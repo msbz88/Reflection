@@ -65,8 +65,11 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <!--StatusBar-->
-
+        
+        <Style TargetType="ScrollBar">
+            <Setter Property="Background" Value="White" />
+        </Style>
+        
     </Window.Resources>
 
     <Grid>
@@ -91,15 +94,13 @@
                 </ScrollViewer>
               </Border>
         </Expander>
-        <DataGrid BorderBrush="Black" Name="dgData" Margin="5,5,0,5" AutoGenerateColumns ="False" Grid.Row="1" Grid.RowSpan="5" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsReadOnly="True" EnableRowVirtualization="True" EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True" ItemsSource="{Binding}"/>
+        <DataGrid BorderBrush="Black" HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="Black" Name="dgData" Margin="5,5,0,0" AutoGenerateColumns ="False" Grid.Row="1" Grid.RowSpan="5" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsReadOnly="True" EnableRowVirtualization="True" EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True" ItemsSource="{Binding}"/>
         <TextBox Name="TextBoxDelimiter" Grid.Row="1" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,5,0,5"/>
         <TextBox Name="TextBoxHeaderRow" Grid.Row="2" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,5,0,5"/>
         <TextBox Name="TextBoxEncoding" Grid.Row="3" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,5,0,5"/>
-        <Button Name ="btnLoad" Grid.Row="5" Grid.Column="2" Height="25" Width="80" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,5,5" Content="Load" Click="ButtonLoadClick" />
-        <StatusBar Padding="5,0,0,0" FontSize="12" Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Height="20" Background="LemonChiffon">
-                <TextBlock Name="TextBlock1"/>
-                <Separator/>
-            <TextBlock Name="TextBlock2"/>
+        <Button Name ="btnLoad" Grid.Row="5" Grid.Column="2" Height="25" Width="80" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,5,0" Content="Load" Click="ButtonLoadClick" />
+        <StatusBar Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Height="20" Background="White">
+            <TextBlock FontFamily="Tahoma" FontSize="12" Padding="5,0,0,0" Name="TextBlockPreviewCount" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         </StatusBar>
     </Grid>
   

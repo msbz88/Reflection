@@ -55,8 +55,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Views\CircularProgress.cs" />
+    <Compile Include="Models\ComparisonDetail.cs" />
     <Compile Include="Models\FileReader.cs" />
     <Compile Include="Models\ImportConfiguration.cs" />
+    <Compile Include="Views\DoubleToPctConverter.cs" />
+    <Compile Include="ViewModels\ComparisonDetailsViewModel.cs" />
     <Compile Include="ViewModels\ImportViewModel.cs" />
     <Compile Include="Views\ImportView.xaml.cs">
       <DependentUpon>ImportView.xaml</DependentUpon>

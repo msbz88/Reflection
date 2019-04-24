@@ -20,8 +20,8 @@ namespace Reflection.Views {
     /// Interaction logic for ImportView.xaml
     /// </summary>
     public partial class ImportView : Window {
-        ImportViewModel ImportViewModel { get; set; }
-        public bool IsReady { get; private set; }
+        public ImportViewModel ImportViewModel { get; set; }
+        public bool IsReady { get; private set; }        
 
         public ImportView() {
             InitializeComponent();
@@ -38,7 +38,7 @@ namespace Reflection.Views {
                     ImportViewModel.PathTestFile = AskFilePath("Test");
                     if (!string.IsNullOrEmpty(ImportViewModel.PathTestFile)) {
                         try {
-                            ImportViewModel.CheckIfPathToFilesCorrect();
+                            ImportViewModel.CheckIfFileSelectionCorrect();
                         } catch (InvalidOperationException ex) {
                             var userResponse = NotifyUser(ex.Message, MessageBoxButton.YesNoCancel);
                             if (userResponse == MessageBoxResult.Yes) {
@@ -88,8 +88,7 @@ namespace Reflection.Views {
 
         private void PrintFileDettails(string fileName) {
             TextBlockFileName.Text = fileName;
-            TextBlock1.Text = "Master: 1000000";
-            TextBlock2.Text = "Test: 2000000";
+            TextBlockPreviewCount.Text = "Preview: " + ImportViewModel.PreviewCount;
         }
 
         private void PrintSkippedLines() {
@@ -102,6 +101,7 @@ namespace Reflection.Views {
 
         private void ButtonLoadClick(object senderIn, RoutedEventArgs eIn) {
             ImportViewModel.SetImportConfiguration();
+            this.Close();
         }
 
         private void OnExpanded(object senderIn, RoutedEventArgs eIn) {

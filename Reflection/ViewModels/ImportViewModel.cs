@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -7,7 +8,8 @@ using System.Threading.Tasks;
 using Reflection.Models;
 
 namespace Reflection.ViewModels {
-    public class ImportViewModel {
+    public class ImportViewModel : INotifyPropertyChanged {
+        public event PropertyChangedEventHandler PropertyChanged;
         public string PathMasterFile { get; set; }
         public string PathTestFile { get; set; }
         public string Delimiter { get; set; }
@@ -17,24 +19,35 @@ namespace Reflection.ViewModels {
         public string[] FileHeaders { get; set; }
         public List<string[]> PreviewContent { get; set; }
         public string[] SkippedLines { get; set; }
+        public int PreviewCount { get; private set; } = 200;
+        public ImportConfiguration ImportConfiguration { get; private set; }
 
         public ImportViewModel() {
         }
 
-        public void CheckIfPathToFilesCorrect() {
+        public void CheckIfFileSelectionCorrect() {
             if (PathMasterFile == PathTestFile) {
-                throw new InvalidOperationException("You select the same file twice\nDo you want to pick files again?");
-            } else if (Path.GetFileName(PathMasterFile)[0] == ']' || PathMasterFile.Contains("Test")) {
-                throw new InvalidOperationException("It looks like you select Test file instead of Master file\nDo you want to pick files again?");
-            } else if (Path.GetFileName(PathTestFile)[0] == '[' || PathTestFile.Contains("Master")) {
-                throw new InvalidOperationException("It looks like you select Master file instead of Test file\nDo you want to pick files again?");
+                throw new InvalidOperationException("You select the same file twice\n"
+                    + "\tMaster file: " + PathMasterFile + "\n"
+                    + "\tTest File: " + PathTestFile + "\n"
+                    + "Do you want to pick files again?");
+            } else if (Path.GetFileName(PathMasterFile)[0] == ']' || (PathMasterFile.Contains("Test") && !PathTestFile.Contains("Test"))) {
+                throw new InvalidOperationException("It looks like you select Test file instead of Master file\n"
+                    + "\tMaster file: " + PathMasterFile + "\n"
+                    + "\tTest File: " + PathTestFile + "\n"
+                    + "Do you want to pick files again?");
+            } else if (Path.GetFileName(PathTestFile)[0] == '[' || (PathTestFile.Contains("Master") && !PathMasterFile.Contains("Master"))) {
+                throw new InvalidOperationException("It looks like you select Master file instead of Test file\n"
+                    + "\tMaster file: " + PathMasterFile + "\n"
+                    + "\tTest File: " + PathTestFile + "\n"
+                    + "Do you want to pick files again?");
             }
         }
 
         public void LoadFileForPreview(string path) {
             var fileReader = new FileReader();
             Encoding = Encoding.ASCII;
-            var fileContent = fileReader.ReadFewLines(path, 200, Encoding);           
+            var fileContent = fileReader.ReadFewLines(path, PreviewCount, Encoding);
             Delimiter = FindDelimiter(fileContent.Take(50));
             RowsToSkip = FindDataBeginning(fileContent.Take(50));
             var firstRow = fileContent.Skip(RowsToSkip).FirstOrDefault().Split(new[] { Delimiter }, StringSplitOptions.None);
@@ -82,14 +95,14 @@ namespace Reflection.ViewModels {
             long l;
             double d;
             DateTime t;
-            if(int.TryParse(item, out i) || long.TryParse(item, out l) || double.TryParse(item, out d) || DateTime.TryParse(item, out t)) {
+            if (int.TryParse(item, out i) || long.TryParse(item, out l) || double.TryParse(item, out d) || DateTime.TryParse(item, out t)) {
                 return false;
             }
             return true;
         }
 
-        public ImportConfiguration SetImportConfiguration() {
-            ImportConfiguration fileConfiguration = new ImportConfiguration(
+        public void SetImportConfiguration() {
+            ImportConfiguration = new ImportConfiguration(
                 pathMasterFile: PathMasterFile,
                 pathTestFile: PathTestFile,
                 delimiter: Delimiter,
@@ -97,7 +110,11 @@ namespace Reflection.ViewModels {
                 isHeadersExist: IsHeadersExist,
                 encoding: Encoding.ASCII
                 );
-            return fileConfiguration;
+            RaisePropertyChanged("ImportConfiguration");
+        }
+
+        private void RaisePropertyChanged(string propertyName) {
+            this.PropertyChanged?.Invoke(this.ImportConfiguration, new PropertyChangedEventArgs(propertyName));
         }
 
     }

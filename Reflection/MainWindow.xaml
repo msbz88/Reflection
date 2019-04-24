@@ -3,16 +3,17 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Reflection"
+        xmlns:local="clr-namespace:Reflection.Views"
         mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="800" MinHeight="350" MinWidth="800">
-    
+        Title="MainWindow" Height="400" Width="950" MinHeight="400" MinWidth="850">
+
     <Window.Resources>
+        <!--Button-->
         <Style TargetType="{x:Type Button}">
             <Setter Property="Background" Value="#373737" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontSize" Value="12" />
-            <Setter Property="FontFamily" Value="./#Segoe UI" />
+            <Setter Property="FontFamily" Value="Segoe UI" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Setter Property="Template">
                 <Setter.Value>
@@ -40,6 +41,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <!--TextBox-->
         <Style TargetType="TextBox">
             <!--<Setter Property="Padding" Value="5"/>-->
             <Setter Property="Margin" Value="5"/>
@@ -47,40 +49,141 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type TextBox}">
-                        <Border x:Name="border" CornerRadius="2" BorderBrush="#000" BorderThickness="1" Background="#fff">
-                            <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
-                        </Border>
+                        <Grid>
+                            <Border x:Name="border" CornerRadius="2" BorderBrush="#000" BorderThickness="1" Background="#fff">
+                                <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                            </Border>
+                            <Label Margin="5,0,0,0" x:Name="WaterMarkLabel" Content="Search here" VerticalAlignment="Center"
+                               Visibility="Collapsed" Foreground="Gray" FontFamily="Arial" FontSize="12" FontStyle="Italic"/>
+                        </Grid>
                         <ControlTemplate.Triggers>
-                            <!--<Trigger Property="IsMouseOver" Value="true">
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="Text" Value=""/>
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Visibility" TargetName="WaterMarkLabel" Value="Visible"/>
+                            </MultiTrigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="DimGray"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="true">
                                 <Setter Property="BorderBrush" TargetName="border" Value="#909090"/>
-                                <Setter Property="Foreground" Value="Red" />
-                                <Setter Property="FontWeight" Value="Bold" />
-                            </Trigger>-->
+                            </Trigger>
                             <Trigger Property="IsFocused" Value="true">
                                 <Setter Property="Foreground" Value="Blue" />
                                 <Setter Property="BorderBrush" TargetName="border" Value="Blue"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="Text" Value="Search here"/>
+                                <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+        <!--Progress bar-->
+        <local:DoubleToPctConverter x:Key="dblToPct"/>
+        <Style TargetType="{x:Type ProgressBar}">
+            <Setter Property="Foreground" Value="#01D328"/>
+            <Setter Property="BorderBrush" Value="#01D328"/>
+            <Setter Property="Maximum" Value="100"/>
+            <Setter Property="Height" Value="80"/>
+            <Setter Property="Width" Value="80"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ProgressBar}">
+                        <Grid x:Name="TemplateRoot" SnapsToDevicePixels="true">
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   FontSize="24" Foreground="DarkGray"
+                            Text="{TemplateBinding Value, Converter={StaticResource dblToPct}}" />
+                            <local:CircularProgress Stroke="{TemplateBinding Foreground}" Value="{TemplateBinding Value}"/>
+                        </Grid>
+                        <!--<ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter Property="Background" Value="Orange"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>-->
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="{x:Type TextBlock}">
+            <Setter Property="FontFamily" Value="Helvetica"/>
+            <Setter Property="FontSize" Value="16"/>
+        </Style>
 
     </Window.Resources>
-
-    <Grid Margin="5">
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="40"/>
             <RowDefinition Height="40"/>
-            <RowDefinition Height="40"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="20"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="160"/>
         </Grid.ColumnDefinitions>
-        <DataGrid Name="gridData" AutoGenerateColumns ="False" Grid.Row="0" Grid.RowSpan="4" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsReadOnly="True" EnableRowVirtualization="True" EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True" ItemsSource="{Binding}"/>
-        <TextBox Name="TextBox1" Grid.Row="0" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,0,5,5"/>
-        <Button Name ="btnOpenFiles" Grid.Row="5" Grid.Column="2" Height="25" Width="80" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,5,0" Content="Open Files" Click="ButtonOpenFilesClick"/>
+        <ListView Name="lvComparisonDetails" Margin="5,5,0,0"  Grid.Row="0" Grid.RowSpan="3" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ItemsSource="{Binding Path=AllComparisonDetails}">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Border Name="border" BorderBrush="LightGray" BorderThickness="1" Padding="5" Margin="5">
+                        <StackPanel Orientation="Horizontal" Height="100" AutomationProperties.Name="{Binding ComparisonId}">
+                            <ProgressBar Value="{Binding PctComplete}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Vertical" VerticalAlignment="Center" Margin="12,0,0,0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="20"/>
+                                        <RowDefinition Height="20"/>
+                                        <RowDefinition Height="20"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" MinWidth="120"/>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="120"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="File Name" HorizontalAlignment="Left" />
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="Rows Count" HorizontalAlignment="Left" />
+                                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Actual Rows Diff" HorizontalAlignment="Left" />
+                                    <TextBlock Grid.Row="0" Grid.Column="3" Text="Compared Rows" HorizontalAlignment="Left" />
+                                    <TextBlock Grid.Row="0" Grid.Column="4" Text="Extra Rows" HorizontalAlignment="Left" />
+                                    <Separator Grid.Row="0" Grid.ColumnSpan="5" VerticalAlignment="Bottom" BorderThickness="5">
+                                        <Separator.BorderBrush>
+                                            <LinearGradientBrush StartPoint="0,0.5" EndPoint="1.0,0.5">
+                                                <GradientStop Color="DarkSlateBlue" Offset="0.0"/>
+                                                <GradientStop Color="SkyBlue" Offset="1.0"/>
+                                            </LinearGradientBrush>
+                                        </Separator.BorderBrush>
+                                    </Separator>
+                                    <!--<GridSplitter Grid.Column="0" Grid.RowSpan="3" Width="1" Background="LightGray" VerticalAlignment="Stretch" HorizontalAlignment="Right"/>-->
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding MasterFileName}" Foreground="DarkSlateBlue" FontSize="15" FontWeight="DemiBold" Padding="0,0,10,0" HorizontalAlignment="Left"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding TestFileName}" Foreground="DarkSlateBlue" FontSize="15" FontWeight="DemiBold" Padding="0,0,10,0" HorizontalAlignment="Left"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding MasterRowsCount}" HorizontalAlignment="Left"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding TestRowsCount}" HorizontalAlignment="Left"/>
+                                    <TextBlock Grid.Row="1" Grid.RowSpan ="2" Grid.Column="2" Text="{Binding ActualRowsDiff}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Row="1" Grid.RowSpan ="2" Grid.Column="3" Text="{Binding ComparedRows}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="4" Text="{Binding ExtraMasterCount}" HorizontalAlignment="Left" />
+                                    <TextBlock Grid.Row="2" Grid.Column="4" Text="{Binding ExtraTestCount}" HorizontalAlignment="Left" />
+                                </Grid>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+        <TextBox Grid.Row="0" Grid.Column="2" Name="TextBoxSearchFile" Width="145" Height="30" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,5,5,5" TextChanged="TextBoxSearchFileTextChanged"/>
+        <Button Name ="btnOpenFiles" Grid.Row="2" Grid.Column="2" Height="25" Width="80" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,5,0" Content="Open Files" Click="ButtonOpenFilesClick"/>
+        <StatusBar Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Height="20" Background="White">
+            <TextBlock FontFamily="Tahoma" FontSize="12" Padding="5,0,0,0" Name="TextBlockinfo" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        </StatusBar>
     </Grid>
 </Window>
