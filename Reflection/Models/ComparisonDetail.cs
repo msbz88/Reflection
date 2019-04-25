@@ -43,15 +43,18 @@ namespace Reflection.Models {
                 }
             }
         }
-        public DateTime StartTime { get; }
+        DateTime startTime { get; set; }
+        public string StartTime {
+            get { return startTime.ToString("dd/MM/yyyy HH:mm:ss"); }
+        }        
         public bool IsComplited { get; set; }
         public string Message { get; set; }
 
         public ComparisonDetail(int comparisonId, string masterFileName, string testFileName) {
             ComparisonId = comparisonId;
             MasterFileName = masterFileName;
-            TestFileName = testFileName;          
-            StartTime = DateTime.Now;
+            TestFileName = testFileName;
+            startTime = DateTime.Now;
             SimulateProgress();
         }
 

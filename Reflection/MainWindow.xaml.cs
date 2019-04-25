@@ -54,7 +54,8 @@ namespace Reflection {
                 return true;
             var comparisonDetail = (ComparisonDetail)item;
             return (comparisonDetail.MasterFileName.ToLower().Contains(TextBoxSearchFile.Text.ToLower())
-                    || comparisonDetail.TestFileName.ToLower().Contains(TextBoxSearchFile.Text.ToLower()));
+                    || comparisonDetail.TestFileName.ToLower().Contains(TextBoxSearchFile.Text.ToLower())
+                    || comparisonDetail.StartTime.Contains(TextBoxSearchFile.Text.ToLower()));
         }
 
 

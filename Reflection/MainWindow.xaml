@@ -136,45 +136,47 @@
                 <DataTemplate>
                     <Border Name="border" BorderBrush="LightGray" BorderThickness="1" Padding="5" Margin="5">
                         <StackPanel Orientation="Horizontal" Height="100" AutomationProperties.Name="{Binding ComparisonId}">
-                            <ProgressBar Style="{DynamicResource pbarCircularStyle}" Value="{Binding Progress}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                            <StackPanel Orientation="Vertical" VerticalAlignment="Center" Margin="12,0,0,0">
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="20"/>
-                                        <RowDefinition Height="20"/>
-                                        <RowDefinition Height="20"/>
-                                    </Grid.RowDefinitions>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" MinWidth="120"/>
-                                        <ColumnDefinition Width="120"/>
-                                        <ColumnDefinition Width="120"/>
-                                        <ColumnDefinition Width="120"/>
-                                        <ColumnDefinition Width="120"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="File Name" HorizontalAlignment="Left" />
-                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="Rows Count" HorizontalAlignment="Left" />
-                                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Actual Rows Diff" HorizontalAlignment="Left" />
-                                    <TextBlock Grid.Row="0" Grid.Column="3" Text="Compared Rows" HorizontalAlignment="Left" />
-                                    <TextBlock Grid.Row="0" Grid.Column="4" Text="Extra Rows" HorizontalAlignment="Left" />
-                                    <Separator Grid.Row="0" Grid.ColumnSpan="5" VerticalAlignment="Bottom" Height="5">
-                                        <Separator.Background>
-                                            <LinearGradientBrush StartPoint="0,0.5" EndPoint="1.0,0.5">
-                                                <GradientStop Color="DarkSlateBlue" Offset="0.0"/>
-                                                <GradientStop Color="SkyBlue" Offset="1.0"/>
-                                            </LinearGradientBrush>
-                                        </Separator.Background>
-                                    </Separator>
-                                    <!--<GridSplitter Grid.Column="0" Grid.RowSpan="3" Width="1" Background="LightGray" VerticalAlignment="Stretch" HorizontalAlignment="Right"/>-->
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding MasterFileName}" Foreground="DarkSlateBlue" FontSize="15" FontWeight="DemiBold" Padding="0,0,10,0" HorizontalAlignment="Left"/>
-                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding TestFileName}" Foreground="DarkSlateBlue" FontSize="15" FontWeight="DemiBold" Padding="0,0,10,0" HorizontalAlignment="Left"/>
-                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding MasterRowsCount}" HorizontalAlignment="Left"/>
-                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding TestRowsCount}" HorizontalAlignment="Left"/>
-                                    <TextBlock Grid.Row="1" Grid.RowSpan ="2" Grid.Column="2" Text="{Binding ActualRowsDiff}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Row="1" Grid.RowSpan ="2" Grid.Column="3" Text="{Binding ComparedRows}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Row="1" Grid.Column="4" Text="{Binding ExtraMasterCount}" HorizontalAlignment="Left" />
-                                    <TextBlock Grid.Row="2" Grid.Column="4" Text="{Binding ExtraTestCount}" HorizontalAlignment="Left" />
-                                </Grid>
-                            </StackPanel>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="30"/>
+                                    <RowDefinition Height="20"/>
+                                    <RowDefinition Height="20"/>
+                                    <RowDefinition Height="20"/>
+                                    <RowDefinition Height="10"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="Auto" MinWidth="120"/>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="120"/>
+                                </Grid.ColumnDefinitions>
+                                <ProgressBar Grid.Row="0" Grid.Column="0" Grid.RowSpan="5" Style="{DynamicResource pbarCircularStyle}" Value="{Binding Progress}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                <Label Grid.Row="0"  Grid.Column="1" Content="{Binding StartTime}" HorizontalAlignment="Left" VerticalAlignment="Center" Padding="0" FontSize="12" Foreground="DarkGray"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="File Name" HorizontalAlignment="Left" />
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="Rows Count" HorizontalAlignment="Left" />
+                                <TextBlock Grid.Row="1" Grid.Column="3" Text="Actual Rows Diff" HorizontalAlignment="Left" />
+                                <TextBlock Grid.Row="1" Grid.Column="4" Text="Compared Rows" HorizontalAlignment="Left" />
+                                <TextBlock Grid.Row="1" Grid.Column="5" Text="Extra Rows" HorizontalAlignment="Left" />
+                                <Separator Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="5" VerticalAlignment="Bottom" Height="5">
+                                    <Separator.Background>
+                                        <LinearGradientBrush StartPoint="0,0.5" EndPoint="1.0,0.5">
+                                            <GradientStop Color="DarkSlateBlue" Offset="0.0"/>
+                                            <GradientStop Color="SkyBlue" Offset="1.0"/>
+                                        </LinearGradientBrush>
+                                    </Separator.Background>
+                                </Separator>
+                                <!--<GridSplitter Grid.Column="0" Grid.RowSpan="3" Width="1" Background="LightGray" VerticalAlignment="Stretch" HorizontalAlignment="Right"/>-->
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding MasterFileName}" Foreground="DarkSlateBlue" FontSize="15" FontWeight="DemiBold" Padding="0,0,10,0" HorizontalAlignment="Left"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding TestFileName}" Foreground="DarkSlateBlue" FontSize="15" FontWeight="DemiBold" Padding="0,0,10,0" HorizontalAlignment="Left"/>
+                                <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding MasterRowsCount}" HorizontalAlignment="Left"/>
+                                <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding TestRowsCount}" HorizontalAlignment="Left"/>
+                                <TextBlock Grid.Row="2" Grid.RowSpan ="2" Grid.Column="3" Text="{Binding ActualRowsDiff}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="2" Grid.RowSpan ="2" Grid.Column="4" Text="{Binding ComparedRows}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="2" Grid.Column="5" Text="{Binding ExtraMasterCount}" HorizontalAlignment="Left" />
+                                <TextBlock Grid.Row="3" Grid.Column="5" Text="{Binding ExtraTestCount}" HorizontalAlignment="Left" />
+                            </Grid>
                         </StackPanel>
                     </Border>
                 </DataTemplate>
