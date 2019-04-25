@@ -85,9 +85,10 @@
         </Style>
         <!--Progress bar-->
         <local:DoubleToPctConverter x:Key="dblToPct"/>
-        <Style TargetType="{x:Type ProgressBar}">
-            <Setter Property="Foreground" Value="#01D328"/>
-            <Setter Property="BorderBrush" Value="#01D328"/>
+        <Style x:Key="pbarCircularStyle" TargetType="{x:Type ProgressBar}">
+            <Setter Property="Foreground" Value="SkyBlue"/>
+            <Setter Property="BorderBrush" Value="SkyBlue"/>
+            <Setter Property="BorderThickness" Value="2"/>
             <Setter Property="Maximum" Value="100"/>
             <Setter Property="Height" Value="80"/>
             <Setter Property="Width" Value="80"/>
@@ -95,8 +96,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ProgressBar}">
                         <Grid x:Name="TemplateRoot" SnapsToDevicePixels="true">
-                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
-                                   FontSize="24" Foreground="DarkGray"
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="24" Foreground="DarkGray"
                             Text="{TemplateBinding Value, Converter={StaticResource dblToPct}}" />
                             <local:CircularProgress Stroke="{TemplateBinding Foreground}" Value="{TemplateBinding Value}"/>
                         </Grid>
@@ -111,7 +111,7 @@
         </Style>
         <Style TargetType="{x:Type TextBlock}">
             <Setter Property="FontFamily" Value="Helvetica"/>
-            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontSize" Value="12"/>
         </Style>
 
     </Window.Resources>
@@ -136,7 +136,7 @@
                 <DataTemplate>
                     <Border Name="border" BorderBrush="LightGray" BorderThickness="1" Padding="5" Margin="5">
                         <StackPanel Orientation="Horizontal" Height="100" AutomationProperties.Name="{Binding ComparisonId}">
-                            <ProgressBar Value="{Binding PctComplete}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                            <ProgressBar Style="{DynamicResource pbarCircularStyle}" Value="{Binding Progress}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                             <StackPanel Orientation="Vertical" VerticalAlignment="Center" Margin="12,0,0,0">
                                 <Grid>
                                     <Grid.RowDefinitions>
@@ -156,13 +156,13 @@
                                     <TextBlock Grid.Row="0" Grid.Column="2" Text="Actual Rows Diff" HorizontalAlignment="Left" />
                                     <TextBlock Grid.Row="0" Grid.Column="3" Text="Compared Rows" HorizontalAlignment="Left" />
                                     <TextBlock Grid.Row="0" Grid.Column="4" Text="Extra Rows" HorizontalAlignment="Left" />
-                                    <Separator Grid.Row="0" Grid.ColumnSpan="5" VerticalAlignment="Bottom" BorderThickness="5">
-                                        <Separator.BorderBrush>
+                                    <Separator Grid.Row="0" Grid.ColumnSpan="5" VerticalAlignment="Bottom" Height="5">
+                                        <Separator.Background>
                                             <LinearGradientBrush StartPoint="0,0.5" EndPoint="1.0,0.5">
                                                 <GradientStop Color="DarkSlateBlue" Offset="0.0"/>
                                                 <GradientStop Color="SkyBlue" Offset="1.0"/>
                                             </LinearGradientBrush>
-                                        </Separator.BorderBrush>
+                                        </Separator.Background>
                                     </Separator>
                                     <!--<GridSplitter Grid.Column="0" Grid.RowSpan="3" Width="1" Background="LightGray" VerticalAlignment="Stretch" HorizontalAlignment="Right"/>-->
                                     <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding MasterFileName}" Foreground="DarkSlateBlue" FontSize="15" FontWeight="DemiBold" Padding="0,0,10,0" HorizontalAlignment="Left"/>
@@ -180,6 +180,7 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
+        <!--<Button Content="Press me" Grid.Row="1" Grid.Column="2" Height="25" Width="80" Click="Button_Click"/>-->
         <TextBox Grid.Row="0" Grid.Column="2" Name="TextBoxSearchFile" Width="145" Height="30" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,5,5,5" TextChanged="TextBoxSearchFileTextChanged"/>
         <Button Name ="btnOpenFiles" Grid.Row="2" Grid.Column="2" Height="25" Width="80" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,5,0" Content="Open Files" Click="ButtonOpenFilesClick"/>
         <StatusBar Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Height="20" Background="White">

@@ -32,12 +32,11 @@ namespace Reflection.Views {
         }
 
         // DependencyProperty - Value (0 - 100)
-        private static FrameworkPropertyMetadata valueMetadata =
-                new FrameworkPropertyMetadata(
-                    0.0,     // Default value
-                    FrameworkPropertyMetadataOptions.AffectsRender,
-                    null,    // Property changed callback
-                    new CoerceValueCallback(CoerceValue));   // Coerce value callback
+        private static FrameworkPropertyMetadata valueMetadata = new FrameworkPropertyMetadata(
+            0.0,
+            FrameworkPropertyMetadataOptions.AffectsRender,
+            null,    // Property changed callback
+            new CoerceValueCallback(CoerceValue));   // Coerce value callback
 
         public static readonly DependencyProperty ValueProperty =
             DependencyProperty.Register("Value", typeof(double), typeof(CircularProgress), valueMetadata);
@@ -72,7 +71,7 @@ namespace Reflection.Views {
                         SweepDirection.Clockwise,
                         true,    // isStroked
                         false);
-                    //    ctx.LineTo(new Point((RenderSize.Width / 2.0), (RenderSize.Height / 2.0)), true, true);
+                       //ctx.LineTo(new Point((RenderSize.Width / 2.0), (RenderSize.Height / 2.0)), true, true);
                 }
 
                 return geom;

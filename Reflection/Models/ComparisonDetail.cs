@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 
 namespace Reflection.Models {
     public class ComparisonDetail : INotifyPropertyChanged {
@@ -16,7 +18,7 @@ namespace Reflection.Models {
             get { return masterRowsCount; }
             set {
                 masterRowsCount = value;
-                NotifyPropertyChanged("MasterRowsCount");
+                OnPropertyChanged("MasterRowsCount");
             }
         }
         int testRowsCount;
@@ -24,13 +26,23 @@ namespace Reflection.Models {
             get { return masterRowsCount; }
             set {
                 testRowsCount = value;
-                NotifyPropertyChanged("TestRowsCount");
+                OnPropertyChanged("TestRowsCount");
             }
         }
         public int ActualRowsDiff { get; set; }
         public int ComparedRows { get; set; }
         public int ExtraMasterCount { get; set; }
         public int ExtraTestCount { get; set; }
+        double progress;
+        public double Progress {
+            get { return progress; }
+            set {
+                if (progress != value) {
+                    progress = value;
+                    OnPropertyChanged("Progress");
+                }
+            }
+        }
         public DateTime StartTime { get; }
         public bool IsComplited { get; set; }
         public string Message { get; set; }
@@ -40,10 +52,21 @@ namespace Reflection.Models {
             MasterFileName = masterFileName;
             TestFileName = testFileName;          
             StartTime = DateTime.Now;
+            SimulateProgress();
         }
 
-        public void NotifyPropertyChanged(string propName) {
+        public void OnPropertyChanged(string propName) {
             this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+        }
+
+        public void SimulateProgress() {
+            new Thread(() =>
+            {
+                for (int i = 0; i <= 100; i++) {
+                    Progress = i;
+                    Thread.Sleep(50);
+                }
+            }).Start();
         }
     }
 }
