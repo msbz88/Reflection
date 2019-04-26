@@ -58,7 +58,21 @@ namespace Reflection {
                     || comparisonDetail.StartTime.Contains(TextBoxSearchFile.Text.ToLower()));
         }
 
+        private void ListViewItemSelected(object sender, MouseButtonEventArgs e) {
+            var item = sender as ListViewItem;
+            if (item != null && item.IsSelected) {
 
+            }
+        }
+
+        private void ButtonOpenFolder(object senderIn, RoutedEventArgs eIn) {
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.ShowDialog();
+        }
+
+        private void ButtonViewResult(object senderIn, RoutedEventArgs eIn) {
+
+        }
     }
 }
 
