@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -46,15 +47,17 @@ namespace Reflection.Models {
         DateTime startTime { get; set; }
         public string StartTime {
             get { return startTime.ToString("dd/MM/yyyy HH:mm:ss"); }
-        }        
+        }
         public bool IsComplited { get; set; }
         public string Message { get; set; }
+        public string CommonDirectoryPath { get; set; }
 
-        public ComparisonDetail(int comparisonId, string masterFileName, string testFileName) {
+        public ComparisonDetail(int comparisonId, string masterFilePath, string testFilePath) {
             ComparisonId = comparisonId;
-            MasterFileName = masterFileName;
-            TestFileName = testFileName;
+            MasterFileName = Path.GetFileName(masterFilePath);
+            TestFileName = Path.GetFileName(testFilePath);
             startTime = DateTime.Now;
+            CommonDirectoryPath = FindCommonDirectory(masterFilePath, testFilePath);
             SimulateProgress();
         }
 
@@ -63,13 +66,27 @@ namespace Reflection.Models {
         }
 
         public void SimulateProgress() {
-            new Thread(() =>
-            {
+            new Thread(() => {
                 for (int i = 0; i <= 100; i++) {
                     Progress = i;
                     Thread.Sleep(50);
                 }
             }).Start();
         }
+
+        private string FindCommonDirectory(string masterPath, string testPath) {
+            var mDir = masterPath.Split(new[] { @"\" }, StringSplitOptions.None);
+            var tDir = testPath.Split(new[] { @"\" }, StringSplitOptions.None);
+            var result = "";
+            var countDir = mDir.Length > tDir.Length ? tDir.Length : mDir.Length;
+            for (int i = 0; i < countDir; i++) {
+                if (mDir[i] != tDir[i]) {
+                    mDir[0] = mDir[0] + @"\";
+                    result = Path.Combine(mDir.Take(i).ToArray());
+                }
+            }
+            return result;
+        }
+
     }
 }

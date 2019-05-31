@@ -1,0 +1,57 @@
+﻿<Page x:Class="Reflection.Views.PageImport"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:Reflection.Views"
+      mc:Ignorable="d" 
+      d:DesignHeight="350" d:DesignWidth="750"
+      Title="PageImport">
+    <Page.Resources>
+        <!-- NavButton -->
+        <Style x:Key="NavButtton" TargetType="Button">
+            <Setter Property="Background" Value="White"/>
+        </Style>
+    </Page.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="160"/>
+        </Grid.ColumnDefinitions>
+        <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0">
+            <Button FontFamily="Marlett" Content="3" FontSize="18"  Grid.Row="0" Grid.Column="1" Height="20" Width="20" Margin ="5,0,0,0" VerticalAlignment="Center" Click="ButtonBackClick"/>
+            <TextBlock Name="TextBlockFileName" Margin ="5,0,0,0" VerticalAlignment="Center" Foreground="Gray" FontSize="18"/>
+        </StackPanel>
+        <Expander Name="ExpanderSkippedRows" Margin ="5,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Stretch" Grid.Row="1" Grid.Column="0" Header="Automatically skipped rows" ExpandDirection="Down"/>
+        <Popup Name="PopupSkipedRows" Margin ="5,0,0,0" IsOpen="{Binding IsExpanded, ElementName=ExpanderSkippedRows}" PlacementTarget="{Binding ElementName=ExpanderSkippedRows}" AllowsTransparency="True" PopupAnimation="Slide" Placement="Bottom">
+            <Border BorderThickness="1" Background="Ivory" BorderBrush="Gray">
+                <TextBlock Name="TextBlockSkippedRows" TextWrapping="Wrap" Foreground="Gray" Height="80" Padding="5" MaxWidth="500" HorizontalAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True"/>
+            </Border>
+        </Popup>
+        <DataGrid BorderBrush="LightGray" HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray" Name="dgData" Margin="5,5,0,0" AutoGenerateColumns ="False" Grid.Row="1" Grid.RowSpan="7" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsReadOnly="True" EnableRowVirtualization="True" EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True" ItemsSource="{Binding}"/>
+        <TextBox Name="TextBoxDelimiter" Grid.Row="1" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,5,0,5" ToolTip="Delimiter" Text="{Binding Path=Delimiter, Mode=TwoWay}"/>
+        <TextBox Name="TextBoxHeaderRow" Grid.Row="2" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,5,0,5" ToolTip ="Header row"/>
+        <ComboBox Name="comboBoxEncoding" Grid.Row="3" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,5,0,5" ToolTip ="File encoding" SelectionChanged="ComboBoxSelectionChanged" >
+           <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <!--<Rectangle Fill="{Binding DisplayName}" Width="10" Height="10" Margin="0,2,5,2" />-->
+                        <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,2,5,2" Text="{Binding Name}" />
+                    </StackPanel>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+        <Button Name ="btnLoad" Grid.Row="4" Grid.Column="2" Height="25" Width="80" HorizontalAlignment="Center" VerticalAlignment="Bottom" Content="Load" Click="ButtonLoadClick" />
+    </Grid>
+
+</Page>

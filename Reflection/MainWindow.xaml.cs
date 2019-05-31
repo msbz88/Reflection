@@ -28,51 +28,47 @@ namespace Reflection {
     /// </summary>
     public partial class MainWindow : Window {
         public ComparisonDetailViewModel ComparisonDetailViewModel { get; set; }
+        PageImport PageImport { get; set; }
+        PageMain PageMain { get; set; }
 
         public MainWindow() {
-            ComparisonDetailViewModel = new ComparisonDetailViewModel();
-            this.DataContext = ComparisonDetailViewModel;
             InitializeComponent();
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
-            CollectionViewSource.GetDefaultView(lvComparisonDetails.ItemsSource).Filter = UserFilter;
+            ComparisonDetailViewModel = new ComparisonDetailViewModel();
+            PageMain = new PageMain(ComparisonDetailViewModel);
+            Main.Content = PageMain;
+            PageMain.OpenFiles += OnOpenFiles;
+            PageImport = new PageImport();
+            PageImport.FilesLoaded += OnFilesLoaded;
+            PageImport.GoBack += OnGoBack;
+            PageImport.ImportViewModel.PropertyChanged += ComparisonDetailViewModel.ImportConfigurationPropertyChanged;
         }
 
-        private void ButtonOpenFilesClick(object senderIn, RoutedEventArgs eIn) {
-            var importView = new ImportView();
-            importView.ImportViewModel.PropertyChanged += ComparisonDetailViewModel.ImportConfigurationPropertyChanged;
-            if (importView.IsReady) {
-                importView.Show();
-            }         
-        }
-
-        private void TextBoxSearchFileTextChanged(object sender, TextChangedEventArgs e) {
-            CollectionViewSource.GetDefaultView(lvComparisonDetails.ItemsSource).Refresh();
-        }
-
-        private bool UserFilter(object item) {
-            if (string.IsNullOrEmpty(TextBoxSearchFile.Text))
-                return true;
-            var comparisonDetail = (ComparisonDetail)item;
-            return (comparisonDetail.MasterFileName.ToLower().Contains(TextBoxSearchFile.Text.ToLower())
-                    || comparisonDetail.TestFileName.ToLower().Contains(TextBoxSearchFile.Text.ToLower())
-                    || comparisonDetail.StartTime.Contains(TextBoxSearchFile.Text.ToLower()));
-        }
-
-        private void ListViewItemSelected(object sender, MouseButtonEventArgs e) {
-            var item = sender as ListViewItem;
-            if (item != null && item.IsSelected) {
-
+        private void OnOpenFiles(object sender, EventArgs e) {
+            PageImport.SelectFiles();            
+            if (PageImport.IsReady) {
+                Main.Content = PageImport;
             }
         }
 
-        private void ButtonOpenFolder(object senderIn, RoutedEventArgs eIn) {
-            OpenFileDialog ofd = new OpenFileDialog();
-            ofd.ShowDialog();
+        private void OnFilesLoaded(object sender, EventArgs e) {
+            Main.Content = PageMain;
         }
 
-        private void ButtonViewResult(object senderIn, RoutedEventArgs eIn) {
-
+        private void OnGoBack(object sender, EventArgs e) {
+            Main.Content = PageMain;
         }
+
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e) {
+            PageImport.ResetPopUp();
+        }
+
+        private void Window_LocationChanged(object sender, EventArgs e) {
+            PageImport.ResetPopUp();
+        }
+
+
+
     }
 }
 

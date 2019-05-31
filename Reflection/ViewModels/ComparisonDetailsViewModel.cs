@@ -37,11 +37,13 @@ namespace Reflection.ViewModels {
 
         public void ImportConfigurationPropertyChanged(object sender, PropertyChangedEventArgs e) {
             if (e.PropertyName == "ImportConfiguration") {
-                var ic = (ImportConfiguration)sender;
-                var comparisonDetail = new ComparisonDetail(comparisonCount++, Path.GetFileName(ic.PathMasterFile), Path.GetFileName(ic.PathTestFile));
+                var importConfiguration = (ImportConfiguration)sender;
+                var comparisonDetail = new ComparisonDetail(comparisonCount++, importConfiguration.MasterFilePath, importConfiguration.TestFilePath);
                 AllComparisonDetails.Add(comparisonDetail);               
             }
         }
+
+
 
     }
 }

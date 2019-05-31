@@ -23,7 +23,7 @@ namespace Reflection.ViewModels {
         public ImportConfiguration ImportConfiguration { get; private set; }
 
         public ImportViewModel() {
-        }
+        }   
 
         public void CheckIfFileSelectionCorrect() {
             if (PathMasterFile == PathTestFile) {
@@ -42,11 +42,11 @@ namespace Reflection.ViewModels {
                     + "\tTest File: " + PathTestFile + "\n"
                     + "Do you want to pick files again?");
             }
+            Encoding = GetEncoding(PathMasterFile);
         }
 
         public void LoadFileForPreview(string path) {
             var fileReader = new FileReader();
-            Encoding = Encoding.ASCII;
             var fileContent = fileReader.ReadFewLines(path, PreviewCount, Encoding);
             Delimiter = FindDelimiter(fileContent.Take(50));
             RowsToSkip = FindDataBeginning(fileContent.Take(50));
@@ -54,6 +54,8 @@ namespace Reflection.ViewModels {
             IsHeadersExist = IsHeadersRow(firstRow);
             if (IsHeadersExist) {
                 FileHeaders = firstRow;
+            }else {
+                FileHeaders = GenerateDefaultHeaders(firstRow.Length);
             }
             PreviewContent = new List<string[]>();
             foreach (var line in fileContent.Skip(RowsToSkip + 1)) {
@@ -101,6 +103,32 @@ namespace Reflection.ViewModels {
             return true;
         }
 
+        private string[] GenerateDefaultHeaders(int columnsCount) {
+            var headers = new string[columnsCount];
+            for (int i = 0; i < columnsCount; i++) {
+                headers[i] = "Column" + i;
+            }
+            return headers;
+        }
+
+        private Encoding GetEncoding(string filename) {
+            var bom = new byte[4];
+            using (var file = new FileStream(filename, FileMode.Open, FileAccess.Read)) {
+                file.Read(bom, 0, 4);
+            }
+            if (bom[0] == 0x2b && bom[1] == 0x2f && bom[2] == 0x76)
+                return Encoding.UTF7;
+            if (bom[0] == 0xef && bom[1] == 0xbb && bom[2] == 0xbf)
+                return Encoding.UTF8;
+            if (bom[0] == 0xff && bom[1] == 0xfe)
+                return Encoding.Unicode;
+            if (bom[0] == 0xfe && bom[1] == 0xff)
+                return Encoding.BigEndianUnicode;
+            if (bom[0] == 0 && bom[1] == 0 && bom[2] == 0xfe && bom[3] == 0xff)
+                return Encoding.UTF32;
+            return Encoding.Default;
+        }
+
         public void SetImportConfiguration() {
             ImportConfiguration = new ImportConfiguration(
                 pathMasterFile: PathMasterFile,
@@ -108,7 +136,7 @@ namespace Reflection.ViewModels {
                 delimiter: Delimiter,
                 rowsToSkip: RowsToSkip,
                 isHeadersExist: IsHeadersExist,
-                encoding: Encoding.ASCII
+                encoding: Encoding
                 );
             RaisePropertyChanged("ImportConfiguration");
         }
@@ -116,6 +144,7 @@ namespace Reflection.ViewModels {
         private void RaisePropertyChanged(string propertyName) {
             this.PropertyChanged?.Invoke(this.ImportConfiguration, new PropertyChangedEventArgs(propertyName));
         }
+
 
     }
 }
