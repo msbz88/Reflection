@@ -10,7 +10,14 @@ using Reflection.Models;
 namespace Reflection.ViewModels {
     public class ImportViewModel : INotifyPropertyChanged {
         public event PropertyChangedEventHandler PropertyChanged;
-        public string PathMasterFile { get; set; }
+        private string pathMasterFile;
+        public string PathMasterFile {
+            get { return pathMasterFile; }
+            set {
+                pathMasterFile = value;
+                Encoding = GetEncoding(PathMasterFile);
+            }
+        }
         public string PathTestFile { get; set; }
         public string Delimiter { get; set; }
         public int RowsToSkip { get; set; }
@@ -41,8 +48,7 @@ namespace Reflection.ViewModels {
                     + "\tMaster file: " + PathMasterFile + "\n"
                     + "\tTest File: " + PathTestFile + "\n"
                     + "Do you want to pick files again?");
-            }
-            Encoding = GetEncoding(PathMasterFile);
+            }           
         }
 
         public void LoadFileForPreview(string path) {

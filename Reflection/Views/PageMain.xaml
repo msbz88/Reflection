@@ -57,27 +57,21 @@
             <Setter Property="BorderBrush" Value="SkyBlue"/>
             <Setter Property="BorderThickness" Value="2"/>
             <Setter Property="Maximum" Value="100"/>
-            <Setter Property="Height" Value="80"/>
-            <Setter Property="Width" Value="80"/>
+            <Setter Property="Height" Value="90"/>
+            <Setter Property="Width" Value="90"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ProgressBar}">
                         <Grid x:Name="TemplateRoot" SnapsToDevicePixels="true">
                             <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="24" Foreground="DarkGray"
-                            Text="{TemplateBinding Value, Converter={StaticResource dblToPct}}" />
-                            <!--<Button Name ="btnOpen" Content="Open" Grid.Row="1" Grid.Column="2" Height="25" Width="60"/>-->
+                            Text="{TemplateBinding Value, Converter={StaticResource dblToPct}}"/>
                             <local:CircularProgress Stroke="{TemplateBinding Foreground}" Value="{TemplateBinding Value}"/>
                         </Grid>
-                        <!--<ControlTemplate.Triggers>
-                            <Trigger Property="Value" Value="100.0">
-                                <Setter Property="Foreground" Value="Black"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>-->
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
-     </Page.Resources>
+    </Page.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="40"/>
@@ -102,14 +96,14 @@
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <Border Name="border" BorderBrush="LightGray" BorderThickness="1" Padding="5" Margin="5">
-                        <StackPanel Orientation="Horizontal" Height="100" AutomationProperties.Name="{Binding ComparisonId}">
+                        <StackPanel Orientation="Horizontal" Height="110" AutomationProperties.Name="{Binding ComparisonId}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="30"/>
                                     <RowDefinition Height="20"/>
                                     <RowDefinition Height="20"/>
                                     <RowDefinition Height="20"/>
-                                    <RowDefinition Height="10"/>
+                                    <RowDefinition Height="20"/>
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -120,7 +114,12 @@
                                     <ColumnDefinition Width="120"/>
                                     <ColumnDefinition Width="120"/>
                                 </Grid.ColumnDefinitions>
-                                <Button Name="btnViewResult" Grid.Column="0" Grid.RowSpan="5" Content="View Result" Height="20" Width="70" HorizontalAlignment="Center" VerticalAlignment="Top"  Margin="10" Click="ButtonViewResult">
+                                <Grid Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top" Height="25" Width="25">
+                                    <Ellipse Stroke="DarkGray" Fill="DarkGray" StrokeThickness="2"/>
+                                    <Label Name="lbl" Foreground="White" Content="{Binding Path=ComparisonId}" Padding="5" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock Name="TextBlockStatus" Grid.Row="2" Grid.Column="0" Text="{Binding Path=Status, NotifyOnTargetUpdated=True}" VerticalAlignment="Center" TargetUpdated="OnStatusUpdated" HorizontalAlignment="Center" FontSize="12" Foreground="DarkGray" />
+                                <Button Name="btnViewResult" Grid.Column="0" Grid.Row="1" Content="View Result" Height="20" Width="70" HorizontalAlignment="Center" VerticalAlignment="Bottom" Click="ButtonViewResult">
                                     <Button.Style>
                                         <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
                                             <Setter Property="FontSize" Value="10" />
@@ -134,16 +133,16 @@
                                         </Style>
                                     </Button.Style>
                                 </Button>
-                                <Button Name ="btnOpenFolder" Grid.Column="0" Grid.RowSpan="5" Content="Open Folder" Height="20" Width="70" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="10" Click="ButtonOpenFolder">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                <Button Name ="btnOpenFolder" Grid.Column="0" Grid.Row="3" Grid.RowSpan="2" Content="Open Folder" Height="20" Width="70" VerticalAlignment="Top" HorizontalAlignment="Center" Click="ButtonOpenFolder">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
                                             <Setter Property="FontSize" Value="10" />
                                             <Setter Property="Background" Value="#E59400"/>
                                         </Style>
-                                </Button.Style>
+                                    </Button.Style>
                                 </Button>
+                                <Label Grid.Row="4"  Grid.Column="0" Content="{Binding StartTime}" HorizontalAlignment="Center" VerticalAlignment="Bottom" Padding="0" FontSize="12" Foreground="DarkGray"/>
                                 <ProgressBar Grid.Row="0" Grid.Column="1" Grid.RowSpan="5" Style="{DynamicResource pbarCircularStyle}" Value="{Binding Progress}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                <Label Grid.Row="0"  Grid.Column="2" Content="{Binding StartTime}" HorizontalAlignment="Left" VerticalAlignment="Center" Padding="0" FontSize="12" Foreground="DarkGray"/>
                                 <TextBlock Grid.Row="1" Grid.Column="2" Text="File Name" HorizontalAlignment="Left" />
                                 <TextBlock Grid.Row="1" Grid.Column="3" Text="Rows Count" HorizontalAlignment="Left" />
                                 <TextBlock Grid.Row="1" Grid.Column="4" Text="Actual Rows Diff" HorizontalAlignment="Left" />
@@ -174,5 +173,5 @@
         </ListView>
         <TextBox Grid.Row="0" Grid.Column="2" Name="TextBoxSearchFile" Width="145" Height="30" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10,5,5,5" TextChanged="TextBoxSearchFileTextChanged"/>
         <Button Name ="btnOpenFiles" Grid.Row="1" Grid.Column="1" Height="25" Width="80" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin ="0,0,5,5" Content="Open Files" Click="ButtonOpenFilesClick"/>
-     </Grid>
+    </Grid>
 </Page>

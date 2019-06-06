@@ -33,14 +33,16 @@
             <TextBlock Name="TextBlockFileName" Margin ="5,0,0,0" VerticalAlignment="Center" Foreground="Gray" FontSize="18"/>
         </StackPanel>
         <Expander Name="ExpanderSkippedRows" Margin ="5,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Stretch" Grid.Row="1" Grid.Column="0" Header="Automatically skipped rows" ExpandDirection="Down"/>
-        <Popup Name="PopupSkipedRows" Margin ="5,0,0,0" IsOpen="{Binding IsExpanded, ElementName=ExpanderSkippedRows}" PlacementTarget="{Binding ElementName=ExpanderSkippedRows}" AllowsTransparency="True" PopupAnimation="Slide" Placement="Bottom">
+        <Popup  Name="PopupSkipedRows" Margin ="5,0,0,0" IsOpen="{Binding IsExpanded, ElementName=ExpanderSkippedRows}" PlacementTarget="{Binding ElementName=ExpanderSkippedRows}" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Slide" Placement="Bottom" Closed="PopupSkipedRows_Closed">
             <Border BorderThickness="1" Background="Ivory" BorderBrush="Gray">
-                <TextBlock Name="TextBlockSkippedRows" TextWrapping="Wrap" Foreground="Gray" Height="80" Padding="5" MaxWidth="500" HorizontalAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" MaxWidth="500" HorizontalScrollBarVisibility="Auto" Height="100">
+                <TextBlock Name="TextBlockSkippedRows" Foreground="Gray" Padding="5" />
+                </ScrollViewer>
             </Border>
         </Popup>
         <DataGrid BorderBrush="LightGray" HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray" Name="dgData" Margin="5,5,0,0" AutoGenerateColumns ="False" Grid.Row="1" Grid.RowSpan="7" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsReadOnly="True" EnableRowVirtualization="True" EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True" ItemsSource="{Binding}"/>
         <TextBox Name="TextBoxDelimiter" Grid.Row="1" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,5,0,5" ToolTip="Delimiter" Text="{Binding Path=Delimiter, Mode=TwoWay}"/>
-        <TextBox Name="TextBoxHeaderRow" Grid.Row="2" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,5,0,5" ToolTip ="Header row"/>
+        <TextBox Name="TextBoxHeaderRow" Grid.Row="2" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,5,0,5" ToolTip ="Rows to skip"/>
         <ComboBox Name="comboBoxEncoding" Grid.Row="3" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,5,0,5" ToolTip ="File encoding" SelectionChanged="ComboBoxSelectionChanged" >
            <ComboBox.ItemTemplate>
                 <DataTemplate>

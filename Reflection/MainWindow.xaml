@@ -11,7 +11,7 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="20"/>
         </Grid.RowDefinitions>
-        <Frame x:Name="Main" Grid.Row="0" NavigationUIVisibility="Hidden"/>
+        <Frame x:Name="Main" Grid.Row="0" NavigationUIVisibility="Hidden" />
         <StatusBar Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Height="20" Background="White">
             <TextBlock FontFamily="Tahoma" FontSize="12" Padding="5,0,0,0" Name="TextBlockPreviewCount" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         </StatusBar>

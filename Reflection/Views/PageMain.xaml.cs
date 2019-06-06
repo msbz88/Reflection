@@ -41,6 +41,24 @@ namespace Reflection.Views {
             CollectionViewSource.GetDefaultView(lvComparisonDetails.ItemsSource).Refresh();
         }
 
+        private void OnStatusUpdated(object senderIn, RoutedEventArgs eIn) {
+            var TextBlockStatus = (TextBlock)senderIn;
+            switch (TextBlockStatus.Text) {
+                case "Executing":
+                TextBlockStatus.Foreground = new SolidColorBrush(Colors.Orange);
+                break;
+                case "Passed":
+                TextBlockStatus.Foreground = new SolidColorBrush(Colors.Green);
+                break;
+                case "Failed":
+                TextBlockStatus.Foreground = new SolidColorBrush(Colors.Red);
+                break;
+                case "Error":
+                TextBlockStatus.Foreground = new SolidColorBrush(Colors.Red);
+                break;
+            }
+        }
+
         private void ButtonOpenFolder(object senderIn, RoutedEventArgs eIn) {
             var selectedItem = (ComparisonDetail)lvComparisonDetails.SelectedItem;
             Process.Start(selectedItem.CommonDirectoryPath);

@@ -55,6 +55,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Models\Status.cs" />
     <Compile Include="Views\CircularProgress.cs" />
     <Compile Include="Models\ComparisonDetail.cs" />
     <Compile Include="Models\FileReader.cs" />

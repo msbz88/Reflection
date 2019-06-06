@@ -178,6 +178,12 @@ namespace Reflection.Views {
             PopupSkipedRows.HorizontalOffset = offset;
         }
 
+        public void ClosePopup() {
+            PopupSkipedRows.IsOpen = false;
+        }
 
+        private void PopupSkipedRows_Closed(object sender, EventArgs e) {
+            ExpanderSkippedRows.IsExpanded = false;
+        }
     }
 }

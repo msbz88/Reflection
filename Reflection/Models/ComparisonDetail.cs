@@ -30,10 +30,38 @@ namespace Reflection.Models {
                 OnPropertyChanged("TestRowsCount");
             }
         }
-        public int ActualRowsDiff { get; set; }
-        public int ComparedRows { get; set; }
-        public int ExtraMasterCount { get; set; }
-        public int ExtraTestCount { get; set; }
+        int actualRowsDiff;
+        public int ActualRowsDiff {
+            get { return actualRowsDiff; }
+            set {
+                actualRowsDiff = value;
+                OnPropertyChanged("ActualRowsDiff");
+            }
+        }
+        int comparedRows;
+        public int ComparedRows {
+            get { return comparedRows; }
+            set {
+                comparedRows = value;
+                OnPropertyChanged("ComparedRows");
+            }
+        }
+        int extraMasterCount;
+        public int ExtraMasterCount {
+            get { return extraMasterCount; }
+            set {
+                extraMasterCount = value;
+                OnPropertyChanged("ExtraMasterCount");
+            }
+        }
+        int extraTestCount;
+        public int ExtraTestCount {
+            get { return extraTestCount; }
+            set {
+                extraTestCount = value;
+                OnPropertyChanged("ExtraTestCount");
+            }
+        }
         double progress;
         public double Progress {
             get { return progress; }
@@ -48,8 +76,17 @@ namespace Reflection.Models {
         public string StartTime {
             get { return startTime.ToString("dd/MM/yyyy HH:mm:ss"); }
         }
-        public bool IsComplited { get; set; }
-        public string Message { get; set; }
+        Status status;
+        public Status Status {
+            get { return status; }
+            set {
+                if (status != value) {
+                    status = value;
+                    OnPropertyChanged("Status");
+                }
+            }
+        }
+        public string ErrorMessage { get; set; }
         public string CommonDirectoryPath { get; set; }
 
         public ComparisonDetail(int comparisonId, string masterFilePath, string testFilePath) {
@@ -58,6 +95,7 @@ namespace Reflection.Models {
             TestFileName = Path.GetFileName(testFilePath);
             startTime = DateTime.Now;
             CommonDirectoryPath = FindCommonDirectory(masterFilePath, testFilePath);
+            Status = Status.Queued;
             SimulateProgress();
         }
 
@@ -66,11 +104,13 @@ namespace Reflection.Models {
         }
 
         public void SimulateProgress() {
-            new Thread(() => {
+            new Thread(() => {               
                 for (int i = 0; i <= 100; i++) {
                     Progress = i;
                     Thread.Sleep(50);
+                    Status = Status.Executing;
                 }
+                Status = Status.Passed;
             }).Start();
         }
 
