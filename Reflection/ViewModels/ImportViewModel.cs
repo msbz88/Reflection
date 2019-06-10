@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Reflection.Model;
 using Reflection.Models;
 
 namespace Reflection.ViewModels {
@@ -30,26 +31,7 @@ namespace Reflection.ViewModels {
         public ImportConfiguration ImportConfiguration { get; private set; }
 
         public ImportViewModel() {
-        }   
-
-        public void CheckIfFileSelectionCorrect() {
-            if (PathMasterFile == PathTestFile) {
-                throw new InvalidOperationException("You select the same file twice\n"
-                    + "\tMaster file: " + PathMasterFile + "\n"
-                    + "\tTest File: " + PathTestFile + "\n"
-                    + "Do you want to pick files again?");
-            } else if (Path.GetFileName(PathMasterFile)[0] == ']' || (PathMasterFile.Contains("Test") && !PathTestFile.Contains("Test"))) {
-                throw new InvalidOperationException("It looks like you select Test file instead of Master file\n"
-                    + "\tMaster file: " + PathMasterFile + "\n"
-                    + "\tTest File: " + PathTestFile + "\n"
-                    + "Do you want to pick files again?");
-            } else if (Path.GetFileName(PathTestFile)[0] == '[' || (PathTestFile.Contains("Master") && !PathMasterFile.Contains("Master"))) {
-                throw new InvalidOperationException("It looks like you select Master file instead of Test file\n"
-                    + "\tMaster file: " + PathMasterFile + "\n"
-                    + "\tTest File: " + PathTestFile + "\n"
-                    + "Do you want to pick files again?");
-            }           
-        }
+        }            
 
         public void LoadFileForPreview(string path) {
             var fileReader = new FileReader();
@@ -60,7 +42,7 @@ namespace Reflection.ViewModels {
             IsHeadersExist = IsHeadersRow(firstRow);
             if (IsHeadersExist) {
                 FileHeaders = firstRow;
-            }else {
+            } else {
                 FileHeaders = GenerateDefaultHeaders(firstRow.Length);
             }
             PreviewContent = new List<string[]>();

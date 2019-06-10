@@ -10,35 +10,25 @@ using System.Windows.Data;
 using Reflection.Models;
 
 namespace Reflection.ViewModels {
-    public class ComparisonDetailViewModel  {
+    public class ComparisonTasksViewModel  {
         private int comparisonCount;
-        public ObservableCollection<ComparisonDetail> AllComparisonDetails { get; }
+        public ObservableCollection<ComparisonTask> AllComparisonDetails { get; }
         public ICollectionView AllComparisonDetailsView {
             get { return CollectionViewSource.GetDefaultView(AllComparisonDetails); }
         }
 
-        //private string search;
-
-        //public event PropertyChangedEventHandler PropertyChanged;
-
-        //public string Search {
-        //    get { return search; }
-        //    set {
-        //        search = value;
-        //        NotifyPropertyChanged("Search");
-        //        AllComparisonDetailsView.Refresh();  
-        //    }
-        //}
-
-        public ComparisonDetailViewModel() {
-            AllComparisonDetails = new ObservableCollection<ComparisonDetail>();         
+        public ComparisonTasksViewModel() {
+            AllComparisonDetails = new ObservableCollection<ComparisonTask>();         
             comparisonCount = 1;
         }
 
         public void ImportConfigurationPropertyChanged(object sender, PropertyChangedEventArgs e) {
             if (e.PropertyName == "ImportConfiguration") {
                 var importConfiguration = (ImportConfiguration)sender;
-                var comparisonDetail = new ComparisonDetail(comparisonCount++, importConfiguration.MasterFilePath, importConfiguration.TestFilePath);
+                var comparisonDetail = new ComparisonTask(comparisonCount++, importConfiguration.MasterFilePath, importConfiguration.TestFilePath);
+                if (AllComparisonDetails.Count == 99) {
+                    AllComparisonDetails.RemoveAt(0);
+                }
                 AllComparisonDetails.Add(comparisonDetail);               
             }
         }

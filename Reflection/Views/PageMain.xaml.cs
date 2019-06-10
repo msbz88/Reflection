@@ -23,10 +23,10 @@ namespace Reflection.Views {
     /// </summary>
     public partial class PageMain : Page {
         public EventHandler OpenFiles { get; set; }
-        public ComparisonDetailViewModel ComparisonDetailViewModel { get; set; }
+        public ComparisonTasksViewModel ComparisonDetailViewModel { get; set; }
         
 
-        public PageMain(ComparisonDetailViewModel comparisonDetailViewModel) {
+        public PageMain(ComparisonTasksViewModel comparisonDetailViewModel) {
             ComparisonDetailViewModel = comparisonDetailViewModel;
             this.DataContext = ComparisonDetailViewModel;
             InitializeComponent();
@@ -60,7 +60,7 @@ namespace Reflection.Views {
         }
 
         private void ButtonOpenFolder(object senderIn, RoutedEventArgs eIn) {
-            var selectedItem = (ComparisonDetail)lvComparisonDetails.SelectedItem;
+            var selectedItem = (ComparisonTask)lvComparisonDetails.SelectedItem;
             Process.Start(selectedItem.CommonDirectoryPath);
         }
 
@@ -71,7 +71,7 @@ namespace Reflection.Views {
         private bool UserFilter(object item) {
             if (string.IsNullOrEmpty(TextBoxSearchFile.Text))
                 return true;
-            var comparisonDetail = (ComparisonDetail)item;
+            var comparisonDetail = (ComparisonTask)item;
             return (comparisonDetail.MasterFileName.ToLower().Contains(TextBoxSearchFile.Text.ToLower())
                     || comparisonDetail.TestFileName.ToLower().Contains(TextBoxSearchFile.Text.ToLower())
                     || comparisonDetail.StartTime.Contains(TextBoxSearchFile.Text.ToLower()));

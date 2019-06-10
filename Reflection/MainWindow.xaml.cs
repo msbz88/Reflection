@@ -27,14 +27,15 @@ namespace Reflection {
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window {
-        public ComparisonDetailViewModel ComparisonDetailViewModel { get; set; }
+        public EventHandler ChildWindowRaised { get; set; }
+        public ComparisonTasksViewModel ComparisonDetailViewModel { get; set; }
         PageImport PageImport { get; set; }
         PageMain PageMain { get; set; }
 
         public MainWindow() {
             InitializeComponent();
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
-            ComparisonDetailViewModel = new ComparisonDetailViewModel();
+            ComparisonDetailViewModel = new ComparisonTasksViewModel();
             PageMain = new PageMain(ComparisonDetailViewModel);
             Main.Content = PageMain;
             PageMain.OpenFiles += OnOpenFiles;
@@ -42,11 +43,12 @@ namespace Reflection {
             PageImport.FilesLoaded += OnFilesLoaded;
             PageImport.GoBack += OnGoBack;
             PageImport.ImportViewModel.PropertyChanged += ComparisonDetailViewModel.ImportConfigurationPropertyChanged;
+            ChildWindowRaised += OnChildWindowRaised;
         }
 
         private void OnOpenFiles(object sender, EventArgs e) {
             PageImport.SelectFiles();            
-            if (PageImport.IsReady) {
+            if (PageImport.IsSingle) {
                 Main.Content = PageImport;
             }
         }
@@ -67,6 +69,17 @@ namespace Reflection {
             PageImport.ResetPopUp();
         }
 
+        private void OnChildWindowRaised(object senderIn, EventArgs eIn) {
+            var childWindow = (Window)senderIn;
+            childWindow.Closed += OnChildWindowClosed;
+            GrayWindow.Visibility = Visibility.Visible;
+        }
+
+        private void OnChildWindowClosed(object senderIn, EventArgs eIn) {
+            var childWindow = (Window)senderIn;
+            childWindow.Closed -= OnChildWindowClosed;
+            GrayWindow.Visibility = Visibility.Collapsed;
+        }
 
     }
 }

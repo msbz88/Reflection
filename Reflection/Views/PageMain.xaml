@@ -63,7 +63,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ProgressBar}">
                         <Grid x:Name="TemplateRoot" SnapsToDevicePixels="true">
-                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="24" Foreground="DarkGray"
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="26" Foreground="DarkGray"
                             Text="{TemplateBinding Value, Converter={StaticResource dblToPct}}"/>
                             <local:CircularProgress Stroke="{TemplateBinding Foreground}" Value="{TemplateBinding Value}"/>
                         </Grid>
@@ -95,9 +95,18 @@
             </ListView.ItemContainerStyle>
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <Border Name="border" BorderBrush="LightGray" BorderThickness="1" Padding="5" Margin="5">
+                    <Border Name="BorderListItem" BorderBrush="LightGray" MaxWidth="1200" BorderThickness="1" Padding="5" Margin="5" >
+                        <!--<Border.Style>
+                            <Style>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Path=Status }" Value="Error">
+                                        <Setter Property="Border.BorderBrush" Value="Red"></Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>-->
                         <StackPanel Orientation="Horizontal" Height="110" AutomationProperties.Name="{Binding ComparisonId}">
-                            <Grid>
+                            <Grid >
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="30"/>
                                     <RowDefinition Height="20"/>
@@ -118,7 +127,7 @@
                                     <Ellipse Stroke="DarkGray" Fill="DarkGray" StrokeThickness="2"/>
                                     <Label Name="lbl" Foreground="White" Content="{Binding Path=ComparisonId}" Padding="5" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Grid>
-                                <TextBlock Name="TextBlockStatus" Grid.Row="2" Grid.Column="0" Text="{Binding Path=Status, NotifyOnTargetUpdated=True}" VerticalAlignment="Center" TargetUpdated="OnStatusUpdated" HorizontalAlignment="Center" FontSize="12" Foreground="DarkGray" />
+                                <TextBlock Name="TextBlockStatus" Grid.Row="2" Grid.Column="0" Text="{Binding Path=Status, NotifyOnTargetUpdated=True}" VerticalAlignment="Center" TargetUpdated="OnStatusUpdated" HorizontalAlignment="Center" FontSize="12" Foreground="DarkGray"/>
                                 <Button Name="btnViewResult" Grid.Column="0" Grid.Row="1" Content="View Result" Height="20" Width="70" HorizontalAlignment="Center" VerticalAlignment="Bottom" Click="ButtonViewResult">
                                     <Button.Style>
                                         <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">

@@ -1,0 +1,30 @@
+﻿<Window x:Class="Reflection.Views.MatchedFilesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Reflection.Views"
+        mc:Ignorable="d"
+        Title="Matched Files" MinHeight="300" MinWidth="300" MaxHeight="800" MaxWidth="800" SizeToContent="WidthAndHeight" Activated="MatchedFilesWindowLoaded">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="30"/>
+        </Grid.RowDefinitions>
+        <ListView 
+            Margin="5"
+            BorderBrush="Black"
+            Name="MatchedFiles" 
+            Grid.Row="0"
+            ItemsSource="{Binding}"
+            FontSize="12">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Master Files" Width="Auto" DisplayMemberBinding="{Binding MasterFileName}" />
+                    <GridViewColumn Header="Test Files" Width="Auto" DisplayMemberBinding="{Binding TestFileName}" />
+                </GridView>
+            </ListView.View>
+        </ListView>
+        <Button Grid.Row="1" Width="80" Height="25" Content="OK" VerticalAlignment="Top" Click="OnOKButtonClick"/>
+    </Grid>
+</Window>

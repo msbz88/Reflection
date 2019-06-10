@@ -21,46 +21,39 @@ namespace Reflection.Views {
     /// </summary>
     public partial class PageImport : Page {
         public ImportViewModel ImportViewModel { get; set; }
-        public bool IsReady { get; private set; }
+        public MatchFileNamesViewModel MatchFileNamesViewModel { get; set; }
+        public bool IsSingle { get; private set; }
         public EventHandler FilesLoaded { get; set; }
         public EventHandler GoBack { get; set; }
 
         public PageImport() {
             InitializeComponent();
-            IsReady = false;
-            ImportViewModel = new ImportViewModel();
-            ComboBoxDataBinding();            
+            IsSingle = false;
+            ImportViewModel = new ImportViewModel();           
+            ComboBoxDataBinding();
         }
 
         public void SelectFiles() {
-            while (true) {
-                ImportViewModel.PathMasterFile = AskFilePath("Master");
-                if (!string.IsNullOrEmpty(ImportViewModel.PathMasterFile)) {
-                    ImportViewModel.PathTestFile = AskFilePath("Test");
-                    if (!string.IsNullOrEmpty(ImportViewModel.PathTestFile)) {
-                        try {
-                            ImportViewModel.CheckIfFileSelectionCorrect();
-                        } catch (InvalidOperationException ex) {
-                            var userResponse = NotifyUser(ex.Message, MessageBoxButton.YesNoCancel);
-                            if (userResponse == MessageBoxResult.Yes) {
-                                continue;
-                            } else if (userResponse == MessageBoxResult.Cancel) {
-                                return;
-                            }
-                        }
-                        RenderFileToView();
-                        TextBoxDelimiter.DataContext = ImportViewModel;
-                        DisplayOnLoadEncoding();
-                        IsReady = true;
-                        break;
-                    }
+            MatchFileNamesViewModel = new MatchFileNamesViewModel();
+            MatchFileNamesViewModel.SelectFiles();
+            if (MatchFileNamesViewModel.IsReady) {
+                    foreach (var item in MatchFileNamesViewModel.MatchedFileNames) {
+                    ImportViewModel.PathMasterFile = item.MasterFilePath;
+                    ImportViewModel.PathTestFile = item.TestFilePath;
+                    ImportViewModel.LoadFileForPreview(ImportViewModel.PathMasterFile);
+                    ImportViewModel.SetImportConfiguration();//cause duplicates
                 }
-                break;
+                if (MatchFileNamesViewModel.MatchedFileNames.Count == 1) {
+                    RenderFileToView();
+                    TextBoxDelimiter.DataContext = ImportViewModel;
+                    DisplayOnLoadEncoding();
+                    IsSingle = true;
+                }               
             }
         }
 
         private void DisplayOnLoadEncoding() {
-            var t = comboBoxEncoding.Items.OfType<ComboBoxItem>().Select(item=>item.Content.ToString());
+            var t = comboBoxEncoding.Items.OfType<ComboBoxItem>().Select(item => item.Content.ToString());
             var comboBoxItem = comboBoxEncoding.Items.SourceCollection.Cast<EncodingInfo>().FirstOrDefault(x => x.CodePage == ImportViewModel.Encoding.CodePage);
             comboBoxEncoding.SelectedIndex = comboBoxEncoding.SelectedIndex = comboBoxEncoding.Items.IndexOf(comboBoxItem);
         }
@@ -95,34 +88,19 @@ namespace Reflection.Views {
         //}
 
         private void RenderFileToView() {
-            ImportViewModel.LoadFileForPreview(ImportViewModel.PathMasterFile);
-            PrintFileContent(System.IO.Path.GetFileName(ImportViewModel.PathMasterFile));    
-            TextBoxHeaderRow.Text = ImportViewModel.RowsToSkip.ToString();          
-        }        
+            PrintFileContent(System.IO.Path.GetFileName(ImportViewModel.PathMasterFile));
+            TextBoxHeaderRow.Text = ImportViewModel.RowsToSkip.ToString();
+        }
 
         private void ComboBoxSelectionChanged(object senderIn, RoutedEventArgs eIn) {
             var encodingInfo = (EncodingInfo)comboBoxEncoding.SelectedItem;
-            ImportViewModel.Encoding = encodingInfo.GetEncoding();           
+            ImportViewModel.Encoding = encodingInfo.GetEncoding();
             RenderFileToView();
         }
 
         private void ComboBoxDataBinding() {
             EncodingInfo[] codePages = Encoding.GetEncodings();
             comboBoxEncoding.ItemsSource = codePages;
-        }
-
-        private MessageBoxResult NotifyUser(string message, MessageBoxButton messageBoxButton) {
-            return MessageBox.Show(message, "Note", messageBoxButton, MessageBoxImage.Question);
-        }
-
-        public string AskFilePath(string fileVersion) {
-            OpenFileDialog dialog = new OpenFileDialog();
-            dialog.Title = "Select " + fileVersion + " file";
-            dialog.RestoreDirectory = true;
-            if (dialog.ShowDialog() == true) {
-                return dialog.FileName;
-            }
-            return string.Empty;
         }
 
         public void PrintFileContent(string fileName) {
@@ -153,19 +131,19 @@ namespace Reflection.Views {
                 Grid.SetRow(btnLoad, 5);
                 TextBlockSkippedRows.Text = string.Join(Environment.NewLine, ImportViewModel.SkippedLines);
                 ExpanderSkippedRows.IsExpanded = true;
-            }else {
+            } else {
                 ExpanderSkippedRows.Visibility = Visibility.Collapsed;
                 Grid.SetRow(dgData, 1);
                 Grid.SetRow(TextBoxDelimiter, 1);
                 Grid.SetRow(TextBoxHeaderRow, 2);
                 Grid.SetRow(comboBoxEncoding, 3);
                 Grid.SetRow(btnLoad, 4);
-            }         
+            }
         }
 
         private void ButtonLoadClick(object senderIn, RoutedEventArgs eIn) {
             ImportViewModel.SetImportConfiguration();
-            FilesLoaded?.Invoke(senderIn, eIn);    
+            FilesLoaded?.Invoke(senderIn, eIn);
         }
 
         private void ButtonBackClick(object senderIn, RoutedEventArgs eIn) {

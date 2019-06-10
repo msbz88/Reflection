@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Threading;
 
 namespace Reflection.Models {
-    public class ComparisonDetail : INotifyPropertyChanged {
+    public class ComparisonTask : INotifyPropertyChanged {
         public event PropertyChangedEventHandler PropertyChanged;
         public int ComparisonId { get; private set; }
         public string MasterFileName { get; private set; }
@@ -89,7 +89,7 @@ namespace Reflection.Models {
         public string ErrorMessage { get; set; }
         public string CommonDirectoryPath { get; set; }
 
-        public ComparisonDetail(int comparisonId, string masterFilePath, string testFilePath) {
+        public ComparisonTask(int comparisonId, string masterFilePath, string testFilePath) {
             ComparisonId = comparisonId;
             MasterFileName = Path.GetFileName(masterFilePath);
             TestFileName = Path.GetFileName(testFilePath);
