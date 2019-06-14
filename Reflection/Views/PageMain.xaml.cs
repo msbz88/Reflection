@@ -23,12 +23,11 @@ namespace Reflection.Views {
     /// </summary>
     public partial class PageMain : Page {
         public EventHandler OpenFiles { get; set; }
-        public ComparisonTasksViewModel ComparisonDetailViewModel { get; set; }
+        public ComparisonTasksViewModel ComparisonTasksViewModel { get; set; }
         
-
-        public PageMain(ComparisonTasksViewModel comparisonDetailViewModel) {
-            ComparisonDetailViewModel = comparisonDetailViewModel;
-            this.DataContext = ComparisonDetailViewModel;
+        public PageMain(ComparisonTasksViewModel comparisonTasksViewModel) {
+            ComparisonTasksViewModel = comparisonTasksViewModel;
+            this.DataContext = ComparisonTasksViewModel;
             InitializeComponent();
             CollectionViewSource.GetDefaultView(lvComparisonDetails.ItemsSource).Filter = UserFilter;          
         }
@@ -71,10 +70,10 @@ namespace Reflection.Views {
         private bool UserFilter(object item) {
             if (string.IsNullOrEmpty(TextBoxSearchFile.Text))
                 return true;
-            var comparisonDetail = (ComparisonTask)item;
-            return (comparisonDetail.MasterFileName.ToLower().Contains(TextBoxSearchFile.Text.ToLower())
-                    || comparisonDetail.TestFileName.ToLower().Contains(TextBoxSearchFile.Text.ToLower())
-                    || comparisonDetail.StartTime.Contains(TextBoxSearchFile.Text.ToLower()));
+            var comparisonTask = (ComparisonTask)item;
+            return (comparisonTask.MasterFileName.ToLower().Contains(TextBoxSearchFile.Text.ToLower())
+                    || comparisonTask.TestFileName.ToLower().Contains(TextBoxSearchFile.Text.ToLower())
+                    || comparisonTask.StartTime.Contains(TextBoxSearchFile.Text.ToLower()));
         }
 
         private Button _previousButton;

@@ -37,18 +37,22 @@ namespace Reflection.Views {
             MatchFileNamesViewModel = new MatchFileNamesViewModel();
             MatchFileNamesViewModel.SelectFiles();
             if (MatchFileNamesViewModel.IsReady) {
-                    foreach (var item in MatchFileNamesViewModel.MatchedFileNames) {
-                    ImportViewModel.PathMasterFile = item.MasterFilePath;
-                    ImportViewModel.PathTestFile = item.TestFilePath;
-                    ImportViewModel.LoadFileForPreview(ImportViewModel.PathMasterFile);
-                    ImportViewModel.SetImportConfiguration();//cause duplicates
-                }
-                if (MatchFileNamesViewModel.MatchedFileNames.Count == 1) {
+                if(MatchFileNamesViewModel.MatchedFileNames.Count == 1) {
+                    ImportViewModel.PathMasterFile = MatchFileNamesViewModel.MatchedFileNames[0].MasterFilePath;
+                    ImportViewModel.PathTestFile = MatchFileNamesViewModel.MatchedFileNames[0].TestFilePath;
+                    ImportViewModel.AnalyseFile(ImportViewModel.PathMasterFile);
                     RenderFileToView();
                     TextBoxDelimiter.DataContext = ImportViewModel;
                     DisplayOnLoadEncoding();
                     IsSingle = true;
-                }               
+                }else {
+                    foreach (var item in MatchFileNamesViewModel.MatchedFileNames) {
+                        ImportViewModel.PathMasterFile = item.MasterFilePath;
+                        ImportViewModel.PathTestFile = item.TestFilePath;
+                        ImportViewModel.AnalyseFile(ImportViewModel.PathMasterFile);
+                        ImportViewModel.SetImportConfiguration();
+                    }
+                }             
             }
         }
 

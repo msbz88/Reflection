@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Reflection.Models.Interfaces;
 
 namespace Reflection.Models {
-    public class ImportConfiguration {
+    public class ImportConfiguration: IImportConfiguration {
         public string MasterFilePath { get; set; }
         public string TestFilePath { get; set; }
         public string Delimiter { get; set; }

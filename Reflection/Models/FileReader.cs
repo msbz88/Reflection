@@ -4,9 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Reflection.Models.Interfaces;
 
 namespace Reflection.Models {
-    public class FileReader {
+    public class FileReader: IFileReader {
         public IEnumerable<string> ReadFile(string filePath, int rowsToSkip, Encoding encoding) {
             return File.ReadLines(filePath, encoding).Skip(rowsToSkip);
         }

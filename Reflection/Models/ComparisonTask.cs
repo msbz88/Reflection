@@ -96,7 +96,7 @@ namespace Reflection.Models {
             startTime = DateTime.Now;
             CommonDirectoryPath = FindCommonDirectory(masterFilePath, testFilePath);
             Status = Status.Queued;
-            SimulateProgress();
+            //SimulateProgress();
         }
 
         public void OnPropertyChanged(string propName) {

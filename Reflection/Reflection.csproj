@@ -55,8 +55,22 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Models\ColumnSummary.cs" />
+    <Compile Include="Models\ComparedRow.cs" />
+    <Compile Include="Models\CompareTable.cs" />
+    <Compile Include="Models\ComparisonCore.cs" />
+    <Compile Include="Models\ComparisonProcessor.cs" />
+    <Compile Include="Models\ComparisonQueue.cs" />
+    <Compile Include="Models\Interfaces\IFileReader.cs" />
+    <Compile Include="Models\Interfaces\IImportConfiguration.cs" />
+    <Compile Include="Models\Interfaces\IWorkTable.cs" />
+    <Compile Include="Models\LevenshteinDistance.cs" />
     <Compile Include="Models\MatchedFileNames.cs" />
+    <Compile Include="Models\PerformanceCounter.cs" />
+    <Compile Include="Models\Deviation.cs" />
     <Compile Include="Models\Status.cs" />
+    <Compile Include="Models\RowsMatch.cs" />
+    <Compile Include="Models\WorkTable.cs" />
     <Compile Include="ViewModels\MatchFileNamesViewModel.cs" />
     <Compile Include="Views\CircularProgress.cs" />
     <Compile Include="Models\ComparisonTask.cs" />
@@ -127,9 +141,7 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Models\Interfaces\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

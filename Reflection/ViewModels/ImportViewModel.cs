@@ -33,7 +33,7 @@ namespace Reflection.ViewModels {
         public ImportViewModel() {
         }            
 
-        public void LoadFileForPreview(string path) {
+        public void AnalyseFile(string path) {
             var fileReader = new FileReader();
             var fileContent = fileReader.ReadFewLines(path, PreviewCount, Encoding);
             Delimiter = FindDelimiter(fileContent.Take(50));

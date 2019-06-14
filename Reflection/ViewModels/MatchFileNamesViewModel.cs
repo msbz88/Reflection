@@ -75,7 +75,7 @@ namespace Reflection.ViewModels {
                         bestMatchedTest = testFile;
                         break;
                     } else {
-                        if (matchedLen > prevLen) {
+                        if (matchedLen > prevLen && matchedLen > 5) {
                             prevLen = matchedLen;
                             bestMatchedTest = testPath;
                         }
