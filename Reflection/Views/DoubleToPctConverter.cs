@@ -10,7 +10,7 @@ namespace Reflection.Views {
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) {
             string result = "";
             double d = (double)value;
-            result = string.Format("{0}%", d);
+            result = string.Format("{0}%", Math.Round(d,0));
 
             return result;
         }

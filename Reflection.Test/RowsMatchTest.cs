@@ -19,7 +19,7 @@ namespace Reflection.Test {
             tRows.Add(new Row(2, new string[] { "S1", "P1", "1001", "100005" }));
 
             var baseStat = ComparisonCore.GatherStatistics(mRows, tRows);
-            RowsMatch RowsMatch = new RowsMatch(baseStat, null);
+            RowsMatch RowsMatch = new RowsMatch(baseStat, null, null);
 
             var expectedResult = new List<ComparedRow>();
             var comparedRow1 = new ComparedRow(1, 2);
@@ -30,7 +30,7 @@ namespace Reflection.Test {
             expectedResult.Add(comparedRow1);
             expectedResult.Add(comparedRow2);
 
-            var actualResult = RowsMatch.ProcessGroup(mRows, tRows);
+            var actualResult = RowsMatch.ProcessGroup(mRows, tRows, 0);
 
             CollectionAssert.AreEqual(expectedResult, actualResult);
         }
@@ -49,7 +49,7 @@ namespace Reflection.Test {
             tRows.Add(new Row(3, new string[] { "S1", "P1", "1006", "100004" }));
 
             var baseStat = ComparisonCore.GatherStatistics(mRows, tRows);
-            RowsMatch RowsMatch = new RowsMatch(baseStat, null);
+            RowsMatch RowsMatch = new RowsMatch(baseStat, null, null);
 
             var expectedResult = new List<ComparedRow>();
             var comparedRow1 = new ComparedRow(1, 3);
@@ -60,7 +60,7 @@ namespace Reflection.Test {
             expectedResult.Add(comparedRow1);
             expectedResult.Add(comparedRow2);
 
-            var actualResult = RowsMatch.ProcessGroup(mRows, tRows);
+            var actualResult = RowsMatch.ProcessGroup(mRows, tRows, 0);
 
             CollectionAssert.AreEqual(expectedResult, actualResult);
         }

@@ -39,7 +39,7 @@ namespace Reflection.Models {
             PerfCounter.Stop("AnalyseForPivotKey");
             File.AppendAllText(@"C:\Users\MSBZ\Desktop\baseStat.txt", "baseKeyIndex: " + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes)));
             //rows match
-            RowsMatch = new RowsMatch(BaseStat, PivotKeysIndexes);
+            RowsMatch = new RowsMatch(BaseStat, PivotKeysIndexes, ComparisonTask);
             //group
             PerfCounter.Start();
             var groupsM = Group(masterTable.Rows, PivotKeysIndexes);
@@ -63,7 +63,7 @@ namespace Reflection.Models {
 
             var groups = from m in mRemainings
                          join t in tRemainings on m.Key equals t.Key
-                         select new { Key = m.Key, ComparedRows = RowsMatch.ProcessGroup(m.Value, t.Value) };
+                         select new { Key = m.Key, ComparedRows = RowsMatch.ProcessGroup(m.Value, t.Value, mRemainings.Count) };
 
             foreach (var item in groups) {
                 CompareTable.AddComparedRows(item.ComparedRows);

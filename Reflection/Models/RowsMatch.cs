@@ -10,12 +10,14 @@ namespace Reflection.Models {
         List<ComparedRow> ComparedRows { get; set; }
         List<ComparedRow> AllCombinations { get; set; }
         List<int> IdColumns { get; set; }
+        ComparisonTask ComparisonTask { get; set; }
 
-        public RowsMatch(List<ColumnSummary> baseStat, List<int> idColumns) {
+        public RowsMatch(List<ColumnSummary> baseStat, List<int> idColumns, ComparisonTask comparisonTask) {
             BaseStat = baseStat;
             ComparedRows = new List<ComparedRow>();
             AllCombinations = new List<ComparedRow>();
             IdColumns = idColumns;
+            ComparisonTask = comparisonTask;
         }
 
         private List<ComparedRow> CreateAllCombinations(List<Row> masterRows, List<Row> testRows) {
@@ -28,7 +30,7 @@ namespace Reflection.Models {
             return AllCombinations;
         }
 
-        public List<ComparedRow> ProcessGroup(List<Row> masterRows, List<Row> testRows) {
+        public List<ComparedRow> ProcessGroup(List<Row> masterRows, List<Row> testRows, int allGroups) {
             ComparedRows.Clear();
             CreateAllCombinations(masterRows, testRows);
             while (AllCombinations.Count > 0) {
@@ -55,8 +57,11 @@ namespace Reflection.Models {
                         var columnsOrderedByPriority = statDeviationsColumns.OrderBy(col => col.MatchingRate).ThenBy(col => col.UniqMatchRate).Select(col => col.ColumnId);
                         List<ComparedRow> bestMatched = new List<ComparedRow>();
                         foreach (var item in columnsOrderedByPriority) {
-                            //exception, cannot find the 477 id 
-                            var firstMatched = bestCombinations.SelectMany(row=>row.Deviations.Where(col=>col.ColumnId==item).Select(col=>col.TestValue)).OrderBy(val=>val).First();
+                            var firstMatched = bestCombinations.SelectMany(row=>row.Deviations.Where(col=>col.ColumnId==item).Select(col=>col.TestValue)).OrderBy(val=>val).FirstOrDefault();
+                            if (string.IsNullOrEmpty(firstMatched)) {
+                                bestMatched.Add(bestCombinations.First());
+                                break;
+                            }
                             bestMatched = bestCombinations.Where(row => row.Deviations.Select(col => col.TestValue).Contains(firstMatched)).ToList();
                             if (bestMatched.Count == 1) {
                                 comparedRow = bestMatched.First();
@@ -73,6 +78,7 @@ namespace Reflection.Models {
                     RemoveWrongCombinations(wrongCombinations);
                 }
             }
+            ComparisonTask.Progress += masterRows.Count / (double)allGroups;
             return ComparedRows;
         }
 
