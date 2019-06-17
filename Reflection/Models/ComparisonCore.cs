@@ -38,6 +38,8 @@ namespace Reflection.Models {
             PivotKeysIndexes = AnalyseForPivotKey(masterTable.Rows, BaseStat);
             PerfCounter.Stop("AnalyseForPivotKey");
             File.AppendAllText(@"C:\Users\MSBZ\Desktop\baseStat.txt", "baseKeyIndex: " + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes)));
+            //rows match
+            RowsMatch = new RowsMatch(BaseStat, PivotKeysIndexes);
             //group
             PerfCounter.Start();
             var groupsM = Group(masterTable.Rows, PivotKeysIndexes);
@@ -49,32 +51,34 @@ namespace Reflection.Models {
             File.AppendAllLines(@"C:\Users\MSBZ\Desktop\groupsT.txt", groupsT.SelectMany(item => item.Value.Select(it => it.GetValuesHashCode(PivotKeysIndexes) + ";" + string.Join(";", it.ColumnIndexIn(PivotKeysIndexes)))));
             PerfCounter.Start();
             CompareTable = new CompareTable(Delimiter, MasterTable.Headers, TestTable.Headers);
-            var uMasterRows = groupsM.Where(r => r.Value.Count() == 1).ToDictionary(item => item.Key, item => item.Value);
-            var uTestRows = groupsT.Where(r => r.Value.Count() == 1).ToDictionary(item => item.Key, item => item.Value);
-            CompareTable.AddComparedRows(Match(uMasterRows.SelectMany(item => item.Value), uTestRows.SelectMany(item => item.Value), PivotKeysIndexes));
+            var uMasterRows = groupsM.Where(r => r.Value.Count() == 1).ToDictionary(item => item.Key, item => item.Value.First());
+            var uTestRows = groupsT.Where(r => r.Value.Count() == 1).ToDictionary(item => item.Key, item => item.Value.First());
+            var resU = Match(uMasterRows, uTestRows).ToList();
+            CompareTable.AddComparedRows(resU);
             PerfCounter.Stop("Preparison");
 
             PerfCounter.Start();
-            var mRemainings = groupsM.Where(r => !uMasterRows.Keys.Contains(r.Key)).ToDictionary(item => item.Key, item => item.Value);
-            var tRemainings = groupsT.Where(r => !uTestRows.Keys.Contains(r.Key)).ToDictionary(item => item.Key, item => item.Value);
+            var mRemainings = Group(GetRemainings(MasterTable.Rows, CompareTable.GetMasterComparedRowsId()), PivotKeysIndexes);
+            var tRemainings = Group(GetRemainings(TestTable.Rows, CompareTable.GetTestComparedRowsId()), PivotKeysIndexes);
 
-            RowsMatch = new RowsMatch(BaseStat, PivotKeysIndexes);
-           
-            var groups = (from m in groupsM
-                         join t in groupsT on m.Key equals t.Key
-                         select ProcessGroup(m.Value, t.Value)).ToList();
+            var groups = from m in mRemainings
+                         join t in tRemainings on m.Key equals t.Key
+                         select new { Key = m.Key, ComparedRows = RowsMatch.ProcessGroup(m.Value, t.Value) };
 
             foreach (var item in groups) {
-                CompareTable.AddComparedRows(item);
+                CompareTable.AddComparedRows(item.ComparedRows);
             }
             PerfCounter.Stop("Process");
 
             //extra
             //PerfCounter.Start();
-            var masterExtra = GetExtraRows(masterTable, CompareTable.GetMasterComparedRowsId());
-            var testExtra = GetExtraRows(testTable, CompareTable.GetTestComparedRowsId());
+            ComparisonTask.ComparedRows = CompareTable.ComparedRowsCount;
+            var masterExtra = GetRemainings(MasterTable.Rows, CompareTable.GetMasterComparedRowsId());
+            var testExtra = GetRemainings(MasterTable.Rows, CompareTable.GetMasterComparedRowsId());
             CompareTable.AddMasterExtraRows(masterExtra);
+            ComparisonTask.ExtraMasterCount = CompareTable.MasterExtraCount;
             CompareTable.AddTestExtraRows(testExtra);
+            ComparisonTask.ExtraTestCount = CompareTable.TestExtraCount;
             PerfCounter.Stop("Extra");
             
             //save to file
@@ -97,10 +101,6 @@ namespace Reflection.Models {
             }
         }
 
-        private List<ComparedRow> ProcessGroup(List<Row> masterRows, List<Row> testRows) {
-            return RowsMatch.ProcessGroup(masterRows, testRows);
-        }
-
         private void FillSummary(int mRowsCount, int tRowsCount, int compRowsCount, int extraMasterCount, int extraTestCount) {
             var actRowsDiff = mRowsCount >= tRowsCount ? mRowsCount - tRowsCount : tRowsCount - mRowsCount;
             ComparisonTask.MasterRowsCount = mRowsCount;
@@ -112,33 +112,30 @@ namespace Reflection.Models {
             ComparisonTask.Progress = 100;
         }
 
-        public void ApplyRowNumberInGroup(IEnumerable<Row> rows, List<int> compKeys) {
-            var query = from r in rows
-                        group r by r.GetValuesHashCode(compKeys)
-                        into g
-                        where g.Count() > 1
-                        //orderby g.Select(r=>r.MaterialiseKey(orderBy))                       
-                        select g;
-            foreach (var group in query) {
-                int RowNumber = 0;
-                foreach (var row in group) {
-                    row.GroupId = RowNumber++;
-                }
-            }
+        //public void ApplyRowNumberInGroup(IEnumerable<Row> rows, List<int> compKeys) {
+        //    var query = from r in rows
+        //                group r by r.GetValuesHashCode(compKeys)
+        //                into g
+        //                where g.Count() > 1
+        //                //orderby g.Select(r=>r.MaterialiseKey(orderBy))                       
+        //                select g;
+        //    foreach (var group in query) {
+        //        int RowNumber = 0;
+        //        foreach (var row in group) {
+        //            row.GroupId = RowNumber++;
+        //        }
+        //    }
+        //}
+
+        private IEnumerable<Row> GetRemainings(List<Row> rows, IEnumerable<int> comparedRowsId) {
+            var filter = rows.Select(row=>row.Id).Except(comparedRowsId).ToList();
+            return rows.Where(row => filter.Contains(row.Id));
         }
 
-        private IEnumerable<string> GetExtraRows(IWorkTable table, IEnumerable<int> comparedId) {
-            var filter = table.Rows.Select(r => r.Id).Except(comparedId);
-            return from r in table.Rows
-                   join f in filter on r.Id equals f
-                   select r.Id + table.Delimiter + table.Name + table.Delimiter + string.Join(table.Delimiter, r.Data);
-        }
-
-        private IEnumerable<ComparedRow> Match(IEnumerable<Row> masterRows, IEnumerable<Row> testRows, List<int> compKeys) {
+        private IEnumerable<ComparedRow> Match(Dictionary<string, Row> masterRows, Dictionary<string, Row> testRows) {
             return from m in masterRows
-                   join t in testRows on new { Id = m.ColumnIndexIn(compKeys) }
-                   equals new { Id = t.ColumnIndexIn(compKeys) }
-                   select RowsMatch.Compare(m, t);
+                   join t in testRows on m.Key equals t.Key 
+                   select RowsMatch.Compare(m.Value, t.Value);
         }
 
         private List<int> AnalyseInGroup(List<ColumnSummary> columnsStat) {

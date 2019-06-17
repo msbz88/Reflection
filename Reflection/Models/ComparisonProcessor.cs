@@ -21,13 +21,21 @@ namespace Reflection.Models {
 
         public void PrepareForComparison() {
             perfCounter.Start();
-            var masterFileContent = FileReader.ReadFile(ImportConfiguration.MasterFilePath, ImportConfiguration.RowsToSkip, ImportConfiguration.Encoding);
+            int headerRowCount = ImportConfiguration.IsHeadersExist ? 1 : 0;
+            var masterFileContent = FileReader.ReadFile(ImportConfiguration.MasterFilePath, ImportConfiguration.RowsToSkip, ImportConfiguration.Encoding);          
+            var countMasterLines = Task.Run(() => FileReader.CountLines(ImportConfiguration.MasterFilePath) - (ImportConfiguration.RowsToSkip + headerRowCount));
             var testFileContent = FileReader.ReadFile(ImportConfiguration.TestFilePath, ImportConfiguration.RowsToSkip, ImportConfiguration.Encoding);
+            var countTestLines = Task.Run(() => FileReader.CountLines(ImportConfiguration.TestFilePath) - (ImportConfiguration.RowsToSkip + headerRowCount));
+            Task.WaitAll(countMasterLines, countTestLines);
+            ComparisonTask.MasterRowsCount = countMasterLines.Result;
+            ComparisonTask.TestRowsCount = countTestLines.Result;
+            ComparisonTask.ActualRowsDiff = ComparisonTask.MasterRowsCount - ComparisonTask.TestRowsCount;
             perfCounter.Stop("Read two init files");
             perfCounter.Start();
             var exceptedMasterData = Except(masterFileContent, testFileContent);
             var exceptedTestData = Except(testFileContent, masterFileContent);
             perfCounter.Stop("Except files");
+            ComparisonTask.Status = Status.Executing;
             ComparisonTask.Progress = 25;
             IWorkTable masterTable = new WorkTable("Master");
             IWorkTable testTable = new WorkTable("Test");
@@ -40,6 +48,8 @@ namespace Reflection.Models {
                 ComparisonTask.Progress += 25;
                 ComparisonCore comparisonCore = new ComparisonCore(perfCounter, ComparisonTask);
                 comparisonCore.Execute(masterTable, testTable);
+                ComparisonTask.Progress = 100;
+                ComparisonTask.Status = Status.Failed;
             } else {
                 perfCounter.SaveAllResults();
             }

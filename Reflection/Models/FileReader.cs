@@ -15,5 +15,9 @@ namespace Reflection.Models {
         public IEnumerable<string> ReadFewLines(string filePath, int rowsToTake, Encoding encoding) {
             return File.ReadLines(filePath, encoding).Take(rowsToTake);
         }
+
+        public int CountLines(string filePath) {
+            return File.ReadLines(filePath).Count();
+        }
     }
 }

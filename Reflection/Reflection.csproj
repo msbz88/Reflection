@@ -55,6 +55,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="IdField.cs" />
     <Compile Include="Models\ColumnSummary.cs" />
     <Compile Include="Models\ComparedRow.cs" />
     <Compile Include="Models\CompareTable.cs" />

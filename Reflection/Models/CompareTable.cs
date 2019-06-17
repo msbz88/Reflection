@@ -11,8 +11,11 @@ namespace Reflection.Models {
         Row MasterHeaders { get; set; }
         Row TestHeaders { get; set; }
         List<ComparedRow> Data { get; set; }
+        public int ComparedRowsCount { get { return Data.Count; } }
         List<string> ExtraMaster { get; set; }
+        public int MasterExtraCount { get { return ExtraMaster.Count; } }
         List<string> ExtraTest { get; set; }
+        public int TestExtraCount { get { return ExtraTest.Count; } }
         string Delimiter { get; set; }
 
         public CompareTable(string delimiter, Row masterHeaders, Row testHeaders) {
@@ -32,8 +35,10 @@ namespace Reflection.Models {
             Data.Add(comparedRow);
         }
 
-        public void AddMasterExtraRows(IEnumerable<string> extraRows) {
-            ExtraMaster.AddRange(extraRows);
+        public void AddMasterExtraRows(IEnumerable<Row> extraRows) {
+            foreach (var item in extraRows) {
+                ExtraMaster.Add(string.Join(Delimiter, item.Data));
+            }
         }
 
         public IEnumerable<int> GetMasterComparedRowsId() {
@@ -44,91 +49,83 @@ namespace Reflection.Models {
             return Data.Select(row => row.TestRowId);
         }
 
-        public void AddTestExtraRows(IEnumerable<string> extraRows) {
-            ExtraTest.AddRange(extraRows);
+        public void AddTestExtraRows(IEnumerable<Row> extraRows) {
+            foreach (var item in extraRows) {
+                ExtraTest.Add(string.Join(Delimiter, item.Data));
+            }
         }
 
         private string GenerateHeadersForFile(List<int> columns) {
-            var headersMaster = MasterHeaders.ColumnIndexIn(columns);
-            var headersTest = TestHeaders.ColumnIndexIn(columns);
             StringBuilder headers = new StringBuilder();
-            for (int i = 0; i < headersMaster.Count; i++) {
-                if (headersMaster[i] != headersTest[i]) {
-                    headers.Append(headersMaster[i] + " | " + headersTest[i]);
-                } else {
-                    headers.Append(headersMaster[i]);
-                }
-                if (i < columns.Count) {
+            foreach (var item in columns) {
+                headers.Append(MasterHeaders[item]);
+                if (item != columns.Last()) {
                     headers.Append(Delimiter);
                 }
-            }
+            }          
            return headers.ToString();
         }
 
         public void SaveComparedRows(string filePath) {
             var idFields = Data.SelectMany(row => row.IdFields.Select(col => col.Key)).Distinct().OrderBy(colId => colId).ToList();
             var allDeviationsColumns = Data.SelectMany(row => row.Deviations.Select(col => col.ColumnId)).Distinct().OrderBy(colId => colId).ToList();
-            Dictionary<int, string> rowToSave = new Dictionary<int, string>(allDeviationsColumns.Count);
+ 
             var allColumns = idFields.Concat(allDeviationsColumns).ToList();
-            var headers = GenerateHeadersForFile(idFields.Concat(allDeviationsColumns).ToList());
+            var headers = GenerateHeadersForFile(allColumns);
             File.WriteAllText(filePath, headers);
             StringBuilder lines = new StringBuilder();
             StringBuilder cell = new StringBuilder();          
             foreach (var comparedRow in Data) {
-                RefreshRowToSave(rowToSave, allColumns);
+                var rowToSave = CreateRowToSave(allColumns);
                 foreach (var deviation in comparedRow.Deviations) {
                     cell.Clear();
                     cell.Append(deviation.MasterValue);
                     cell.Append(" | ");
                     cell.Append(deviation.TestValue);
-                    if(comparedRow.Deviations.IndexOf(deviation) < allDeviationsColumns.Count) {
-                        cell.Append(Delimiter);
-                    }                   
+                    cell.Append(Delimiter);             
                     rowToSave[deviation.ColumnId] = cell.ToString();
                 }
                 lines.Append(Environment.NewLine);
                 AddIdentificationColumns(comparedRow.IdFields, rowToSave);
+                var lastValue = rowToSave.Last();
+                rowToSave[lastValue.Key] = lastValue.Value.TrimEnd(Delimiter.ToCharArray());
                 foreach (var item in rowToSave) {
                     lines.Append(item.Value);
-                }               
+                }
             }
             File.AppendAllText(filePath, lines.ToString());
         }
 
-        private void RefreshRowToSave(Dictionary<int, string> rowToSave, List<int> allColumns) {
-            rowToSave.Clear();
+        private Dictionary<int, string> CreateRowToSave(List<int> allColumns) {
+            Dictionary<int, string> rowToSave = new Dictionary<int, string>(allColumns.Count);
             foreach (var colId in allColumns) {
-                rowToSave.Add(colId, "0");
+                rowToSave.Add(colId, "0" + Delimiter);
             }
+            return rowToSave;
         }
 
         public void SaveExtraRows(string filePath) {
-            StringBuilder line = new StringBuilder();
-            var headers = CreateLine("Version", line, MasterHeaders.Data.ToList());
-            File.WriteAllText(filePath, headers);
-            foreach (var item in ExtraMaster) {
-                line.Append("Master");
-                line.Append(item);
-                File.AppendAllText(filePath, item);
+            StringBuilder headers = new StringBuilder();           
+            headers.Append("Version");
+            foreach (var item in MasterHeaders.Data) {
+                headers.Append(Delimiter);
+                headers.Append(item);               
             }
-            foreach (var item in ExtraTest) {
-                line.Append("Test");
-                line.Append(item);
-                File.AppendAllText(filePath, item);
-            }
+            headers.Append(Environment.NewLine);
+            File.WriteAllText(filePath, headers.ToString());         
+            File.AppendAllText(filePath, CreateLines("Master", ExtraMaster));
+            File.AppendAllText(filePath, CreateLines("Test", ExtraTest));
         }
 
-        private string CreateLine(string id, StringBuilder line, List<string> values) {
-            line.Clear();
-            line.Append(id);
-            line.Append(Delimiter);
-            foreach (var item in values) {
-                line.Append(item);
-                if (values.IndexOf(item) + 1 < values.Count) {
-                    line.Append(Delimiter);
-                }                
+        private string CreateLines(string version, List<string> extraLines) {
+            StringBuilder lines = new StringBuilder();
+            foreach (var item in extraLines) {
+                lines.Append(version);
+                lines.Append(Delimiter);
+                lines.Append(item);
+                lines.Append(Environment.NewLine);
             }
-            return line.ToString();
+            return lines.ToString();
         }
 
         private void AddIdentificationColumns(Dictionary<int, string> idFields, Dictionary<int, string> rowToSave) {

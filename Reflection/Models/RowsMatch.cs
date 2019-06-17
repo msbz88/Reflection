@@ -33,6 +33,7 @@ namespace Reflection.Models {
             CreateAllCombinations(masterRows, testRows);
             while (AllCombinations.Count > 0) {
                 int minDeviation = AllCombinations.Min(row => row.Deviations.Count);
+                //doesnot select all values == minDeviation
                 var bestCombinations = AllCombinations.Where(row => row.Deviations.Count == minDeviation).ToList();
                 if (bestCombinations.Count == 1) {
                     var comparedRow = bestCombinations.First();
@@ -54,7 +55,8 @@ namespace Reflection.Models {
                         var columnsOrderedByPriority = statDeviationsColumns.OrderBy(col => col.MatchingRate).ThenBy(col => col.UniqMatchRate).Select(col => col.ColumnId);
                         List<ComparedRow> bestMatched = new List<ComparedRow>();
                         foreach (var item in columnsOrderedByPriority) {
-                            var firstMatched = bestCombinations.SelectMany(row=>row.Deviations.Where(col=>col.ColumnId==item).Select(col=>col.TestValue)).OrderBy(col=>col).First();
+                            //exception, cannot find the 477 id 
+                            var firstMatched = bestCombinations.SelectMany(row=>row.Deviations.Where(col=>col.ColumnId==item).Select(col=>col.TestValue)).OrderBy(val=>val).First();
                             bestMatched = bestCombinations.Where(row => row.Deviations.Select(col => col.TestValue).Contains(firstMatched)).ToList();
                             if (bestMatched.Count == 1) {
                                 comparedRow = bestMatched.First();
@@ -91,13 +93,9 @@ namespace Reflection.Models {
         }
 
         private Dictionary<int, string> GetIdFields(Row masterRow, Row testRow) {
-            var mId = masterRow.ColumnIndexIn(IdColumns);
-            var tId = testRow.ColumnIndexIn(IdColumns);
-            Dictionary<int, string> idFields =new Dictionary<int, string>();
-            for (int i = 0; i < mId.Count;i++) {
-                if (masterRow.Data[i] == testRow.Data[i]) {
-                    idFields.Add(i, masterRow.Data[i]);
-                }          
+            Dictionary<int, string> idFields = new Dictionary<int, string>();
+            foreach (var item in IdColumns) {
+                idFields.Add(item, masterRow.Data[item]);
             }
             return idFields;
         }
