@@ -25,7 +25,7 @@ namespace Reflection.ViewModels {
             FileReader = new FileReader();
         }
 
-        public void ImportConfigurationPropertyChanged(object sender, PropertyChangedEventArgs e) {
+        public async void ImportConfigurationPropertyChanged(object sender, PropertyChangedEventArgs e) {
             if (e.PropertyName == "ImportConfiguration") {
                 var importConfiguration = (ImportConfiguration)sender;
                 var comparisonTask = new ComparisonTask(comparisonCount++, importConfiguration.MasterFilePath, importConfiguration.TestFilePath);
@@ -34,8 +34,14 @@ namespace Reflection.ViewModels {
                 }
                 AllComparisonDetails.Add(comparisonTask);
                 var comparisonProcessor = new ComparisonProcessor(FileReader, importConfiguration, comparisonTask);
-                var t = new Task(()=>comparisonProcessor.PrepareForComparison());
+                var t = new Task(() => comparisonProcessor.PrepareForComparison());
                 t.Start();
+                try {
+                    await t;
+                } catch (Exception ae) {
+                    comparisonTask.Status = Status.Error;
+                    comparisonTask.ErrorMessage = ae.Message;
+                }
             }
         }
 

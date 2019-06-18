@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -35,22 +36,35 @@ namespace Reflection.Models {
             CreateAllCombinations(masterRows, testRows);
             while (AllCombinations.Count > 0) {
                 int minDeviation = AllCombinations.Min(row => row.Deviations.Count);
-                //doesnot select all values == minDeviation
+                //doesnot filter all values == minDeviation
                 var bestCombinations = AllCombinations.Where(row => row.Deviations.Count == minDeviation).ToList();
+                //File.WriteAllLines(@"C: \Users\MSBZ\Desktop\allComb.txt", AllCombinations.Select(row => row.ToString()));
+                //File.WriteAllLines(@"C: \Users\MSBZ\Desktop\bestComb.txt", bestCombinations.Select(row => row.ToString()));
                 if (bestCombinations.Count == 1) {
                     var comparedRow = bestCombinations.First();
                     ComparedRows.Add(comparedRow);
-                    var wrongCombinations = AllCombinations.Where(row => row.MasterRowId == comparedRow.MasterRowId || row.TestRowId == comparedRow.TestRowId).ToList();
-                    RemoveWrongCombinations(wrongCombinations);
-                } else {
+                    RemoveWrongCombinations(comparedRow);
+                }else {
                     var deviationsColumns = bestCombinations.SelectMany(item => item.Deviations.Select(col => col.ColumnId)).Distinct().ToList();
+                    if (deviationsColumns.Count == minDeviation) {
+                        var masterGroup = bestCombinations.GroupBy(item => item.MasterRowId).Where(item=>item.Count() > 1).Select(item=>item.Key);
+                        var testGroup = bestCombinations.GroupBy(item => item.TestRowId).Where(item => item.Count() > 1).Select(item => item.Key);
+                        var comparedRows = bestCombinations.Where(item => !masterGroup.Contains(item.MasterRowId) && !testGroup.Contains(item.TestRowId)).ToList();
+                        if (comparedRows.Count > 0) {
+                            ComparedRows.AddRange(comparedRows);
+                            foreach (var compRow in comparedRows) {
+                                RemoveWrongCombinations(compRow);
+                            }
+                            continue;
+                        }
+                    }
                     var statDeviationsColumns = BaseStat.Where(stat => deviationsColumns.Contains(stat.ColumnId));
                     ComparedRow comparedRow = null;
                     if (deviationsColumns.Count == 1 && !statDeviationsColumns.First().IsString) {
                         var masterValue = bestCombinations.SelectMany(row => row.Deviations.Select(col => ConvertToDouble(col.MasterValue))).First();
                         var testValues = bestCombinations.SelectMany(row => row.Deviations.Select(col => ConvertToDouble(col.TestValue))).ToList();
                         var bestMatch = ClosestNumber(testValues, masterValue);
-                        comparedRow = bestCombinations.Where(row => row.Deviations.Select(col => col.TestValue).Contains(bestMatch.ToString())).First();
+                        comparedRow = bestCombinations.Where(row => row.Deviations.Select(col => ConvertToDouble(col.TestValue)).Contains(bestMatch)).First();
                     } else if(deviationsColumns.Count == 1 && statDeviationsColumns.First().IsString) {                  
                         comparedRow = bestCombinations.OrderBy(row => row.Deviations.Select(col=>col.TestValue)).First();
                     } else {                      
@@ -74,11 +88,10 @@ namespace Reflection.Models {
                         }
                     }
                     ComparedRows.Add(comparedRow);
-                    var wrongCombinations = AllCombinations.Where(row => row.MasterRowId == comparedRow.MasterRowId || row.TestRowId == comparedRow.TestRowId).ToList();
-                    RemoveWrongCombinations(wrongCombinations);
+                    RemoveWrongCombinations(comparedRow);
                 }
             }
-            ComparisonTask.Progress += masterRows.Count / (double)allGroups;
+            ComparisonTask.Progress += (masterRows.Count / (double)allGroups) * 10;
             return ComparedRows;
         }
 
@@ -92,7 +105,8 @@ namespace Reflection.Models {
             return columnValues.Aggregate((x, y) => Math.Abs(x - compareTo) < Math.Abs(y - compareTo) ? x : y);
         }
        
-        private void RemoveWrongCombinations(List<ComparedRow> wrongCombinations) {
+        private void RemoveWrongCombinations(ComparedRow comparedRow) {
+            var wrongCombinations = AllCombinations.Where(row => row.MasterRowId == comparedRow.MasterRowId || row.TestRowId == comparedRow.TestRowId).ToList();
             foreach (var item in wrongCombinations) {
                 AllCombinations.Remove(item);
             }

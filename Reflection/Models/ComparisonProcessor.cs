@@ -20,11 +20,14 @@ namespace Reflection.Models {
         }
 
         public void PrepareForComparison() {
+            ComparisonTask.Status = Status.Executing;
             perfCounter.Start();
             int headerRowCount = ImportConfiguration.IsHeadersExist ? 1 : 0;
-            var masterFileContent = FileReader.ReadFile(ImportConfiguration.MasterFilePath, ImportConfiguration.RowsToSkip, ImportConfiguration.Encoding);          
+            var masterFileContent = FileReader.ReadFile(ImportConfiguration.MasterFilePath, ImportConfiguration.RowsToSkip, ImportConfiguration.Encoding);
+            ComparisonTask.Progress += 2;
             var countMasterLines = Task.Run(() => FileReader.CountLines(ImportConfiguration.MasterFilePath) - (ImportConfiguration.RowsToSkip + headerRowCount));
             var testFileContent = FileReader.ReadFile(ImportConfiguration.TestFilePath, ImportConfiguration.RowsToSkip, ImportConfiguration.Encoding);
+            ComparisonTask.Progress += 2;
             var countTestLines = Task.Run(() => FileReader.CountLines(ImportConfiguration.TestFilePath) - (ImportConfiguration.RowsToSkip + headerRowCount));
             Task.WaitAll(countMasterLines, countTestLines);
             ComparisonTask.MasterRowsCount = countMasterLines.Result;
@@ -33,23 +36,20 @@ namespace Reflection.Models {
             perfCounter.Stop("Read two init files");
             perfCounter.Start();
             var exceptedMasterData = Except(masterFileContent, testFileContent);
+            ComparisonTask.Progress += 2;
             var exceptedTestData = Except(testFileContent, masterFileContent);
-            perfCounter.Stop("Except files");
-            ComparisonTask.Status = Status.Executing;
-            ComparisonTask.Progress = 25;
+            ComparisonTask.Progress += 2;
+            perfCounter.Stop("Except files");         
             IWorkTable masterTable = new WorkTable("Master");
             IWorkTable testTable = new WorkTable("Test");
 
             if (exceptedMasterData.Any() && exceptedTestData.Any()) {
                 perfCounter.Start();
-                masterTable.LoadData(exceptedMasterData, ImportConfiguration.Delimiter, ImportConfiguration.IsHeadersExist);
-                testTable.LoadData(exceptedTestData, ImportConfiguration.Delimiter, ImportConfiguration.IsHeadersExist);
+                masterTable.LoadData(exceptedMasterData, ImportConfiguration.Delimiter, ImportConfiguration.IsHeadersExist, ComparisonTask);
+                testTable.LoadData(exceptedTestData, ImportConfiguration.Delimiter, ImportConfiguration.IsHeadersExist, ComparisonTask);
                 perfCounter.Stop("Load two files to WorkTable");
-                ComparisonTask.Progress += 25;
                 ComparisonCore comparisonCore = new ComparisonCore(perfCounter, ComparisonTask);
                 comparisonCore.Execute(masterTable, testTable);
-                ComparisonTask.Progress = 100;
-                ComparisonTask.Status = Status.Failed;
             } else {
                 perfCounter.SaveAllResults();
             }
@@ -60,9 +60,9 @@ namespace Reflection.Models {
             if (ImportConfiguration.IsHeadersExist) {
                 headersLine = dataFirst.Take(1);
             }
-            var uniqHashes = new HashSet<string>(dataSecond.Select(line=>CalculateMD5Hash(line)));
+            var uniqHashes = new HashSet<string>(dataSecond);
             var duplicates = dataFirst.GroupBy(x => x).Where(g => g.Count() > 1).Select(y => y.Key);
-            return headersLine.Concat(duplicates.Concat(dataFirst.Where(x => !uniqHashes.Contains(CalculateMD5Hash(x)))));
+            return headersLine.Concat(duplicates.Concat(dataFirst.Where(x => !uniqHashes.Contains(x))));
         }
 
         private string CalculateMD5Hash(string input) {

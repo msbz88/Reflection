@@ -26,5 +26,20 @@ namespace Reflection.Models {
             IdFields = idFields;
         }
 
+        public override string ToString() {
+            StringBuilder sb = new StringBuilder();
+            sb.Append(MasterRowId);
+            sb.Append(";");
+            sb.Append(TestRowId);
+            foreach (var item in IdFields) {
+                sb.Append(";");
+                sb.Append(item.Value);               
+            }
+            foreach (var item in Deviations) {
+                sb.Append(";");
+                sb.Append(item.MasterValue + " | " + item.TestValue);
+            }
+            return sb.ToString();
+        }
     }
 }

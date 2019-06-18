@@ -24,18 +24,20 @@ namespace Reflection.Models {
             ComparisonTask = comparisonTask;          
         }
 
-        public CompareTable Execute(IWorkTable masterTable, IWorkTable testTable) {
+        public void Execute(IWorkTable masterTable, IWorkTable testTable) {
             MasterTable = masterTable;
             TestTable = testTable;
             Delimiter = SetDelimiter();
             //gather base stat  
             PerfCounter.Start();
             BaseStat = GatherStatistics(masterTable.Rows, testTable.Rows);
+            ComparisonTask.Progress += 5;
             PerfCounter.Stop("Base Gather Stat");
             //analyse
             File.WriteAllLines(@"C:\Users\MSBZ\Desktop\baseStat.txt", BaseStat.Select(r => r.ToString()));
             PerfCounter.Start();
             PivotKeysIndexes = AnalyseForPivotKey(masterTable.Rows, BaseStat);
+            ComparisonTask.Progress += 5;
             PerfCounter.Stop("AnalyseForPivotKey");
             File.AppendAllText(@"C:\Users\MSBZ\Desktop\baseStat.txt", "baseKeyIndex: " + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes)));
             //rows match
@@ -43,7 +45,9 @@ namespace Reflection.Models {
             //group
             PerfCounter.Start();
             var groupsM = Group(masterTable.Rows, PivotKeysIndexes);
+            ComparisonTask.Progress += 5;
             var groupsT = Group(testTable.Rows, PivotKeysIndexes);
+            ComparisonTask.Progress += 5;
             PerfCounter.Stop("Base Group");
             File.WriteAllText(@"C:\Users\MSBZ\Desktop\groupsM.txt", "Hash" + ";" + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes)) + Environment.NewLine);
             File.AppendAllLines(@"C:\Users\MSBZ\Desktop\groupsM.txt", groupsM.SelectMany(item => item.Value.Select(it => it.GetValuesHashCode(PivotKeysIndexes) + ";" + string.Join(";", it.ColumnIndexIn(PivotKeysIndexes)))));
@@ -52,15 +56,18 @@ namespace Reflection.Models {
             PerfCounter.Start();
             CompareTable = new CompareTable(Delimiter, MasterTable.Headers, TestTable.Headers);
             var uMasterRows = groupsM.Where(r => r.Value.Count() == 1).ToDictionary(item => item.Key, item => item.Value.First());
+            ComparisonTask.Progress += 2;
             var uTestRows = groupsT.Where(r => r.Value.Count() == 1).ToDictionary(item => item.Key, item => item.Value.First());
-            var resU = Match(uMasterRows, uTestRows).ToList();
+            ComparisonTask.Progress += 2;
+            var resU = GroupMatch(uMasterRows, uTestRows).ToList();
             CompareTable.AddComparedRows(resU);
-            PerfCounter.Stop("Preparison");
-
-            PerfCounter.Start();
+            ComparisonTask.Progress += 2;
             var mRemainings = Group(GetRemainings(MasterTable.Rows, CompareTable.GetMasterComparedRowsId()), PivotKeysIndexes);
+            ComparisonTask.Progress += 2;
             var tRemainings = Group(GetRemainings(TestTable.Rows, CompareTable.GetTestComparedRowsId()), PivotKeysIndexes);
-
+            ComparisonTask.Progress += 2;
+            PerfCounter.Stop("Preparison");
+            PerfCounter.Start();
             var groups = from m in mRemainings
                          join t in tRemainings on m.Key equals t.Key
                          select new { Key = m.Key, ComparedRows = RowsMatch.ProcessGroup(m.Value, t.Value, mRemainings.Count) };
@@ -71,13 +78,15 @@ namespace Reflection.Models {
             PerfCounter.Stop("Process");
 
             //extra
-            //PerfCounter.Start();
+            PerfCounter.Start();
             ComparisonTask.ComparedRows = CompareTable.ComparedRowsCount;
             var masterExtra = GetRemainings(MasterTable.Rows, CompareTable.GetMasterComparedRowsId());
-            var testExtra = GetRemainings(MasterTable.Rows, CompareTable.GetMasterComparedRowsId());
+            var testExtra = GetRemainings(TestTable.Rows, CompareTable.GetTestComparedRowsId());
+            ComparisonTask.Progress += 2;
             CompareTable.AddMasterExtraRows(masterExtra);
             ComparisonTask.ExtraMasterCount = CompareTable.MasterExtraCount;
             CompareTable.AddTestExtraRows(testExtra);
+            ComparisonTask.Progress += 2;
             ComparisonTask.ExtraTestCount = CompareTable.TestExtraCount;
             PerfCounter.Stop("Extra");
             
@@ -87,10 +96,17 @@ namespace Reflection.Models {
 
             PerfCounter.Start();
             CompareTable.SaveComparedRows(comparedRecordsFile);
+            ComparisonTask.Progress += 2;
             CompareTable.SaveExtraRows(extraRecordsFile);
+            ComparisonTask.Progress += 2;
             PerfCounter.Stop("Save comparison");
             PerfCounter.SaveAllResults();
-            return CompareTable;
+            ComparisonTask.Progress = 100;
+            if (CompareTable.ComparedRowsCount == 0) {
+                ComparisonTask.Status = Status.Passed;
+            }else {
+                ComparisonTask.Status = Status.Failed;
+            }
         }
 
         private string SetDelimiter() {
@@ -132,7 +148,7 @@ namespace Reflection.Models {
             return rows.Where(row => filter.Contains(row.Id));
         }
 
-        private IEnumerable<ComparedRow> Match(Dictionary<string, Row> masterRows, Dictionary<string, Row> testRows) {
+        private IEnumerable<ComparedRow> GroupMatch(Dictionary<string, Row> masterRows, Dictionary<string, Row> testRows) {
             return from m in masterRows
                    join t in testRows on m.Key equals t.Key 
                    select RowsMatch.Compare(m.Value, t.Value);

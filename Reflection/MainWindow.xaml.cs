@@ -39,6 +39,7 @@ namespace Reflection {
             PageMain = new PageMain(ComparisonDetailViewModel);
             Main.Content = PageMain;
             PageMain.OpenFiles += OnOpenFiles;
+            PageMain.Error += OnError;
             PageImport = new PageImport();
             PageImport.FilesLoaded += OnFilesLoaded;
             PageImport.GoBack += OnGoBack;
@@ -80,6 +81,13 @@ namespace Reflection {
             childWindow.Closed -= OnChildWindowClosed;
             GrayWindow.Visibility = Visibility.Collapsed;
         }
+
+        private void OnError(object sender, EventArgs e) {
+            var erorrMessage = (string)sender;
+            StatusBarContent.Foreground = new SolidColorBrush(Colors.Red);
+            StatusBarContent.Text = erorrMessage;
+        }
+
 
     }
 }

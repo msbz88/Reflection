@@ -20,7 +20,7 @@ namespace Reflection.Models {
             Rows = new List<Row>();
         }
 
-        public void LoadData(IEnumerable<string> data, string delimiter, bool isHeadersExist) {
+        public void LoadData(IEnumerable<string> data, string delimiter, bool isHeadersExist, ComparisonTask comparisonTask) {
             Delimiter = delimiter;
             var firstLine = Parse(data.First());
             ColumnsCount = firstLine.Length;
@@ -31,10 +31,12 @@ namespace Reflection.Models {
                 Headers = GenerateDefaultHeaders();
             }
             RowsCount = 0;
+            var totalLines = comparisonTask.MasterRowsCount > comparisonTask.TestRowsCount ? comparisonTask.MasterRowsCount : comparisonTask.TestRowsCount;
             foreach (var line in data) {
                 var row = new Row(++RowsCount, Parse(line));
                 if (row.Data.Length == ColumnsCount) {
                     Rows.Add(row);
+                    comparisonTask.Progress += 10.0 / (totalLines /0.5);
                 } else {
                     throw new Exception("Parse failed! Different number of columns.");
                 }

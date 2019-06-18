@@ -24,7 +24,7 @@ namespace Reflection.Models {
         }
         int testRowsCount;
         public int TestRowsCount {
-            get { return masterRowsCount; }
+            get { return testRowsCount; }
             set {
                 testRowsCount = value;
                 OnPropertyChanged("TestRowsCount");

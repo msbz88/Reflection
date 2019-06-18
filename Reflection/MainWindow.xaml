@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Reflection.Views"
         mc:Ignorable="d"
-        Title="MainWindow" Height="500" Width="950" MinHeight="350" MinWidth="750" SizeChanged="Window_SizeChanged" LocationChanged="Window_LocationChanged" >
+        Title="MainWindow" Height="500" Width="1080" MinHeight="350" MinWidth="750" SizeChanged="Window_SizeChanged" LocationChanged="Window_LocationChanged" >
     <Grid>
         
         <Grid.RowDefinitions>
@@ -13,8 +13,8 @@
             <RowDefinition Height="20"/>
         </Grid.RowDefinitions>
         <Frame x:Name="Main" Grid.Row="0" NavigationUIVisibility="Hidden" />
-        <StatusBar Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Height="20" Background="White">
-            <TextBlock FontFamily="Tahoma" FontSize="12" Padding="5,0,0,0" Name="TextBlockPreviewCount" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        <StatusBar Name="MainStatusBar" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Height="20" Background="White">
+            <TextBlock Name="StatusBarContent" Padding="5,0,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         </StatusBar>
         <Rectangle Name="GrayWindow" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Fill="Black" Opacity="0.7" Visibility="Collapsed"/>
     </Grid>

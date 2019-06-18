@@ -105,6 +105,9 @@ namespace Reflection.Models {
         }
 
         public void SaveExtraRows(string filePath) {
+            if(MasterExtraCount == 0 && TestExtraCount == 0) {
+                return;
+            }
             StringBuilder headers = new StringBuilder();           
             headers.Append("Version");
             foreach (var item in MasterHeaders.Data) {
