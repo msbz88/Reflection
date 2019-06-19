@@ -12,15 +12,17 @@ namespace Reflection.Models {
         IFileReader FileReader { get; set; }
         IImportConfiguration ImportConfiguration { get; set; }
         PerformanceCounter perfCounter = new PerformanceCounter();
+        public bool IsBusy { get; private set; }
 
-        public ComparisonProcessor(IFileReader fileReader, IImportConfiguration importConfiguration, ComparisonTask comparisonTask) {
+        public ComparisonProcessor() {}
+
+        public void StartComparison(IFileReader fileReader, ComparisonTask comparisonTask) {
             FileReader = fileReader;
-            ImportConfiguration = importConfiguration;
+            ImportConfiguration = comparisonTask.ImportConfiguration;
             ComparisonTask = comparisonTask;
-        }
-
-        public void PrepareForComparison() {
+            IsBusy = true;
             ComparisonTask.Status = Status.Executing;
+            //start
             perfCounter.Start();
             int headerRowCount = ImportConfiguration.IsHeadersExist ? 1 : 0;
             var masterFileContent = FileReader.ReadFile(ImportConfiguration.MasterFilePath, ImportConfiguration.RowsToSkip, ImportConfiguration.Encoding);
@@ -53,6 +55,7 @@ namespace Reflection.Models {
             } else {
                 perfCounter.SaveAllResults();
             }
+            IsBusy = false;
         }
 
         private IEnumerable<string> Except(IEnumerable<string> dataFirst, IEnumerable<string> dataSecond) {

@@ -151,7 +151,7 @@ namespace Reflection.Models {
         private IEnumerable<ComparedRow> GroupMatch(Dictionary<string, Row> masterRows, Dictionary<string, Row> testRows) {
             return from m in masterRows
                    join t in testRows on m.Key equals t.Key 
-                   select RowsMatch.Compare(m.Value, t.Value);
+                   select RowsMatch.CompareSingle(m.Value, t.Value);
         }
 
         private List<int> AnalyseInGroup(List<ColumnSummary> columnsStat) {
@@ -186,7 +186,7 @@ namespace Reflection.Models {
             var maxMatchingRate = clearedStats.Max(col => col.MatchingRate);
             var maxUniqMatchRate = clearedStats.Where(col => col.MatchingRate == maxMatchingRate).Max(col => col.UniqMatchRate);
             var mainPivotKey = clearedStats.Where(col => col.MatchingRate == maxMatchingRate && col.UniqMatchRate == maxUniqMatchRate).First().ColumnId;
-            var additionalKeys = clearedStats.Where(col => col.MatchingRate == maxMatchingRate && col.ColumnId != mainPivotKey).Select(col => col.ColumnId);
+            var additionalKeys = clearedStats.Where(col => col.MatchingRate == maxMatchingRate && col.ColumnId != mainPivotKey && col.UniqMatchCount>2).Select(col => col.ColumnId);
             List<int> compositeKey = new List<int>() { mainPivotKey };
             var groups = Group(sampleRows, compositeKey);
             foreach (var key in additionalKeys) {

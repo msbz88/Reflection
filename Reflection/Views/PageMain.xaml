@@ -118,7 +118,7 @@
                                     <Ellipse Stroke="DarkGray" Fill="DarkGray" StrokeThickness="2"/>
                                     <Label Name="lbl" Foreground="White" Content="{Binding Path=ComparisonId}" Padding="5" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Grid>
-                                <TextBlock Name="TextBlockStatus" Grid.Row="2" Grid.Column="0" Text="{Binding Path=Status}" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="12">
+                                <TextBlock Name="TextBlockStatus" Grid.Row="2" Grid.Column="0" Text="{Binding Path=Status}" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="15" >
                                     <TextBlock.Style>
                                         <Style TargetType="{x:Type TextBlock}">
                                             <Style.Triggers>
@@ -184,14 +184,14 @@
                                     </Separator.Background>
                                 </Separator>
                                 <GridSplitter Grid.Column="2" Grid.RowSpan="3" Grid.Row="1" Width="2" Background="LightGray"/>
-                                <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding MasterFileName}" Foreground="DarkSlateBlue" FontSize="15" FontWeight="DemiBold" Padding="0,0,10,0" HorizontalAlignment="Left"/>
-                                <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding TestFileName}" Foreground="DarkSlateBlue" FontSize="15" FontWeight="DemiBold" Padding="0,0,10,0" HorizontalAlignment="Left"/>
-                                <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding MasterRowsCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" Margin="2,0,0,0"/>
-                                <TextBlock Grid.Row="3" Grid.Column="3" Text="{Binding TestRowsCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" Margin="2,0,0,0"/>
-                                <TextBlock Grid.Row="2" Grid.RowSpan ="2" Grid.Column="4" Text="{Binding ActualRowsDiff, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Row="2" Grid.RowSpan ="2" Grid.Column="5" Text="{Binding ComparedRows, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Row="2" Grid.Column="6" Text="{Binding ExtraMasterCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" />
-                                <TextBlock Grid.Row="3" Grid.Column="6" Text="{Binding ExtraTestCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" />
+                                <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding MasterFileName}" Foreground="DarkSlateBlue" FontSize="15" FontWeight="DemiBold" Padding="0,0,10,0" HorizontalAlignment="Left" />
+                                <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding TestFileName}" Foreground="DarkSlateBlue" FontSize="15" FontWeight="DemiBold" Padding="0,0,10,0" HorizontalAlignment="Left" />
+                                <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding MasterRowsCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="2,0,0,0" FontWeight="DemiBold"/>
+                                <TextBlock Grid.Row="3" Grid.Column="3" Text="{Binding TestRowsCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="2,0,0,0" FontWeight="DemiBold"/>
+                                <TextBlock Grid.Row="2" Grid.RowSpan ="2" Grid.Column="4" Text="{Binding ActualRowsDiff, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Center" FontWeight="DemiBold"/>
+                                <TextBlock Grid.Row="2" Grid.RowSpan ="2" Grid.Column="5" Text="{Binding ComparedRows, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Center" FontWeight="DemiBold"/>
+                                <TextBlock Grid.Row="2" Grid.Column="6" Text="{Binding ExtraMasterCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Bottom" FontWeight="DemiBold" />
+                                <TextBlock Grid.Row="3" Grid.Column="6" Text="{Binding ExtraTestCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Bottom" FontWeight="DemiBold"/>
                             </Grid>
                         </StackPanel>
                     </Border>

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Reflection.Models {
     public class ColumnSummary {
         private int UniqCount { get; set; }
-        private int UniqMatchCount { get; set; }
+        public int UniqMatchCount { get; set; }
         public int ColumnId { get; set; }
         ///<summary>Percentage of equal values</summary>
         public double MatchingRate { get; set; }

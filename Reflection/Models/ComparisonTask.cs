@@ -88,13 +88,15 @@ namespace Reflection.Models {
         }
         public string ErrorMessage { get; set; }
         public string CommonDirectoryPath { get; set; }
+        public ImportConfiguration ImportConfiguration { get; set; }
 
-        public ComparisonTask(int comparisonId, string masterFilePath, string testFilePath) {
+        public ComparisonTask(int comparisonId, ImportConfiguration importConfiguration) {
             ComparisonId = comparisonId;
-            MasterFileName = Path.GetFileName(masterFilePath);
-            TestFileName = Path.GetFileName(testFilePath);
+            ImportConfiguration = importConfiguration;
+            MasterFileName = Path.GetFileName(importConfiguration.MasterFilePath);
+            TestFileName = Path.GetFileName(importConfiguration.TestFilePath);
             startTime = DateTime.Now;
-            CommonDirectoryPath = FindCommonDirectory(masterFilePath, testFilePath);
+            CommonDirectoryPath = FindCommonDirectory(importConfiguration.MasterFilePath, importConfiguration.TestFilePath);
             Status = Status.Queued;
             //SimulateProgress();
         }
