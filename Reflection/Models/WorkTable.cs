@@ -36,7 +36,7 @@ namespace Reflection.Models {
                 var row = new Row(++RowsCount, Parse(line));
                 if (row.Data.Length == ColumnsCount) {
                     Rows.Add(row);
-                    comparisonTask.Progress += 10.0 / (totalLines /0.5);
+                    comparisonTask.UpdateProgress(20.0 / (totalLines / 0.5));
                 } else {
                     throw new Exception("Parse failed! Different number of columns.");
                 }

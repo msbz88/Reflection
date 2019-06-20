@@ -101,6 +101,10 @@ namespace Reflection.Models {
             //SimulateProgress();
         }
 
+        public void UpdateProgress(double val) {
+            Progress += val;
+        }
+
         public void OnPropertyChanged(string propName) {
             this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
         }

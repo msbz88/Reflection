@@ -26,10 +26,10 @@ namespace Reflection.Models {
             perfCounter.Start();
             int headerRowCount = ImportConfiguration.IsHeadersExist ? 1 : 0;
             var masterFileContent = FileReader.ReadFile(ImportConfiguration.MasterFilePath, ImportConfiguration.RowsToSkip, ImportConfiguration.Encoding);
-            ComparisonTask.Progress += 2;
+            ComparisonTask.UpdateProgress(1);
             var countMasterLines = Task.Run(() => FileReader.CountLines(ImportConfiguration.MasterFilePath) - (ImportConfiguration.RowsToSkip + headerRowCount));
             var testFileContent = FileReader.ReadFile(ImportConfiguration.TestFilePath, ImportConfiguration.RowsToSkip, ImportConfiguration.Encoding);
-            ComparisonTask.Progress += 2;
+            ComparisonTask.UpdateProgress(1);
             var countTestLines = Task.Run(() => FileReader.CountLines(ImportConfiguration.TestFilePath) - (ImportConfiguration.RowsToSkip + headerRowCount));
             Task.WaitAll(countMasterLines, countTestLines);
             ComparisonTask.MasterRowsCount = countMasterLines.Result;
@@ -38,9 +38,9 @@ namespace Reflection.Models {
             perfCounter.Stop("Read two init files");
             perfCounter.Start();
             var exceptedMasterData = Except(masterFileContent, testFileContent);
-            ComparisonTask.Progress += 2;
+            ComparisonTask.UpdateProgress(2);
             var exceptedTestData = Except(testFileContent, masterFileContent);
-            ComparisonTask.Progress += 2;
+            ComparisonTask.UpdateProgress(2);
             perfCounter.Stop("Except files");         
             IWorkTable masterTable = new WorkTable("Master");
             IWorkTable testTable = new WorkTable("Test");
@@ -62,10 +62,12 @@ namespace Reflection.Models {
             IEnumerable<string> headersLine = Enumerable.Empty<string>();
             if (ImportConfiguration.IsHeadersExist) {
                 headersLine = dataFirst.Take(1);
+                dataFirst = dataFirst.Skip(1);
+                dataSecond = dataSecond.Skip(1);
             }
             var uniqHashes = new HashSet<string>(dataSecond);
-            var duplicates = dataFirst.GroupBy(x => x).Where(g => g.Count() > 1).Select(y => y.Key);
-            return headersLine.Concat(duplicates.Concat(dataFirst.Where(x => !uniqHashes.Contains(x))));
+            //var duplicates = dataFirst.GroupBy(x => x).Where(g => g.Count() > 1).Select(y => y.Key);
+            return headersLine.Concat(dataFirst.Where(x => !uniqHashes.Contains(x)));
         }
 
         private string CalculateMD5Hash(string input) {

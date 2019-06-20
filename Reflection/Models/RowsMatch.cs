@@ -97,7 +97,7 @@ namespace Reflection.Models {
                     RemoveWrongCombinations(comparedRow);
                 }
             }
-            ComparisonTask.Progress += 20 / (double)allGroups;
+            ComparisonTask.UpdateProgress(20 / (double)allGroups);
             return ComparedRows;
         }
 

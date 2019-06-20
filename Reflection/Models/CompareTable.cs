@@ -68,8 +68,7 @@ namespace Reflection.Models {
 
         public void SaveComparedRows(string filePath) {
             var idFields = Data.SelectMany(row => row.IdFields.Select(col => col.Key)).Distinct().OrderBy(colId => colId).ToList();
-            var allDeviationsColumns = Data.SelectMany(row => row.Deviations.Select(col => col.ColumnId)).Distinct().OrderBy(colId => colId).ToList();
- 
+            var allDeviationsColumns = Data.SelectMany(row => row.Deviations.Select(col => col.ColumnId)).Distinct().OrderBy(colId => colId).ToList(); 
             var allColumns = idFields.Concat(allDeviationsColumns).ToList();
             var headers = GenerateHeadersForFile(allColumns);
             File.WriteAllText(filePath, headers);

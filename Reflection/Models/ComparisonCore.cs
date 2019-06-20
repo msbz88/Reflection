@@ -30,14 +30,12 @@ namespace Reflection.Models {
             Delimiter = SetDelimiter();
             //gather base stat  
             PerfCounter.Start();
-            BaseStat = GatherStatistics(masterTable.Rows, testTable.Rows);
-            ComparisonTask.Progress += 5;
+            BaseStat = GatherStatistics(masterTable.Rows, testTable.Rows);          
             PerfCounter.Stop("Base Gather Stat");
             //analyse
             File.WriteAllLines(@"C:\Users\MSBZ\Desktop\baseStat.txt", BaseStat.Select(r => r.ToString()));
             PerfCounter.Start();
-            PivotKeysIndexes = AnalyseForPivotKey(masterTable.Rows, BaseStat);
-            ComparisonTask.Progress += 5;
+            PivotKeysIndexes = AnalyseForPivotKey(masterTable.Rows, BaseStat);            
             PerfCounter.Stop("AnalyseForPivotKey");
             File.AppendAllText(@"C:\Users\MSBZ\Desktop\baseStat.txt", "baseKeyIndex: " + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes)));
             //rows match
@@ -45,9 +43,9 @@ namespace Reflection.Models {
             //group
             PerfCounter.Start();
             var groupsM = Group(masterTable.Rows, PivotKeysIndexes);
-            ComparisonTask.Progress += 5;
+            ComparisonTask.UpdateProgress(4);
             var groupsT = Group(testTable.Rows, PivotKeysIndexes);
-            ComparisonTask.Progress += 5;
+            ComparisonTask.UpdateProgress(4);
             PerfCounter.Stop("Base Group");
             File.WriteAllText(@"C:\Users\MSBZ\Desktop\groupsM.txt", "Hash" + ";" + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes)) + Environment.NewLine);
             File.AppendAllLines(@"C:\Users\MSBZ\Desktop\groupsM.txt", groupsM.SelectMany(item => item.Value.Select(it => it.GetValuesHashCode(PivotKeysIndexes) + ";" + string.Join(";", it.ColumnIndexIn(PivotKeysIndexes)))));
@@ -56,16 +54,16 @@ namespace Reflection.Models {
             PerfCounter.Start();
             CompareTable = new CompareTable(Delimiter, MasterTable.Headers, TestTable.Headers);
             var uMasterRows = groupsM.Where(r => r.Value.Count() == 1).ToDictionary(item => item.Key, item => item.Value.First());
-            ComparisonTask.Progress += 2;
+            ComparisonTask.UpdateProgress(2);
             var uTestRows = groupsT.Where(r => r.Value.Count() == 1).ToDictionary(item => item.Key, item => item.Value.First());
-            ComparisonTask.Progress += 2;
+            ComparisonTask.UpdateProgress(2);
             var resU = GroupMatch(uMasterRows, uTestRows).ToList();
             CompareTable.AddComparedRows(resU);
-            ComparisonTask.Progress += 2;
+            ComparisonTask.UpdateProgress(2);
             var mRemainings = Group(GetRemainings(MasterTable.Rows, CompareTable.GetMasterComparedRowsId()), PivotKeysIndexes);
-            ComparisonTask.Progress += 2;
+            ComparisonTask.UpdateProgress(2);
             var tRemainings = Group(GetRemainings(TestTable.Rows, CompareTable.GetTestComparedRowsId()), PivotKeysIndexes);
-            ComparisonTask.Progress += 2;
+            ComparisonTask.UpdateProgress(2);
             PerfCounter.Stop("Preparison");
             PerfCounter.Start();
             var groups = from m in mRemainings
@@ -82,11 +80,11 @@ namespace Reflection.Models {
             ComparisonTask.ComparedRows = CompareTable.ComparedRowsCount;
             var masterExtra = GetRemainings(MasterTable.Rows, CompareTable.GetMasterComparedRowsId());
             var testExtra = GetRemainings(TestTable.Rows, CompareTable.GetTestComparedRowsId());
-            ComparisonTask.Progress += 2;
+            ComparisonTask.UpdateProgress(1);
             CompareTable.AddMasterExtraRows(masterExtra);
             ComparisonTask.ExtraMasterCount = CompareTable.MasterExtraCount;
             CompareTable.AddTestExtraRows(testExtra);
-            ComparisonTask.Progress += 2;
+            ComparisonTask.UpdateProgress(1);
             ComparisonTask.ExtraTestCount = CompareTable.TestExtraCount;
             PerfCounter.Stop("Extra");
             
@@ -96,12 +94,12 @@ namespace Reflection.Models {
 
             PerfCounter.Start();
             CompareTable.SaveComparedRows(comparedRecordsFile);
-            ComparisonTask.Progress += 2;
+            ComparisonTask.UpdateProgress(1);
             CompareTable.SaveExtraRows(extraRecordsFile);
-            ComparisonTask.Progress += 2;
+            ComparisonTask.UpdateProgress(1);
             PerfCounter.Stop("Save comparison");
             PerfCounter.SaveAllResults();
-            ComparisonTask.Progress = 100;
+            ComparisonTask.UpdateProgress(2);
             if (CompareTable.ComparedRowsCount == 0) {
                 ComparisonTask.Status = Status.Passed;
             }else {
@@ -125,7 +123,6 @@ namespace Reflection.Models {
             ComparisonTask.ComparedRows = compRowsCount;
             ComparisonTask.ExtraMasterCount = extraMasterCount;
             ComparisonTask.ExtraMasterCount = extraTestCount;
-            ComparisonTask.Progress = 100;
         }
 
         //public void ApplyRowNumberInGroup(IEnumerable<Row> rows, List<int> compKeys) {
@@ -186,15 +183,17 @@ namespace Reflection.Models {
             var maxMatchingRate = clearedStats.Max(col => col.MatchingRate);
             var maxUniqMatchRate = clearedStats.Where(col => col.MatchingRate == maxMatchingRate).Max(col => col.UniqMatchRate);
             var mainPivotKey = clearedStats.Where(col => col.MatchingRate == maxMatchingRate && col.UniqMatchRate == maxUniqMatchRate).First().ColumnId;
-            var additionalKeys = clearedStats.Where(col => col.MatchingRate == maxMatchingRate && col.ColumnId != mainPivotKey && col.UniqMatchCount>2).Select(col => col.ColumnId);
+            var additionalKeys = clearedStats.Where(col => col.MatchingRate == maxMatchingRate && col.ColumnId != mainPivotKey && col.UniqMatchCount>2).Select(col => col.ColumnId).ToList();
             List<int> compositeKey = new List<int>() { mainPivotKey };
             var groups = Group(sampleRows, compositeKey);
+            ComparisonTask.UpdateProgress(1);
             foreach (var key in additionalKeys) {
                 if (IsUsefulInCompositeKey(groups, compositeKey, key)) {
                     compositeKey.Add(key);
                     groups = Group(groups.Where(grp => grp.Value.Count() > 1).SelectMany(row => row.Value), compositeKey);
                 }
-            }
+                ComparisonTask.UpdateProgress(20.0 / additionalKeys.Count);
+            }           
             return compositeKey;
         }
 
@@ -210,6 +209,7 @@ namespace Reflection.Models {
                 HashSet<string> uniqVals = new HashSet<string>();
                 columns.Add(i, uniqVals);
             }
+            ComparisonTask.UpdateProgress(2);
             int index = 0;
             foreach (var row in rows) {
                 foreach (var item in row.Data) {
@@ -217,12 +217,14 @@ namespace Reflection.Models {
                 }
                 index = 0;
             }
+            ComparisonTask.UpdateProgress(2);
             return columns;
         }
 
         public List<ColumnSummary> GatherStatistics(IEnumerable<Row> masterRows, IEnumerable<Row> testRows) {
             var masterColumns = GetColumns(masterRows);
             var testColumns = GetColumns(testRows);
+            ComparisonTask.UpdateProgress(2);
             var totalRowsCount = masterRows.Count() > testRows.Count() ? testRows.Count() : masterRows.Count();
             if (totalRowsCount == 0) {
                 return new List<ColumnSummary>();
@@ -231,6 +233,7 @@ namespace Reflection.Models {
                 m => m.Key,
                 t => t.Key,
                 (m, t) => new ColumnSummary(m.Key, totalRowsCount, m.Value, t.Value)).ToList();
+            ComparisonTask.UpdateProgress(2);
             return columnsSummary.ToList();
         }
     }
