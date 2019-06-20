@@ -99,8 +99,8 @@ namespace Reflection.Models {
             ComparisonTask.UpdateProgress(1);
             PerfCounter.Stop("Save comparison");
             PerfCounter.SaveAllResults();
-            ComparisonTask.UpdateProgress(2);
-            if (CompareTable.ComparedRowsCount == 0) {
+            ComparisonTask.UpdateProgress(100);
+            if (CompareTable.ComparedRowsCount == 0 && CompareTable.MasterExtraCount==0 && CompareTable.TestExtraCount==0) {
                 ComparisonTask.Status = Status.Passed;
             }else {
                 ComparisonTask.Status = Status.Failed;

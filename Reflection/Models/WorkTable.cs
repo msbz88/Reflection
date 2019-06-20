@@ -36,9 +36,9 @@ namespace Reflection.Models {
                 var row = new Row(++RowsCount, Parse(line));
                 if (row.Data.Length == ColumnsCount) {
                     Rows.Add(row);
-                    comparisonTask.UpdateProgress(20.0 / (totalLines / 0.5));
+                    comparisonTask.UpdateProgress(10.0 / (totalLines / 0.5));
                 } else {
-                    throw new Exception("Parse failed! Different number of columns.");
+                    throw new Exception("Unable to parse " + RowsCount + " line with the specified delimiter.");
                 }
             }
             //Rows = data.Select(line => new Row(++RowsCount, Parse(line))).ToList();         

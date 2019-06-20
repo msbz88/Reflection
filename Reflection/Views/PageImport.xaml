@@ -41,9 +41,9 @@
             </Border>
         </Popup>
         <DataGrid BorderBrush="LightGray" HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray" Name="dgData" Margin="5,5,0,0" AutoGenerateColumns ="False" Grid.Row="1" Grid.RowSpan="7" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsReadOnly="True" EnableRowVirtualization="True" EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True" ItemsSource="{Binding}"/>
-        <TextBox Name="TextBoxDelimiter" Grid.Row="1" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,5,0,5" ToolTip="Delimiter" Text="{Binding Path=Delimiter, Mode=TwoWay}"/>
-        <TextBox Name="TextBoxHeaderRow" Grid.Row="2" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,5,0,5" ToolTip ="Rows to skip"/>
-        <ComboBox Name="comboBoxEncoding" Grid.Row="3" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,5,0,5" ToolTip ="File encoding" SelectionChanged="ComboBoxSelectionChanged" >
+        <TextBox Name="TextBoxDelimiter" Grid.Row="1" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Stretch" VerticalAlignment="Center" ToolTip="Delimiter" GotFocus="TextBoxGotFocus" LostFocus="TextBoxLostFocus"/>
+        <TextBox Name="TextBoxHeaderRow" Grid.Row="2" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Stretch" VerticalAlignment="Center" ToolTip ="Rows to skip"/>
+        <ComboBox Name="comboBoxEncoding" Grid.Row="3" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Stretch" Padding="5" FontSize="15" VerticalAlignment="Center" ToolTip ="File encoding" SelectionChanged="ComboBoxSelectionChanged" >
            <ComboBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
@@ -53,7 +53,7 @@
                 </DataTemplate>
             </ComboBox.ItemTemplate>
         </ComboBox>
-        <Button Name ="btnLoad" Grid.Row="4" Grid.Column="2" Height="25" Width="80" HorizontalAlignment="Center" VerticalAlignment="Bottom" Content="Load" Click="ButtonLoadClick" />
+        <Button Name ="ButtonExecute" Grid.Row="4" Grid.Column="2" Height="25" Width="80" HorizontalAlignment="Center" VerticalAlignment="Center" Content="Execute" Click="ButtonExecuteClick" />
     </Grid>
 
 </Page>

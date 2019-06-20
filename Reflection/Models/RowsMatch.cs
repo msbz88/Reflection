@@ -42,10 +42,7 @@ namespace Reflection.Models {
             CreateAllCombinations(masterRows, testRows);
             while (AllCombinations.Count > 0) {
                 int minDeviation = AllCombinations.Min(row => row.Deviations.Count);
-                //doesnot filter all values == minDeviation
                 var bestCombinations = AllCombinations.Where(row => row.Deviations.Count == minDeviation).ToList();
-                //File.WriteAllLines(@"C: \Users\MSBZ\Desktop\allComb.txt", AllCombinations.Select(row => row.ToString()));
-                //File.WriteAllLines(@"C: \Users\MSBZ\Desktop\bestComb.txt", bestCombinations.Select(row => row.ToString()));
                 if (bestCombinations.Count == 1) {
                     var comparedRow = bestCombinations.First();
                     ComparedRows.Add(comparedRow);

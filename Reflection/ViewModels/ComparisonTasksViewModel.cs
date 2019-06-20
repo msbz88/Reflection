@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Data;
 using Reflection.Models;
@@ -27,39 +28,39 @@ namespace Reflection.ViewModels {
             ComparisonProcessor = new ComparisonProcessor();
         }
 
-        public void ImportConfigurationPropertyChanged(object sender, PropertyChangedEventArgs e) {
+        public async void ImportConfigurationPropertyChanged(object sender, PropertyChangedEventArgs e) {
             if (e.PropertyName == "ImportConfiguration") {
                 var importConfiguration = (ImportConfiguration)sender;
-                var comparisonTask = new ComparisonTask(comparisonCount++, importConfiguration);
                 if (AllComparisonDetails.Count == 99) {
                     AllComparisonDetails.RemoveAt(0);
+                    comparisonCount = 1;
                 }
+                var comparisonTask = new ComparisonTask(comparisonCount++, importConfiguration);
                 AllComparisonDetails.Add(comparisonTask);
                 if (!ComparisonProcessor.IsBusy) {
-                    TriggerComparison(comparisonTask);
-                }
-            }
-        }
-
-        private async void TriggerComparison(ComparisonTask comparisonTask) {
-            while (true) {
-                var t = new Task(() => ComparisonProcessor.StartComparison(FileReader, comparisonTask));
-                t.Start();
-                try {
-                    await t;
-                    var nextTask = AllComparisonDetails.Where(task => task.Status == Status.Queued).OrderBy(task => task.ComparisonId).FirstOrDefault();
-                    if (nextTask != null) {
-                        comparisonTask = nextTask;
-                    } else {
-                        break;
+                    while (true) {
+                        await TriggerComparison(comparisonTask);
+                        var nextTask = AllComparisonDetails.Where(task => task.Status == Status.Queued).FirstOrDefault();
+                        if (nextTask != null) {
+                            comparisonTask = nextTask;
+                        } else {
+                            break;
+                        }
                     }
-                } catch (Exception ae) {
-                    comparisonTask.Status = Status.Error;
-                    comparisonTask.ErrorMessage = ae.Message;
                 }
             }
         }
 
+        private async Task TriggerComparison(ComparisonTask comparisonTask) {
+            var task = new Task(() => ComparisonProcessor.StartComparison(FileReader, comparisonTask));
+            task.Start();
+            try {
+                await task;
+            } catch (Exception e) {
+                comparisonTask.Status = Status.Error;
+                comparisonTask.ErrorMessage = e.Message;
+            }
+        }
 
 
     }

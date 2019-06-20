@@ -42,9 +42,16 @@ namespace Reflection.Views {
         }
 
         private void ButtonOpenFolder(object senderIn, RoutedEventArgs eIn) {
-            //cause crash when list item is not selected
-            var selectedItem = (ComparisonTask)lvComparisonDetails.SelectedItem;
-            Process.Start(selectedItem.CommonDirectoryPath);
+            var listViewItem = GetAncestorOfType<ListViewItem>(senderIn as Button);
+            if (listViewItem != null) {
+                var selectedItem = (ComparisonTask)listViewItem.DataContext;
+                string argument = "/select, \"" + selectedItem.ImportConfiguration.MasterFilePath + "\"";
+                try {
+                    Process.Start("explorer.exe", argument);
+                } catch (Exception) {
+                    Process.Start(selectedItem.CommonDirectoryPath);
+                }
+            }
         }
 
         private void ButtonViewResult(object senderIn, RoutedEventArgs eIn) {
@@ -67,6 +74,13 @@ namespace Reflection.Views {
             } else {
                 Error?.Invoke("", null);
             }
-        }    
+        }
+
+        private T GetAncestorOfType<T>(FrameworkElement child) where T : FrameworkElement {
+            var parent = VisualTreeHelper.GetParent(child);
+            if (parent != null && !(parent is T))
+                return (T)GetAncestorOfType<T>((FrameworkElement)parent);
+            return (T)parent;
+        }
     }
 }

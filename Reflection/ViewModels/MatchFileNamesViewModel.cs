@@ -56,7 +56,7 @@ namespace Reflection.ViewModels {
         }
 
         private MessageBoxResult NotifyUser(string message, MessageBoxButton messageBoxButton) {
-            return MessageBox.Show(message, "Note", messageBoxButton, MessageBoxImage.Question, MessageBoxResult.No);
+            return MessageBox.Show(message, "", messageBoxButton, MessageBoxImage.Question, MessageBoxResult.No);
         }
 
         private void MatchMultipleFileNames() {

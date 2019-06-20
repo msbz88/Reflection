@@ -27,13 +27,13 @@ namespace Reflection.Views {
         public EventHandler GoBack { get; set; }
 
         public PageImport() {
-            InitializeComponent();
-            IsSingle = false;
+            InitializeComponent();            
             ImportViewModel = new ImportViewModel();           
             ComboBoxDataBinding();
         }
 
         public void SelectFiles() {
+            IsSingle = false;
             MatchFileNamesViewModel = new MatchFileNamesViewModel();
             MatchFileNamesViewModel.SelectFiles();
             if (MatchFileNamesViewModel.IsReady) {
@@ -42,10 +42,10 @@ namespace Reflection.Views {
                     ImportViewModel.PathTestFile = MatchFileNamesViewModel.MatchedFileNames[0].TestFilePath;
                     ImportViewModel.AnalyseFile(ImportViewModel.PathMasterFile);
                     RenderFileToView();
-                    TextBoxDelimiter.DataContext = ImportViewModel;
+                    TextBoxDelimiter.Text = PresentDelimiter(ImportViewModel.Delimiter);
                     DisplayOnLoadEncoding();
                     IsSingle = true;
-                }else {
+                } else {
                     foreach (var item in MatchFileNamesViewModel.MatchedFileNames) {
                         ImportViewModel.PathMasterFile = item.MasterFilePath;
                         ImportViewModel.PathTestFile = item.TestFilePath;
@@ -66,7 +66,7 @@ namespace Reflection.Views {
             string viewDelimiter = "";
             switch (delimiter) {
                 case "\t":
-                viewDelimiter = "<\t> (Tab)";
+                viewDelimiter = "<\\t> (Tab)";
                 break;
                 case ";":
                 viewDelimiter = "<;> (Semicolon)";
@@ -84,12 +84,17 @@ namespace Reflection.Views {
             return viewDelimiter;
         }
 
-        //private void TextBoxTextChanged(object senderIn, RoutedEventArgs eIn) {
-        //    var viewDelimiter = PresentDelimiter(ImportViewModel.Delimiter);
-        //    if (TextBoxDelimiter.Text != viewDelimiter) {
-        //        TextBoxDelimiter.Text = viewDelimiter;
-        //    }
-        //}
+        private void TextBoxGotFocus(object senderIn, RoutedEventArgs eIn) {
+            TextBoxDelimiter.Text = "";
+        }
+
+        private void TextBoxLostFocus(object senderIn, RoutedEventArgs eIn) {
+            if (TextBoxDelimiter.Text != "") {
+                TextBoxDelimiter.Text = PresentDelimiter(TextBoxDelimiter.Text);
+            } else {
+                TextBoxDelimiter.Text = PresentDelimiter(ImportViewModel.Delimiter);
+            }
+        }
 
         private void RenderFileToView() {
             PrintFileContent(System.IO.Path.GetFileName(ImportViewModel.PathMasterFile));
@@ -132,7 +137,7 @@ namespace Reflection.Views {
                 Grid.SetRow(TextBoxDelimiter, 2);
                 Grid.SetRow(TextBoxHeaderRow, 3);
                 Grid.SetRow(comboBoxEncoding, 4);
-                Grid.SetRow(btnLoad, 5);
+                Grid.SetRow(ButtonExecute, 5);
                 TextBlockSkippedRows.Text = string.Join(Environment.NewLine, ImportViewModel.SkippedLines);
                 ExpanderSkippedRows.IsExpanded = true;
             } else {
@@ -141,11 +146,11 @@ namespace Reflection.Views {
                 Grid.SetRow(TextBoxDelimiter, 1);
                 Grid.SetRow(TextBoxHeaderRow, 2);
                 Grid.SetRow(comboBoxEncoding, 3);
-                Grid.SetRow(btnLoad, 4);
+                Grid.SetRow(ButtonExecute, 4);
             }
         }
 
-        private void ButtonLoadClick(object senderIn, RoutedEventArgs eIn) {
+        private void ButtonExecuteClick(object senderIn, RoutedEventArgs eIn) {
             ImportViewModel.SetImportConfiguration();
             FilesLoaded?.Invoke(senderIn, eIn);
         }

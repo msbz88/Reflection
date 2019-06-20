@@ -27,15 +27,15 @@ namespace Reflection.Models {
             int headerRowCount = ImportConfiguration.IsHeadersExist ? 1 : 0;
             var masterFileContent = FileReader.ReadFile(ImportConfiguration.MasterFilePath, ImportConfiguration.RowsToSkip, ImportConfiguration.Encoding);
             ComparisonTask.UpdateProgress(1);
-            var countMasterLines = Task.Run(() => FileReader.CountLines(ImportConfiguration.MasterFilePath) - (ImportConfiguration.RowsToSkip + headerRowCount));
+            var countMasterLines = FileReader.CountLines(ImportConfiguration.MasterFilePath) - (ImportConfiguration.RowsToSkip + headerRowCount);
+            ComparisonTask.MasterRowsCount = countMasterLines;
             var testFileContent = FileReader.ReadFile(ImportConfiguration.TestFilePath, ImportConfiguration.RowsToSkip, ImportConfiguration.Encoding);
             ComparisonTask.UpdateProgress(1);
-            var countTestLines = Task.Run(() => FileReader.CountLines(ImportConfiguration.TestFilePath) - (ImportConfiguration.RowsToSkip + headerRowCount));
-            Task.WaitAll(countMasterLines, countTestLines);
-            ComparisonTask.MasterRowsCount = countMasterLines.Result;
-            ComparisonTask.TestRowsCount = countTestLines.Result;
+            var countTestLines = FileReader.CountLines(ImportConfiguration.TestFilePath) - (ImportConfiguration.RowsToSkip + headerRowCount);          
+            ComparisonTask.TestRowsCount = countTestLines;
             ComparisonTask.ActualRowsDiff = ComparisonTask.MasterRowsCount - ComparisonTask.TestRowsCount;
             perfCounter.Stop("Read two init files");
+            CheckIfEqualColumns(masterFileContent.FirstOrDefault(), testFileContent.FirstOrDefault());
             perfCounter.Start();
             var exceptedMasterData = Except(masterFileContent, testFileContent);
             ComparisonTask.UpdateProgress(2);
@@ -65,9 +65,9 @@ namespace Reflection.Models {
                 dataFirst = dataFirst.Skip(1);
                 dataSecond = dataSecond.Skip(1);
             }
-            var uniqHashes = new HashSet<string>(dataSecond);
+            var uniqHashes = new HashSet<string>(dataSecond.Select(line => CalculateMD5Hash(line)));
             //var duplicates = dataFirst.GroupBy(x => x).Where(g => g.Count() > 1).Select(y => y.Key);
-            return headersLine.Concat(dataFirst.Where(x => !uniqHashes.Contains(x)));
+            return headersLine.Concat(dataFirst.Where(x => !uniqHashes.Contains(CalculateMD5Hash(x))));
         }
 
         private string CalculateMD5Hash(string input) {
@@ -81,5 +81,12 @@ namespace Reflection.Models {
             return sb.ToString();
         }
 
+        private void CheckIfEqualColumns(string masterFirstLine, string testFirstLine) {
+            var parseMaster = masterFirstLine.Split(new[] { ImportConfiguration.Delimiter }, StringSplitOptions.None);
+            var parseTest = testFirstLine.Split(new[] { ImportConfiguration.Delimiter }, StringSplitOptions.None);
+            if (parseMaster.Length != parseTest.Length) {
+                throw new Exception("There is different number of columns between master and test files.");
+            }
+        }
     }
 }

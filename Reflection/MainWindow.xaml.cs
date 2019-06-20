@@ -62,6 +62,18 @@ namespace Reflection {
             Main.Content = PageMain;
         }
 
+        private void OnClosing(object sender, CancelEventArgs e) {
+            var isTasksExist = ComparisonDetailViewModel.AllComparisonDetails.Any();
+            if (isTasksExist) {
+                var userAnswer = MessageBox.Show("Do you want to exit?\nComparison history will be lost.", "", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
+                if (userAnswer == MessageBoxResult.Yes) {
+                    e.Cancel = false;
+                } else {
+                    e.Cancel = true;
+                }
+            }
+        }
+
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e) {
             PageImport.ResetPopUp();
         }
