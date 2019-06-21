@@ -110,7 +110,7 @@
                                     <ColumnDefinition Width="250" MinWidth="150"/>
                                     <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="100"/>
-                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="125"/>
                                     <ColumnDefinition Width="100"/>
                                 </Grid.ColumnDefinitions>
                                 <Grid Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top" Height="25" Width="25">
@@ -172,7 +172,7 @@
                                 <TextBlock Grid.Row="1" Grid.Column="2" Text="File Name" HorizontalAlignment="Left" />
                                 <TextBlock Grid.Row="1" Grid.Column="3" Text="Rows Count" HorizontalAlignment="Left" Margin="2,0,0,0"/>
                                 <TextBlock Grid.Row="1" Grid.Column="4" Text="Actual Rows Diff" HorizontalAlignment="Left" />
-                                <TextBlock Grid.Row="1" Grid.Column="5" Text="Compared Rows" HorizontalAlignment="Left" />
+                                <TextBlock Grid.Row="1" Grid.Column="5" Text="Rows with Deviations" HorizontalAlignment="Left" />
                                 <TextBlock Grid.Row="1" Grid.Column="6" Text="Extra Rows" HorizontalAlignment="Left" />
                                 <Separator Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="5" VerticalAlignment="Bottom" Height="5">
                                     <Separator.Background>

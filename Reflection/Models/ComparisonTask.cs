@@ -38,12 +38,12 @@ namespace Reflection.Models {
                 OnPropertyChanged("ActualRowsDiff");
             }
         }
-        int comparedRows;
-        public int ComparedRows {
-            get { return comparedRows; }
+        int rowsWithDeviations;
+        public int RowsWithDeviations {
+            get { return rowsWithDeviations; }
             set {
-                comparedRows = value;
-                OnPropertyChanged("ComparedRows");
+                rowsWithDeviations = value;
+                OnPropertyChanged("RowsWithDeviations");
             }
         }
         int extraMasterCount;
@@ -88,6 +88,7 @@ namespace Reflection.Models {
         }
         public string ErrorMessage { get; set; }
         public string CommonDirectoryPath { get; set; }
+        public string CommonName { get; set; }
         public ImportConfiguration ImportConfiguration { get; set; }
 
         public ComparisonTask(int comparisonId, ImportConfiguration importConfiguration) {
@@ -97,6 +98,7 @@ namespace Reflection.Models {
             TestFileName = Path.GetFileName(importConfiguration.TestFilePath);
             startTime = DateTime.Now;
             CommonDirectoryPath = FindCommonDirectory(importConfiguration.MasterFilePath, importConfiguration.TestFilePath);
+            CommonName = GetCommonName();
             Status = Status.Queued;
             //SimulateProgress();
         }
@@ -118,6 +120,10 @@ namespace Reflection.Models {
                 }
                 Status = Status.Passed;
             }).Start();
+        }
+
+        private string GetCommonName() {
+            return MasterFileName[0]=='['? MasterFileName.TrimStart('['): MasterFileName;
         }
 
         private string FindCommonDirectory(string masterPath, string testPath) {

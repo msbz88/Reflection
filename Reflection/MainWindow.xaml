@@ -7,7 +7,6 @@
         mc:Ignorable="d"
         Title="Reflection" Height="500" Width="1100" MinHeight="350" MinWidth="750" SizeChanged="Window_SizeChanged" LocationChanged="Window_LocationChanged" Closing="OnClosing">
     <Grid>
-        
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="20"/>

@@ -25,6 +25,7 @@ namespace Reflection.Views {
         public bool IsSingle { get; private set; }
         public EventHandler FilesLoaded { get; set; }
         public EventHandler GoBack { get; set; }
+        private string customDelimiter;
 
         public PageImport() {
             InitializeComponent();            
@@ -41,7 +42,7 @@ namespace Reflection.Views {
                     ImportViewModel.PathMasterFile = MatchFileNamesViewModel.MatchedFileNames[0].MasterFilePath;
                     ImportViewModel.PathTestFile = MatchFileNamesViewModel.MatchedFileNames[0].TestFilePath;
                     ImportViewModel.AnalyseFile(ImportViewModel.PathMasterFile);
-                    RenderFileToView();
+                    RenderFileToView(ImportViewModel.PathMasterFile);
                     TextBoxDelimiter.Text = PresentDelimiter(ImportViewModel.Delimiter);
                     DisplayOnLoadEncoding();
                     IsSingle = true;
@@ -85,26 +86,39 @@ namespace Reflection.Views {
         }
 
         private void TextBoxGotFocus(object senderIn, RoutedEventArgs eIn) {
-            TextBoxDelimiter.Text = "";
+            if (PresentDelimiter(ImportViewModel.Delimiter) == TextBoxDelimiter.Text) {
+                var delimiter = ImportViewModel.Delimiter;
+                if (delimiter == "\t") {
+                    delimiter = "\\t";
+                }
+                TextBoxDelimiter.Text = delimiter;
+            }else {
+                TextBoxDelimiter.Text = customDelimiter;
+            }  
         }
 
         private void TextBoxLostFocus(object senderIn, RoutedEventArgs eIn) {
-            if (TextBoxDelimiter.Text != "") {
+            if (TextBoxDelimiter.Text != ImportViewModel.Delimiter && TextBoxDelimiter.Text != "\\t") {
+                customDelimiter = TextBoxDelimiter.Text;
                 TextBoxDelimiter.Text = PresentDelimiter(TextBoxDelimiter.Text);
             } else {
                 TextBoxDelimiter.Text = PresentDelimiter(ImportViewModel.Delimiter);
             }
         }
 
-        private void RenderFileToView() {
-            PrintFileContent(System.IO.Path.GetFileName(ImportViewModel.PathMasterFile));
+        private void RenderFileToView(string path) {
+            PrintFileContent(System.IO.Path.GetFileName(path));
             TextBoxHeaderRow.Text = ImportViewModel.RowsToSkip.ToString();
         }
 
         private void ComboBoxSelectionChanged(object senderIn, RoutedEventArgs eIn) {
             var encodingInfo = (EncodingInfo)comboBoxEncoding.SelectedItem;
             ImportViewModel.Encoding = encodingInfo.GetEncoding();
-            RenderFileToView();
+            if(TextBlockFileName.Text== (System.IO.Path.GetFileName(ImportViewModel.PathMasterFile))){
+                RenderFileToView(ImportViewModel.PathMasterFile);
+            }else {
+                RenderFileToView(ImportViewModel.PathTestFile);
+            }            
         }
 
         private void ComboBoxDataBinding() {
@@ -139,6 +153,7 @@ namespace Reflection.Views {
                 Grid.SetRow(comboBoxEncoding, 4);
                 Grid.SetRow(ButtonExecute, 5);
                 TextBlockSkippedRows.Text = string.Join(Environment.NewLine, ImportViewModel.SkippedLines);
+                ExpanderSkippedRows.Visibility = Visibility.Visible;
                 ExpanderSkippedRows.IsExpanded = true;
             } else {
                 ExpanderSkippedRows.Visibility = Visibility.Collapsed;
@@ -155,18 +170,42 @@ namespace Reflection.Views {
             FilesLoaded?.Invoke(senderIn, eIn);
         }
 
-        private void ButtonBackClick(object senderIn, RoutedEventArgs eIn) {
-            GoBack?.Invoke(senderIn, eIn);
+        private void ButtonGoBackClick(object senderIn, RoutedEventArgs eIn) {
+            if (TextBlockFileName.Text == (System.IO.Path.GetFileName(ImportViewModel.PathTestFile))) {
+                ImportViewModel.AnalyseFile(ImportViewModel.PathMasterFile);
+                RenderFileToView(ImportViewModel.PathMasterFile);
+                TextBoxDelimiter.Text = PresentDelimiter(ImportViewModel.Delimiter);
+                DisplayOnLoadEncoding();
+                ButtonGoForward.Visibility = Visibility.Visible;
+                ButtonGoBack.ToolTip = "Back to Main Page";
+            } else {
+                GoBack?.Invoke(senderIn, eIn);
+            }             
+        }
+
+        private void ButtonGoForwardClick(object senderIn, RoutedEventArgs eIn) {
+            if (TextBlockFileName.Text != (System.IO.Path.GetFileName(ImportViewModel.PathTestFile))) {
+                ImportViewModel.AnalyseFile(ImportViewModel.PathTestFile);
+                RenderFileToView(ImportViewModel.PathTestFile);
+                TextBoxDelimiter.Text = PresentDelimiter(ImportViewModel.Delimiter);
+                DisplayOnLoadEncoding();
+                ButtonGoForward.Visibility = Visibility.Collapsed;
+                ButtonGoBack.ToolTip = "Back to Master file";
+            }
+        }
+
+        private void OnExpanded(object senderIn, RoutedEventArgs eIn) {
+            PopupSkipedRows.IsOpen = true;
+        }
+
+        private void OnCollapsed(object senderIn, RoutedEventArgs eIn) {
+            PopupSkipedRows.IsOpen = false;
         }
 
         public void ResetPopUp() {
             var offset = PopupSkipedRows.HorizontalOffset;
             PopupSkipedRows.HorizontalOffset = offset + 1;
             PopupSkipedRows.HorizontalOffset = offset;
-        }
-
-        public void ClosePopup() {
-            PopupSkipedRows.IsOpen = false;
         }
 
         private void PopupSkipedRows_Closed(object sender, EventArgs e) {

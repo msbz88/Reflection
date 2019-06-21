@@ -4,7 +4,7 @@
              xmlns:local="clr-namespace:Reflection.Views"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <!--Button-->
+        <!--Button main-->
         <Style TargetType="{x:Type Button}">
             <Setter Property="Background" Value="#373737" />
             <Setter Property="Foreground" Value="White" />
@@ -29,6 +29,35 @@
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter Property="Background" Value="#FF20C520"/>
                                 <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!--Button Nav-->
+        <Style TargetType="{x:Type Button}" x:Key="NavButtton" >
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="Foreground" Value="Black" />
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Ellipse Name ="OuterRing" Width ="25" Height ="25" Fill="White"/>
+                            <Ellipse Name ="InnerRing" Width ="20" Height ="20" Fill="Transparent"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName ="OuterRing" Property ="Fill" Value ="LightGray"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property ="IsPressed" Value ="True">
+                                <Setter TargetName ="InnerRing" Property ="Height" Value ="20"/>
+                                <Setter TargetName ="InnerRing" Property ="Width" Value ="20"/>
+                                <Setter TargetName ="InnerRing" Property ="Fill" Value ="DarkGray"/>
+                                <Setter Property="FontSize" Value="14" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

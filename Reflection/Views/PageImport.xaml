@@ -7,12 +7,6 @@
       mc:Ignorable="d" 
       d:DesignHeight="350" d:DesignWidth="750"
       Title="PageImport">
-    <Page.Resources>
-        <!-- NavButton -->
-        <Style x:Key="NavButtton" TargetType="Button">
-            <Setter Property="Background" Value="White"/>
-        </Style>
-    </Page.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
@@ -28,18 +22,20 @@
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="160"/>
         </Grid.ColumnDefinitions>
-        <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0">
-            <Button FontFamily="Marlett" Content="3" FontSize="18"  Grid.Row="0" Grid.Column="1" Height="20" Width="20" Margin ="5,0,0,0" VerticalAlignment="Center" Click="ButtonBackClick"/>
-            <TextBlock Name="TextBlockFileName" Margin ="5,0,0,0" VerticalAlignment="Center" Foreground="Gray" FontSize="18"/>
-        </StackPanel>
-        <Expander Name="ExpanderSkippedRows" Margin ="5,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Stretch" Grid.Row="1" Grid.Column="0" Header="Automatically skipped rows" ExpandDirection="Down"/>
-        <Popup  Name="PopupSkipedRows" Margin ="5,0,0,0" IsOpen="{Binding IsExpanded, ElementName=ExpanderSkippedRows}" PlacementTarget="{Binding ElementName=ExpanderSkippedRows}" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Slide" Placement="Bottom" Closed="PopupSkipedRows_Closed">
+        <Grid Grid.Row="0" Grid.Column="0">
+            <Button Name="ButtonGoBack" Style="{StaticResource NavButtton}" Content="&#xE830;" Margin="5,0,0,0" ToolTip ="Back to Main Page" VerticalAlignment="Center" HorizontalAlignment="Left" Click="ButtonGoBackClick"/>
+            <TextBlock Name="TextBlockFileName" Margin ="5,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="DarkGray" FontSize="18"/>
+            <Button Name="ButtonGoForward" Style="{StaticResource NavButtton}" Content="&#xEA47;" ToolTip ="Go to Test file" VerticalAlignment="Center" HorizontalAlignment="Right" Click="ButtonGoForwardClick"/>
+        </Grid>
+        <Expander Name="ExpanderSkippedRows" Margin ="5,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" Grid.Row="1" Grid.Column="0" Header="Automatically skipped rows" ExpandDirection="Down" Expanded="OnExpanded" Collapsed="OnCollapsed">
+        <Popup Name="PopupSkipedRows" Margin ="5,0,0,0" PlacementTarget="{Binding ElementName=ExpanderSkippedRows}" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Slide" Placement="Bottom" Closed="PopupSkipedRows_Closed">
             <Border BorderThickness="1" Background="Ivory" BorderBrush="Gray">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" MaxWidth="500" HorizontalScrollBarVisibility="Auto" Height="100">
                 <TextBlock Name="TextBlockSkippedRows" Foreground="Gray" Padding="5" />
                 </ScrollViewer>
             </Border>
         </Popup>
+        </Expander>
         <DataGrid BorderBrush="LightGray" HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray" Name="dgData" Margin="5,5,0,0" AutoGenerateColumns ="False" Grid.Row="1" Grid.RowSpan="7" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsReadOnly="True" EnableRowVirtualization="True" EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True" ItemsSource="{Binding}"/>
         <TextBox Name="TextBoxDelimiter" Grid.Row="1" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Stretch" VerticalAlignment="Center" ToolTip="Delimiter" GotFocus="TextBoxGotFocus" LostFocus="TextBoxLostFocus"/>
         <TextBox Name="TextBoxHeaderRow" Grid.Row="2" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Stretch" VerticalAlignment="Center" ToolTip ="Rows to skip"/>

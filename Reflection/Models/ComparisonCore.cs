@@ -33,11 +33,11 @@ namespace Reflection.Models {
             BaseStat = GatherStatistics(masterTable.Rows, testTable.Rows);          
             PerfCounter.Stop("Base Gather Stat");
             //analyse
-            File.WriteAllLines(@"C:\Users\MSBZ\Desktop\baseStat.txt", BaseStat.Select(r => r.ToString()));
+            //File.WriteAllLines(@"C:\Users\MSBZ\Desktop\baseStat.txt", BaseStat.Select(r => r.ToString()));
             PerfCounter.Start();
             PivotKeysIndexes = AnalyseForPivotKey(masterTable.Rows, BaseStat);            
             PerfCounter.Stop("AnalyseForPivotKey");
-            File.AppendAllText(@"C:\Users\MSBZ\Desktop\baseStat.txt", "baseKeyIndex: " + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes)));
+            //File.AppendAllText(@"C:\Users\MSBZ\Desktop\baseStat.txt", "baseKeyIndex: " + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes)));
             //rows match
             RowsMatch = new RowsMatch(BaseStat, PivotKeysIndexes, ComparisonTask);
             //group
@@ -47,10 +47,10 @@ namespace Reflection.Models {
             var groupsT = Group(testTable.Rows, PivotKeysIndexes);
             ComparisonTask.UpdateProgress(4);
             PerfCounter.Stop("Base Group");
-            File.WriteAllText(@"C:\Users\MSBZ\Desktop\groupsM.txt", "Hash" + ";" + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes)) + Environment.NewLine);
-            File.AppendAllLines(@"C:\Users\MSBZ\Desktop\groupsM.txt", groupsM.SelectMany(item => item.Value.Select(it => it.GetValuesHashCode(PivotKeysIndexes) + ";" + string.Join(";", it.ColumnIndexIn(PivotKeysIndexes)))));
-            File.WriteAllText(@"C:\Users\MSBZ\Desktop\groupsT.txt", "Hash" + ";" + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes)) + Environment.NewLine);
-            File.AppendAllLines(@"C:\Users\MSBZ\Desktop\groupsT.txt", groupsT.SelectMany(item => item.Value.Select(it => it.GetValuesHashCode(PivotKeysIndexes) + ";" + string.Join(";", it.ColumnIndexIn(PivotKeysIndexes)))));
+            //File.WriteAllText(@"C:\Users\MSBZ\Desktop\groupsM.txt", "Hash" + ";" + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes)) + Environment.NewLine);
+            //File.AppendAllLines(@"C:\Users\MSBZ\Desktop\groupsM.txt", groupsM.SelectMany(item => item.Value.Select(it => it.GetValuesHashCode(PivotKeysIndexes) + ";" + string.Join(";", it.ColumnIndexIn(PivotKeysIndexes)))));
+            //File.WriteAllText(@"C:\Users\MSBZ\Desktop\groupsT.txt", "Hash" + ";" + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes)) + Environment.NewLine);
+            //File.AppendAllLines(@"C:\Users\MSBZ\Desktop\groupsT.txt", groupsT.SelectMany(item => item.Value.Select(it => it.GetValuesHashCode(PivotKeysIndexes) + ";" + string.Join(";", it.ColumnIndexIn(PivotKeysIndexes)))));
             PerfCounter.Start();
             CompareTable = new CompareTable(Delimiter, MasterTable.Headers, TestTable.Headers);
             var uMasterRows = groupsM.Where(r => r.Value.Count() == 1).ToDictionary(item => item.Key, item => item.Value.First());
@@ -77,7 +77,7 @@ namespace Reflection.Models {
 
             //extra
             PerfCounter.Start();
-            ComparisonTask.ComparedRows = CompareTable.ComparedRowsCount;
+            ComparisonTask.RowsWithDeviations = CompareTable.ComparedRowsCount;
             var masterExtra = GetRemainings(MasterTable.Rows, CompareTable.GetMasterComparedRowsId());
             var testExtra = GetRemainings(TestTable.Rows, CompareTable.GetTestComparedRowsId());
             ComparisonTask.UpdateProgress(1);
@@ -89,13 +89,13 @@ namespace Reflection.Models {
             PerfCounter.Stop("Extra");
             
             //save to file
-            string comparedRecordsFile = @"C:\Users\MSBZ\Desktop\comparedRecords.txt";
-            string extraRecordsFile = @"C:\Users\MSBZ\Desktop\extra.txt";
+            //string comparedRecordsFile = @"C:\Users\MSBZ\Desktop\comparedRecords.txt";
+            //string extraRecordsFile = @"C:\Users\MSBZ\Desktop\extra.txt";
 
             PerfCounter.Start();
-            CompareTable.SaveComparedRows(comparedRecordsFile);
+            CompareTable.SaveComparedRows(ComparisonTask.CommonDirectoryPath+@"\Compared_"+ComparisonTask.CommonName);
             ComparisonTask.UpdateProgress(1);
-            CompareTable.SaveExtraRows(extraRecordsFile);
+            CompareTable.SaveExtraRows(ComparisonTask.CommonDirectoryPath + @"\Extra_" + ComparisonTask.CommonName);
             ComparisonTask.UpdateProgress(1);
             PerfCounter.Stop("Save comparison");
             PerfCounter.SaveAllResults();
@@ -120,7 +120,7 @@ namespace Reflection.Models {
             ComparisonTask.MasterRowsCount = mRowsCount;
             ComparisonTask.TestRowsCount = tRowsCount;
             ComparisonTask.ActualRowsDiff = actRowsDiff;
-            ComparisonTask.ComparedRows = compRowsCount;
+            ComparisonTask.RowsWithDeviations = compRowsCount;
             ComparisonTask.ExtraMasterCount = extraMasterCount;
             ComparisonTask.ExtraMasterCount = extraTestCount;
         }
