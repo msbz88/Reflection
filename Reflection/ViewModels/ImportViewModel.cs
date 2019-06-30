@@ -19,6 +19,7 @@ namespace Reflection.ViewModels {
                 Encoding = GetEncoding(PathMasterFile);
             }
         }
+        public List<int> UserKeys { get; set; } = new List<int>();
         public string PathTestFile { get; set; }
         public string Delimiter { get; set; }
         public int RowsToSkip { get; set; }
@@ -124,7 +125,8 @@ namespace Reflection.ViewModels {
                 delimiter: Delimiter,
                 rowsToSkip: RowsToSkip,
                 isHeadersExist: IsHeadersExist,
-                encoding: Encoding
+                encoding: Encoding,
+                userKeys: UserKeys
                 );
             RaisePropertyChanged("ImportConfiguration");
         }

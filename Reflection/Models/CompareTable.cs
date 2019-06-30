@@ -25,7 +25,7 @@ namespace Reflection.Models {
             Delimiter = delimiter;
             MasterHeaders = masterHeaders;
             TestHeaders = testHeaders;
-        }
+        } 
 
         public void AddComparedRows(IEnumerable<ComparedRow> comparedRows) {
             Data.AddRange(comparedRows);
@@ -55,8 +55,14 @@ namespace Reflection.Models {
             }
         }
 
-        private string GenerateHeadersForFile(List<int> columns) {
+        private string GenerateHeadersForFile(List<int> addKeys, List<int> columns) {
             StringBuilder headers = new StringBuilder();
+            foreach (var item in addKeys) {
+                headers.Append("M__" + MasterHeaders[item]);
+                headers.Append(Delimiter);
+                headers.Append("T__" + MasterHeaders[item]);
+                headers.Append(Delimiter);
+            }
             foreach (var item in columns) {
                 headers.Append(MasterHeaders[item]);
                 if (item != columns.Last()) {
@@ -67,15 +73,16 @@ namespace Reflection.Models {
         }
 
         public void SaveComparedRows(string filePath) {
-            var idFields = Data.SelectMany(row => row.IdFields.Select(col => col.Key)).Distinct().OrderBy(colId => colId).ToList();
+            var additionalKeys = Data.SelectMany(item => item.IdFields.Where(f => f.AdditionalKey!=-1).Select(f=>f.AdditionalKey)).Distinct().ToList();     
+            var mainKeys = Data.SelectMany(row => row.IdFields.Select(col => col.MainKey)).Distinct().Where(col=>col!=-1).OrderBy(colId => colId).ToList();
             var allDeviationsColumns = Data.SelectMany(row => row.Deviations.Select(col => col.ColumnId)).Distinct().OrderBy(colId => colId).ToList(); 
-            var allColumns = idFields.Concat(allDeviationsColumns).ToList();
-            var headers = GenerateHeadersForFile(allColumns);
+            var allColumns = mainKeys.Concat(allDeviationsColumns).ToList();
+            var headers = GenerateHeadersForFile(additionalKeys, allColumns);
             File.WriteAllText(filePath, headers);
             StringBuilder lines = new StringBuilder();
             StringBuilder cell = new StringBuilder();          
             foreach (var comparedRow in Data) {
-                var rowToSave = CreateRowToSave(allColumns);
+                var rowToSave = CreateRowToSave(additionalKeys, allColumns);
                 foreach (var deviation in comparedRow.Deviations) {
                     cell.Clear();
                     cell.Append(deviation.MasterValue);
@@ -95,9 +102,12 @@ namespace Reflection.Models {
             File.AppendAllText(filePath, lines.ToString());
         }
 
-        private Dictionary<int, string> CreateRowToSave(List<int> allColumns) {
-            Dictionary<int, string> rowToSave = new Dictionary<int, string>(allColumns.Count);
-            foreach (var colId in allColumns) {
+        private Dictionary<int, string> CreateRowToSave(List<int> addKeys, List<int> allColumns) {
+            Dictionary<int, string> rowToSave = new Dictionary<int, string>(allColumns.Count+addKeys.Count);
+            foreach (var colId in addKeys) {
+                rowToSave.Add(colId*-1, "0" + Delimiter);
+            }
+            foreach (var colId in allColumns.Except(addKeys)) {
                 rowToSave.Add(colId, "0" + Delimiter);
             }
             return rowToSave;
@@ -130,9 +140,14 @@ namespace Reflection.Models {
             return lines.ToString();
         }
 
-        private void AddIdentificationColumns(Dictionary<int, string> idFields, Dictionary<int, string> rowToSave) {
+        private void AddIdentificationColumns(List<PrintIdFields> idFields, Dictionary<int, string> rowToSave) {
             foreach (var item in idFields) {
-                rowToSave[item.Key] = item.Value + Delimiter;
+                if (item.AdditionalKey > -1) {
+                    rowToSave[item.AdditionalKey * -1] = item.MasterAdditionalKeyVal + Delimiter + item.TestAdditionalKeyVal + Delimiter;
+                }
+                if (item.MainKey > -1) {
+                    rowToSave[item.MainKey] = item.MainVal + Delimiter;
+                }
             }
         }
 

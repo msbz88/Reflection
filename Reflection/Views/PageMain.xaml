@@ -95,14 +95,14 @@
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <Border Name="BorderListItem" BorderBrush="LightGray" MaxWidth="1200" BorderThickness="1" Padding="5" Margin="5" >
-                        <StackPanel Orientation="Horizontal" Height="110" AutomationProperties.Name="{Binding ComparisonId}">
+                        <StackPanel Orientation="Horizontal" Height="115" AutomationProperties.Name="{Binding ComparisonId}">
                             <Grid>
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="30"/>
+                                    <RowDefinition Height="25"/>
                                     <RowDefinition Height="20"/>
+                                    <RowDefinition Height="25"/>
                                     <RowDefinition Height="20"/>
-                                    <RowDefinition Height="20"/>
-                                    <RowDefinition Height="20"/>
+                                    <RowDefinition Height="25"/>
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -110,7 +110,7 @@
                                     <ColumnDefinition Width="250" MinWidth="150"/>
                                     <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="100"/>
-                                    <ColumnDefinition Width="125"/>
+                                    <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="100"/>
                                 </Grid.ColumnDefinitions>
                                 <Grid Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top" Height="25" Width="25">
@@ -141,7 +141,7 @@
                                         </Style>
                                     </TextBlock.Style>
                                 </TextBlock>
-                                <Button Name="btnViewResult" Grid.Column="0" Grid.Row="1" Content="View Result" Height="20" Width="70" HorizontalAlignment="Center" VerticalAlignment="Bottom" Click="ButtonViewResult">
+                                <Button Name="btnViewResult" Grid.Column="0" Grid.Row="1" Content="View Result" Height="20" Width="70" HorizontalAlignment="Center" VerticalAlignment="Center" Click="ButtonViewResult">
                                     <Button.Style>
                                         <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
                                             <Setter Property="FontSize" Value="10" />
@@ -159,7 +159,7 @@
                                         </Style>
                                     </Button.Style>
                                 </Button>
-                                <Button Name ="btnOpenFolder" Grid.Column="0" Grid.Row="3" Grid.RowSpan="2" Content="Open Folder" Height="20" Width="70" VerticalAlignment="Top" HorizontalAlignment="Center" Click="ButtonOpenFolder">
+                                <Button Name ="btnOpenFolder" Grid.Column="0" Grid.Row="3" Content="Open Folder" Height="20" Width="70" VerticalAlignment="Center" HorizontalAlignment="Center" Click="ButtonOpenFolder">
                                     <Button.Style>
                                         <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
                                             <Setter Property="FontSize" Value="10" />
@@ -167,12 +167,12 @@
                                         </Style>
                                     </Button.Style>
                                 </Button>
-                                <Label Grid.Row="4"  Grid.Column="0" Content="{Binding StartTime}" HorizontalAlignment="Center" VerticalAlignment="Bottom" Padding="0" FontSize="12" Foreground="DarkGray"/>
+                                <Label Grid.Row="4"  Grid.Column="0" Content="{Binding StartTime}" HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="12" Foreground="DarkGray"/>
                                 <ProgressBar Grid.Row="0" Grid.Column="1" Grid.RowSpan="5" Style="{DynamicResource pbarCircularStyle}" Value="{Binding Progress}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Row="1" Grid.Column="2" Text="File Name" HorizontalAlignment="Left" />
                                 <TextBlock Grid.Row="1" Grid.Column="3" Text="Rows Count" HorizontalAlignment="Left" Margin="2,0,0,0"/>
                                 <TextBlock Grid.Row="1" Grid.Column="4" Text="Actual Rows Diff" HorizontalAlignment="Left" />
-                                <TextBlock Grid.Row="1" Grid.Column="5" Text="Rows with Deviations" HorizontalAlignment="Left" />
+                                <TextBlock Grid.Row="1" Grid.Column="5" Text="Deviations" HorizontalAlignment="Left" />
                                 <TextBlock Grid.Row="1" Grid.Column="6" Text="Extra Rows" HorizontalAlignment="Left" />
                                 <Separator Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="5" VerticalAlignment="Bottom" Height="5">
                                     <Separator.Background>
@@ -182,13 +182,13 @@
                                         </LinearGradientBrush>
                                     </Separator.Background>
                                 </Separator>
-                                <GridSplitter Grid.Column="2" Grid.RowSpan="3" Grid.Row="1" Width="1" Background="LightGray"/>
+                                <GridSplitter Grid.Column="2" Grid.RowSpan="3" Grid.Row="1" Width="2" Background="LightGray"/>
                                 <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding MasterFileName}" Foreground="DarkSlateBlue" FontSize="15" FontWeight="DemiBold" Padding="0,0,10,0" HorizontalAlignment="Left" />
                                 <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding TestFileName}" Foreground="DarkSlateBlue" FontSize="15" FontWeight="DemiBold" Padding="0,0,10,0" HorizontalAlignment="Left" />
                                 <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding MasterRowsCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="2,0,0,0" FontWeight="DemiBold"/>
                                 <TextBlock Grid.Row="3" Grid.Column="3" Text="{Binding TestRowsCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="2,0,0,0" FontWeight="DemiBold"/>
                                 <TextBlock Grid.Row="2" Grid.RowSpan ="2" Grid.Column="4" Text="{Binding ActualRowsDiff, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Center" FontWeight="DemiBold"/>
-                                <TextBlock Grid.Row="2" Grid.RowSpan ="2" Grid.Column="5" Text="{Binding ComparedRows, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Center" FontWeight="DemiBold"/>
+                                <TextBlock Grid.Row="2" Grid.RowSpan ="2" Grid.Column="5" Text="{Binding RowsWithDeviations, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Center" FontWeight="DemiBold"/>
                                 <TextBlock Grid.Row="2" Grid.Column="6" Text="{Binding ExtraMasterCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Bottom" FontWeight="DemiBold" />
                                 <TextBlock Grid.Row="3" Grid.Column="6" Text="{Binding ExtraTestCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Bottom" FontWeight="DemiBold"/>
                             </Grid>

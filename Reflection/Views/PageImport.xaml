@@ -20,9 +20,10 @@
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="160"/>
         </Grid.ColumnDefinitions>
-        <Grid Grid.Row="0" Grid.Column="0">
+        <Grid Name="HeaderGrid"  Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
             <Button Name="ButtonGoBack" Style="{StaticResource NavButtton}" Content="&#xE830;" Margin="5,0,0,0" ToolTip ="Back to Main Page" VerticalAlignment="Center" HorizontalAlignment="Left" Click="ButtonGoBackClick"/>
             <TextBlock Name="TextBlockFileName" Margin ="5,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="DarkGray" FontSize="18"/>
             <Button Name="ButtonGoForward" Style="{StaticResource NavButtton}" Content="&#xEA47;" ToolTip ="Go to Test file" VerticalAlignment="Center" HorizontalAlignment="Right" Click="ButtonGoForwardClick"/>
@@ -36,7 +37,7 @@
             </Border>
         </Popup>
         </Expander>
-        <DataGrid BorderBrush="LightGray" HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray" Name="dgData" Margin="5,5,0,0" AutoGenerateColumns ="False" Grid.Row="1" Grid.RowSpan="7" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsReadOnly="True" EnableRowVirtualization="True" EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True" ItemsSource="{Binding}"/>
+        <DataGrid BorderBrush="LightGray" HorizontalGridLinesBrush="LightGray" Grid.ColumnSpan="2" VerticalGridLinesBrush="LightGray" Name="dgData" Margin="5,5,0,0" AutoGenerateColumns ="False" Grid.Row="1" Grid.RowSpan="7" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsReadOnly="True" EnableRowVirtualization="True" EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True" ItemsSource="{Binding}"/>
         <TextBox Name="TextBoxDelimiter" Grid.Row="1" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Stretch" VerticalAlignment="Center" ToolTip="Delimiter" GotFocus="TextBoxGotFocus" LostFocus="TextBoxLostFocus"/>
         <TextBox Name="TextBoxHeaderRow" Grid.Row="2" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Stretch" VerticalAlignment="Center" ToolTip ="Rows to skip"/>
         <ComboBox Name="comboBoxEncoding" Grid.Row="3" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Stretch" Padding="5" FontSize="15" VerticalAlignment="Center" ToolTip ="File encoding" SelectionChanged="ComboBoxSelectionChanged" >
@@ -49,7 +50,31 @@
                 </DataTemplate>
             </ComboBox.ItemTemplate>
         </ComboBox>
-        <Button Name ="ButtonExecute" Grid.Row="4" Grid.Column="2" Height="25" Width="80" HorizontalAlignment="Center" VerticalAlignment="Center" Content="Execute" Click="ButtonExecuteClick" />
+        <Button Name ="ButtonExecute" Margin="5" Grid.Row="4" Grid.Column="2" Height="25" Width="70" HorizontalAlignment="Right" VerticalAlignment="Center" Content="Execute" Click="ButtonExecuteClick" />
+        <Button Name ="ButtonSuggestKey" Margin="5" Grid.Row="4" Grid.Column="2" Height="25" Width="70" HorizontalAlignment="Left" VerticalAlignment="Center" Content="Suggest Key" Click="ButtonSuggestKeyClick" />
+        <!--<GridSplitter Name="SpliterUserKeys" Margin="2,5,0,0" Grid.Column="1" Grid.Row="1" Grid.RowSpan="7" Visibility="Collapsed" Width="3" HorizontalAlignment="Left"/>-->
+        <Border Name="BorderUserKeys" Margin="0,5,0,0" BorderBrush="LightGray" Visibility="Collapsed" BorderThickness="1" Grid.Column="1" Grid.Row="1" Grid.RowSpan="7" >
+            <Grid >
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="25"/>
+                </Grid.RowDefinitions>
+                <ListBox Grid.Row="0" Name="ListBoxAvailableKeys" Visibility="Collapsed" BorderBrush="Transparent">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="{x:Type ListBoxItem}">
+                        <Setter Property="Focusable" Value="False"/>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                            <CheckBox Content="{Binding Path=Key}" IsChecked="{Binding Path=IsChecked}" />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <Button Visibility="Collapsed" Name="ButtonApplyUserKey" Grid.Row="1" Content="OK" Height="25" Width="70" VerticalAlignment="Bottom" HorizontalAlignment="Center" Click="ButtonApplyUserKeyClick"/>
+            
+        </Grid>
+        </Border>
     </Grid>
 
 </Page>

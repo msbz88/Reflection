@@ -28,14 +28,14 @@ namespace Reflection.Views {
             SourceInitialized += (x, y) => {
                 this.HideMinimizeAndMaximizeButtons();
             };
+            Application curApp = Application.Current;
+            MainWindow = (MainWindow)curApp.MainWindow;
         }
 
         private void MatchedFilesWindowLoaded(object senderIn, EventArgs eIn) {
-            Application curApp = Application.Current;
-            MainWindow = (MainWindow)curApp.MainWindow;
-            this.Left = MainWindow.Left + (MainWindow.Width - this.ActualWidth) / 2;
-            this.Top = MainWindow.Top + (MainWindow.Height - this.ActualHeight) / 2;
             MainWindow.ChildWindowRaised?.Invoke(this, null);
+            this.Left = MainWindow.Left + (MainWindow.Width - this.ActualWidth) / 2;
+            this.Top = MainWindow.Top + (MainWindow.Height - this.ActualHeight) / 2;          
         }
 
         private void OnOKButtonClick(object senderIn, RoutedEventArgs eIn) {

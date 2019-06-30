@@ -90,6 +90,7 @@ namespace Reflection.Models {
         public string CommonDirectoryPath { get; set; }
         public string CommonName { get; set; }
         public ImportConfiguration ImportConfiguration { get; set; }
+        public string ResultFile { get; set; }
 
         public ComparisonTask(int comparisonId, ImportConfiguration importConfiguration) {
             ComparisonId = comparisonId;

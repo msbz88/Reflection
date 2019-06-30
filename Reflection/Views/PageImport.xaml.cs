@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Microsoft.Win32;
+using Reflection.Models;
 using Reflection.ViewModels;
 
 namespace Reflection.Views {
@@ -22,6 +23,7 @@ namespace Reflection.Views {
     public partial class PageImport : Page {
         public ImportViewModel ImportViewModel { get; set; }
         public MatchFileNamesViewModel MatchFileNamesViewModel { get; set; }
+        AvailableKeysViewModel AvailableKeysViewModel = new AvailableKeysViewModel();
         public bool IsSingle { get; private set; }
         public EventHandler FilesLoaded { get; set; }
         public EventHandler GoBack { get; set; }
@@ -168,6 +170,30 @@ namespace Reflection.Views {
         private void ButtonExecuteClick(object senderIn, RoutedEventArgs eIn) {
             ImportViewModel.SetImportConfiguration();
             FilesLoaded?.Invoke(senderIn, eIn);
+        }
+
+        private void ButtonSuggestKeyClick(object senderIn, RoutedEventArgs eIn) {
+            Grid.SetColumnSpan(dgData, 1);
+            //SpliterUserKeys.Visibility = Visibility.Visible;
+            BorderUserKeys.Visibility = Visibility.Visible;
+            ListBoxAvailableKeys.Visibility = Visibility.Visible;
+            ButtonApplyUserKey.Visibility = Visibility.Visible;
+            int index = 0;
+            foreach (var item in ImportViewModel.FileHeaders) {
+                var key = new UserKey(index, item);
+                AvailableKeysViewModel.UserKeys.Add(key);
+                index++;
+            }
+            ListBoxAvailableKeys.ItemsSource = AvailableKeysViewModel.UserKeys;
+        }
+
+        private void ButtonApplyUserKeyClick(object senderIn, RoutedEventArgs eIn) {
+            Grid.SetColumnSpan(dgData, 2);
+            //SpliterUserKeys.Visibility = Visibility.Collapsed;
+            BorderUserKeys.Visibility = Visibility.Collapsed;
+            ListBoxAvailableKeys.Visibility = Visibility.Collapsed;
+            ButtonApplyUserKey.Visibility = Visibility.Collapsed;
+            ImportViewModel.UserKeys = AvailableKeysViewModel.UserKeys.Where(item=>item.IsChecked).Select(item=>item.Id).ToList();
         }
 
         private void ButtonGoBackClick(object senderIn, RoutedEventArgs eIn) {

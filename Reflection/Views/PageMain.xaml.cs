@@ -24,6 +24,7 @@ namespace Reflection.Views {
     public partial class PageMain : Page {
         public EventHandler Error { get; set; }
         public EventHandler OpenFiles { get; set; }
+        public EventHandler ShowViewResult { get; set; }
         public ComparisonTasksViewModel ComparisonTasksViewModel { get; set; }
         
         public PageMain(ComparisonTasksViewModel comparisonTasksViewModel) {
@@ -55,7 +56,11 @@ namespace Reflection.Views {
         }
 
         private void ButtonViewResult(object senderIn, RoutedEventArgs eIn) {
-            //not implemented yet
+            var listViewItem = GetAncestorOfType<ListViewItem>(senderIn as Button);
+            if (listViewItem != null) {
+                var selectedItem = (ComparisonTask)listViewItem.DataContext;
+                ShowViewResult?.Invoke(selectedItem, null);
+            }
         }
 
         private bool UserFilter(object item) {
@@ -64,16 +69,19 @@ namespace Reflection.Views {
             var comparisonTask = (ComparisonTask)item;
             return (comparisonTask.MasterFileName.ToLower().Contains(TextBoxSearchFile.Text.ToLower())
                     || comparisonTask.TestFileName.ToLower().Contains(TextBoxSearchFile.Text.ToLower())
-                    || comparisonTask.StartTime.Contains(TextBoxSearchFile.Text.ToLower()));
+                    || comparisonTask.Status.ToString().ToLower().Contains(TextBoxSearchFile.Text.ToLower())
+                    || comparisonTask.StartTime.ToString().Contains(TextBoxSearchFile.Text));
         }
 
         private void ListViewItemSelected(object sender, SelectionChangedEventArgs e) {
-            var comparisonTask = (ComparisonTask)lvComparisonDetails.SelectedItem;       
-            if (comparisonTask.Status == Status.Error) {
-                Error?.Invoke(comparisonTask.ErrorMessage, null);
-            } else {
-                Error?.Invoke("", null);
-            }
+            var comparisonTask = (ComparisonTask)lvComparisonDetails.SelectedItem;
+            if (comparisonTask != null) {
+                if (comparisonTask.Status == Status.Error) {
+                    Error?.Invoke(comparisonTask.ErrorMessage, null);
+                } else {
+                    Error?.Invoke("", null);
+                }
+            }  
         }
 
         private T GetAncestorOfType<T>(FrameworkElement child) where T : FrameworkElement {

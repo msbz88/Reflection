@@ -31,6 +31,7 @@ namespace Reflection {
         public ComparisonTasksViewModel ComparisonDetailViewModel { get; set; }
         PageImport PageImport { get; set; }
         PageMain PageMain { get; set; }
+        PageViewResult PageViewResult { get; set; }
 
         public MainWindow() {
             InitializeComponent();
@@ -40,6 +41,7 @@ namespace Reflection {
             Main.Content = PageMain;
             PageMain.OpenFiles += OnOpenFiles;
             PageMain.Error += OnError;
+            PageMain.ShowViewResult += OnShowViewResult;
             PageImport = new PageImport();
             PageImport.FilesLoaded += OnFilesLoaded;
             PageImport.GoBack += OnGoBack;
@@ -56,6 +58,10 @@ namespace Reflection {
 
         private void OnFilesLoaded(object sender, EventArgs e) {
             Main.Content = PageMain;
+            if (PageViewResult != null) {
+                PageViewResult.GoBack -= OnGoBack;
+                PageViewResult.Error -= OnError;
+            }          
         }
 
         private void OnGoBack(object sender, EventArgs e) {
@@ -98,6 +104,16 @@ namespace Reflection {
             var erorrMessage = (string)sender;
             StatusBarContent.Foreground = new SolidColorBrush(Colors.Red);
             StatusBarContent.Text = erorrMessage;
+        }
+
+        private void OnShowViewResult(object sender, EventArgs e) {
+            PageViewResult = new PageViewResult();
+            PageViewResult.GoBack += OnGoBack;
+            PageViewResult.Error += OnError;
+            Main.Content = PageViewResult;
+            var comparisonTask = (ComparisonTask)sender;
+            if(comparisonTask!=null)
+            PageViewResult.PrintFileContent(comparisonTask.ResultFile, comparisonTask.ImportConfiguration.Delimiter);
         }
 
 

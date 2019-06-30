@@ -10,11 +10,11 @@ namespace Reflection.Models {
         private List<ColumnSummary> BaseStat { get; set; }
         List<ComparedRow> ComparedRows { get; set; }
         List<ComparedRow> AllCombinations { get; set; }
-        List<int> IdColumns { get; set; }
+        ComparisonKeys IdColumns { get; set; }
         ComparisonTask ComparisonTask { get; set; }
         int columnsCount = 0;
 
-        public RowsMatch(List<ColumnSummary> baseStat, List<int> idColumns, ComparisonTask comparisonTask) {
+        public RowsMatch(List<ColumnSummary> baseStat, ComparisonKeys idColumns, ComparisonTask comparisonTask) {
             BaseStat = baseStat;
             ComparedRows = new List<ComparedRow>();
             AllCombinations = new List<ComparedRow>();
@@ -69,7 +69,7 @@ namespace Reflection.Models {
                         var bestMatch = ClosestNumber(testValues, masterValue);
                         comparedRow = bestCombinations.Where(row => row.Deviations.Select(col => ConvertToDouble(col.TestValue)).Contains(bestMatch)).First();
                     } else if (deviationsColumns.Count == 1 && statDeviationsColumns.First().IsString) {
-                        comparedRow = bestCombinations.OrderBy(row => row.Deviations.Select(col => col.TestValue)).First();
+                        comparedRow = bestCombinations.OrderBy(row => row.Deviations.Select(col => col.TestValue).First()).First();
                     } else {
                         var columnsOrderedByPriority = statDeviationsColumns.OrderBy(col => col.MatchingRate).ThenBy(col => col.UniqMatchRate).Select(col => col.ColumnId);
                         List<ComparedRow> bestMatched = new List<ComparedRow>();
@@ -115,10 +115,20 @@ namespace Reflection.Models {
             }
         }
 
-        private Dictionary<int, string> GetIdFields(Row masterRow, Row testRow) {
-            Dictionary<int, string> idFields = new Dictionary<int, string>();
-            foreach (var item in IdColumns) {
-                idFields.Add(item, masterRow.Data[item]);
+        private List<PrintIdFields> GetIdFields(Row masterRow, Row testRow) {
+            List<PrintIdFields> idFields = new List<PrintIdFields>();
+            foreach (var item in IdColumns.AdditionalKeys) {
+                PrintIdFields printFields = new PrintIdFields();
+                printFields.AdditionalKey = item;
+                printFields.MasterAdditionalKeyVal = masterRow.Data[item];
+                printFields.TestAdditionalKeyVal = testRow.Data[item];
+                idFields.Add(printFields);
+            }
+            foreach (var item in IdColumns.MainKeys) {
+                PrintIdFields printFields = new PrintIdFields();
+                printFields.MainKey = item;
+                printFields.MainVal = masterRow.Data[item];
+                idFields.Add(printFields);
             }
             return idFields;
         }
@@ -127,13 +137,15 @@ namespace Reflection.Models {
             ComparedRow comparedRow = new ComparedRow(masterRow.Id, testRow.Id);
             int currentDeviations = 0;
             for (int i = 0; i < masterRow.Data.Length; i++) {
-                if (masterRow.Data[i] != testRow.Data[i]) {
-                    currentDeviations++;
-                    if (currentDeviations <= minDeviations) {
-                        var deviation = new Deviation(i, masterRow.Data[i], testRow.Data[i]);
-                        comparedRow.AddDeviation(deviation);
-                    } else {
-                        return null;
+                if (!IdColumns.AdditionalKeys.Contains(i)) {
+                    if (masterRow.Data[i] != testRow.Data[i]) {
+                        currentDeviations++;
+                        if (currentDeviations <= minDeviations) {
+                            var deviation = new Deviation(i, masterRow.Data[i], testRow.Data[i]);
+                            comparedRow.AddDeviation(deviation);
+                        } else {
+                            return null;
+                        }
                     }
                 }
             }
@@ -154,9 +166,11 @@ namespace Reflection.Models {
         public ComparedRow CompareSingle(Row masterRow, Row testRow) {
             ComparedRow comparedRow = new ComparedRow(masterRow.Id, testRow.Id);
             for (int i = 0; i < masterRow.Data.Length; i++) {
-                if (masterRow.Data[i] != testRow.Data[i]) {
-                    var deviation = new Deviation(i, masterRow.Data[i], testRow.Data[i]);
-                    comparedRow.AddDeviation(deviation);
+                if (!IdColumns.AdditionalKeys.Contains(i)) {
+                    if (masterRow.Data[i] != testRow.Data[i]) {
+                        var deviation = new Deviation(i, masterRow.Data[i], testRow.Data[i]);
+                        comparedRow.AddDeviation(deviation);
+                    }
                 }
             }
             comparedRow.AddIdFields(GetIdFields(masterRow, testRow));

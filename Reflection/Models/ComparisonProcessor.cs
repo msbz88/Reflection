@@ -12,16 +12,15 @@ namespace Reflection.Models {
         IFileReader FileReader { get; set; }
         IImportConfiguration ImportConfiguration { get; set; }
         PerformanceCounter perfCounter = new PerformanceCounter();
+        IWorkTable MasterTable = new WorkTable("Master");
+        IWorkTable TestTable = new WorkTable("Test");
         public bool IsBusy { get; private set; }
 
-        public ComparisonProcessor() {}
+        public ComparisonProcessor() {
+        }
 
-        public void StartComparison(IFileReader fileReader, ComparisonTask comparisonTask) {
-            FileReader = fileReader;
-            ImportConfiguration = comparisonTask.ImportConfiguration;
-            ComparisonTask = comparisonTask;
-            IsBusy = true;
-            ComparisonTask.Status = Status.Executing;
+        private void PrepareData(ImportConfiguration importConfiguration) {
+            ImportConfiguration = importConfiguration;            
             //start
             perfCounter.Start();
             int headerRowCount = ImportConfiguration.IsHeadersExist ? 1 : 0;
@@ -31,7 +30,7 @@ namespace Reflection.Models {
             ComparisonTask.MasterRowsCount = countMasterLines;
             var testFileContent = FileReader.ReadFile(ImportConfiguration.TestFilePath, ImportConfiguration.RowsToSkip, ImportConfiguration.Encoding);
             ComparisonTask.UpdateProgress(1);
-            var countTestLines = FileReader.CountLines(ImportConfiguration.TestFilePath) - (ImportConfiguration.RowsToSkip + headerRowCount);          
+            var countTestLines = FileReader.CountLines(ImportConfiguration.TestFilePath) - (ImportConfiguration.RowsToSkip + headerRowCount);
             ComparisonTask.TestRowsCount = countTestLines;
             ComparisonTask.ActualRowsDiff = ComparisonTask.MasterRowsCount - ComparisonTask.TestRowsCount;
             perfCounter.Stop("Read two init files");
@@ -41,21 +40,42 @@ namespace Reflection.Models {
             ComparisonTask.UpdateProgress(2);
             var exceptedTestData = Except(testFileContent, masterFileContent);
             ComparisonTask.UpdateProgress(2);
-            perfCounter.Stop("Except files");         
-            IWorkTable masterTable = new WorkTable("Master");
-            IWorkTable testTable = new WorkTable("Test");
-
-            if (exceptedMasterData.Any() && exceptedTestData.Any()) {
+            perfCounter.Stop("Except files");
+            if (ChaeckPreparison(exceptedMasterData, exceptedTestData)) {
                 perfCounter.Start();
-                masterTable.LoadData(exceptedMasterData, ImportConfiguration.Delimiter, ImportConfiguration.IsHeadersExist, ComparisonTask);
-                testTable.LoadData(exceptedTestData, ImportConfiguration.Delimiter, ImportConfiguration.IsHeadersExist, ComparisonTask);
+                MasterTable.LoadData(exceptedMasterData, ImportConfiguration.Delimiter, ImportConfiguration.IsHeadersExist, ComparisonTask);
+                TestTable.LoadData(exceptedTestData, ImportConfiguration.Delimiter, ImportConfiguration.IsHeadersExist, ComparisonTask);
                 perfCounter.Stop("Load two files to WorkTable");
-                ComparisonCore comparisonCore = new ComparisonCore(perfCounter, ComparisonTask);
-                comparisonCore.Execute(masterTable, testTable);
             } else {
+                ComparisonTask.Status = Status.Passed;
+                ComparisonTask.UpdateProgress(100);
                 perfCounter.SaveAllResults();
             }
+        }
+
+        public void StartComparison(IFileReader fileReader, ComparisonTask comparisonTask) {
+            IsBusy = true;
+            ComparisonTask = comparisonTask;
+            ComparisonTask.Status = Status.Executing;
+            FileReader = fileReader;
+            PrepareData(ComparisonTask.ImportConfiguration);
+            if (MasterTable.RowsCount > 0 || TestTable.RowsCount > 0) {
+                ComparisonCore comparisonCore = new ComparisonCore(perfCounter, ComparisonTask);
+                comparisonCore.Execute(MasterTable, TestTable);
+            }
             IsBusy = false;
+        }
+
+        private bool ChaeckPreparison(IEnumerable<string> master, IEnumerable<string> test) {
+            if (master.Any() && test.Any()) {
+                var m = master.Take(2);
+                var t = test.Take(2);
+                if(m.Count()==1 && test.Count() == 1) {
+                    return false;
+                } else { return true; }
+            }else {
+                return false;
+            }
         }
 
         private IEnumerable<string> Except(IEnumerable<string> dataFirst, IEnumerable<string> dataSecond) {
@@ -86,6 +106,14 @@ namespace Reflection.Models {
             var parseTest = testFirstLine.Split(new[] { ImportConfiguration.Delimiter }, StringSplitOptions.None);
             if (parseMaster.Length != parseTest.Length) {
                 throw new Exception("There is different number of columns between master and test files.");
+            }
+        }
+
+        public void Analyse(IFileReader fileReader, ImportConfiguration importConfiguration) {
+            PrepareData(importConfiguration);
+            if (MasterTable.RowsCount > 0 || TestTable.RowsCount > 0) {
+                ComparisonCore comparisonCore = new ComparisonCore(perfCounter, ComparisonTask);
+                comparisonCore.RunEarlyAnalysis(MasterTable, TestTable);
             }
         }
     }

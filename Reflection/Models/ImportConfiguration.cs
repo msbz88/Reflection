@@ -13,14 +13,16 @@ namespace Reflection.Models {
         public int RowsToSkip { get; set; }
         public bool IsHeadersExist { get; set; }
         public Encoding Encoding { get; set; }
+        public List<int> UserKeys { get; set; }
 
-        public ImportConfiguration(string pathMasterFile, string pathTestFile, string delimiter, int rowsToSkip, bool isHeadersExist, Encoding encoding) {
+        public ImportConfiguration(string pathMasterFile, string pathTestFile, string delimiter, int rowsToSkip, bool isHeadersExist, Encoding encoding, List<int> userKeys) {
             MasterFilePath = pathMasterFile;
             TestFilePath = pathTestFile;
             Delimiter = delimiter;
             RowsToSkip = rowsToSkip;
             IsHeadersExist = isHeadersExist;
             Encoding = encoding;
-        }
+            UserKeys = userKeys;
+    }
     }
 }

@@ -19,6 +19,7 @@ namespace Reflection.Models {
         public bool IsDouble { get; set; }
         public bool HasNulls { get; set; }
         private bool IsNumber { get; set; }
+        public bool CanBeAdditionalId { get; set; }
 
         public ColumnSummary(int id, int totalRowsCount, HashSet<string> masterUniqVals, HashSet<string> testUniqVals) {
             UniqMatchCount = masterUniqVals.Intersect(testUniqVals).Count();
@@ -31,6 +32,7 @@ namespace Reflection.Models {
             IsNumber = CheckIfNumeric(masterUniqVals);
             IsDouble = IsNumber ? false : CheckIfDouble(masterUniqVals);
             IsString = IsDouble || IsNumber ? false : true;
+            CanBeAdditionalId = CheckIfCanBeAdditionalId(masterUniqVals);
         }
 
         private bool CheckIfDouble(HashSet<string> columnData) {
@@ -59,7 +61,7 @@ namespace Reflection.Models {
                 return 0;
             } else {
                 double finalRate = 0;
-                var lowerNumber = uniqueRowsMaster > uniqueRowsTest ? uniqueRowsMaster : uniqueRowsTest;
+                var lowerNumber = uniqueRowsMaster > uniqueRowsTest ? uniqueRowsTest : uniqueRowsMaster;
                 finalRate = ((double)matchedValues / lowerNumber) * 100;
                 return Math.Round(finalRate, 2);
             }
@@ -82,5 +84,26 @@ namespace Reflection.Models {
             sb.Append(HasNulls);
             return sb.ToString();
         }
+
+        private bool CheckIfCanBeAdditionalId(HashSet<string> columnData) {
+            if (IsNumber && !HasNulls) {
+                foreach (var item in columnData) {
+                    long n = 0;
+                    long.TryParse(item, out n);
+                    if (n == 0) {
+                        return false;
+                    } else if (n < 0) {
+                        return false;
+                    } else if(Math.Floor(Math.Log10(n) + 1) != 14) {
+                        return false;
+                    }
+                }
+                return true;
+            } else {
+                return false;
+            }           
+        }
+
+
     }
 }

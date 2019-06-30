@@ -88,8 +88,10 @@ namespace Reflection.ViewModels {
                 testFiles.Remove(bestMatchedTest);
             }
             var masterExtraFiles = MasterSelectedFiles.Where(item => !MatchedFileNames.Select(pair => pair.MasterFilePath).Contains(item)).Select(item => new MatchedFileNames(item, ""));
+            masterExtraFiles.Concat(MatchedFileNames.Where(item => item.TestFilePath == ""));
             MatchedFileNames.AddRange(masterExtraFiles);
             var testExtraFiles = TestSelectedFiles.Where(item => !MatchedFileNames.Select(pair => pair.TestFilePath).Contains(item)).Select(item => new MatchedFileNames("", item));
+            testExtraFiles.Concat(MatchedFileNames.Where(item => item.MasterFilePath == ""));
             MatchedFileNames.AddRange(testExtraFiles);
             MatchedFilesWindow = new MatchedFilesWindow(MatchedFileNames);
             MatchedFilesWindow.FilesMatched += OnFilesMatched;

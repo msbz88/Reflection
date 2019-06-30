@@ -55,11 +55,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="IdField.cs" />
+    <Compile Include="Models\UserKey.cs" />
     <Compile Include="Models\ColumnSummary.cs" />
     <Compile Include="Models\ComparedRow.cs" />
     <Compile Include="Models\CompareTable.cs" />
     <Compile Include="Models\ComparisonCore.cs" />
+    <Compile Include="Models\ComparisonKeys.cs" />
     <Compile Include="Models\ComparisonProcessor.cs" />
     <Compile Include="Models\ComparisonQueue.cs" />
     <Compile Include="Models\Interfaces\IFileReader.cs" />
@@ -69,9 +70,13 @@
     <Compile Include="Models\MatchedFileNames.cs" />
     <Compile Include="Models\PerformanceCounter.cs" />
     <Compile Include="Models\Deviation.cs" />
+    <Compile Include="Models\PrintIdFields.cs" />
+    <Compile Include="Models\RowToSave.cs" />
     <Compile Include="Models\Status.cs" />
     <Compile Include="Models\RowsMatch.cs" />
     <Compile Include="Models\WorkTable.cs" />
+    <Compile Include="ViewModels\AvailableKeysViewModel.cs" />
+    <Compile Include="ViewModels\ComparisonResultViewModel.cs" />
     <Compile Include="ViewModels\MatchFileNamesViewModel.cs" />
     <Compile Include="Views\CircularProgress.cs" />
     <Compile Include="Models\ComparisonTask.cs" />
@@ -88,6 +93,9 @@
     </Compile>
     <Compile Include="Views\PageMain.xaml.cs">
       <DependentUpon>PageMain.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\PageViewResult.xaml.cs">
+      <DependentUpon>PageViewResult.xaml</DependentUpon>
     </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -110,6 +118,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\PageMain.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\PageViewResult.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
