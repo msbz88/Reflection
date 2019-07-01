@@ -68,15 +68,16 @@
         <Style TargetType="TextBox">
             <Setter Property="Padding" Value="2"/>
             <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontFamily" Value="Segoe UI" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type TextBox}">
-                        <Border x:Name="border" CornerRadius="2" BorderBrush="#000" BorderThickness="1" Background="#fff">
+                        <Border x:Name="border" CornerRadius="2" BorderBrush="DarkGray" BorderThickness="1" Background="White">
                             <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="true">
-                                <Setter Property="BorderBrush" TargetName="border" Value="#909090"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="Black"/>
                                 <Setter Property="FontWeight" Value="Bold" />
                             </Trigger>
                             <Trigger Property="IsFocused" Value="true">

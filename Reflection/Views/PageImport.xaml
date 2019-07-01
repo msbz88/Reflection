@@ -20,7 +20,7 @@
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="200" MaxWidth="400" MinWidth="200"/>
             <ColumnDefinition Width="160"/>
         </Grid.ColumnDefinitions>
         <Grid Name="HeaderGrid"  Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
@@ -29,19 +29,19 @@
             <Button Name="ButtonGoForward" Style="{StaticResource NavButtton}" Content="&#xEA47;" ToolTip ="Go to Test file" VerticalAlignment="Center" HorizontalAlignment="Right" Click="ButtonGoForwardClick"/>
         </Grid>
         <Expander Name="ExpanderSkippedRows" Margin ="5,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" Grid.Row="1" Grid.Column="0" Header="Automatically skipped rows" ExpandDirection="Down" Expanded="OnExpanded" Collapsed="OnCollapsed">
-        <Popup Name="PopupSkipedRows" Margin ="5,0,0,0" PlacementTarget="{Binding ElementName=ExpanderSkippedRows}" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Slide" Placement="Bottom" Closed="PopupSkipedRows_Closed">
-            <Border BorderThickness="1" Background="Ivory" BorderBrush="Gray">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" MaxWidth="500" HorizontalScrollBarVisibility="Auto" Height="100">
-                <TextBlock Name="TextBlockSkippedRows" Foreground="Gray" Padding="5" />
-                </ScrollViewer>
-            </Border>
-        </Popup>
+            <Popup Name="PopupSkipedRows" Margin ="5,0,0,0" PlacementTarget="{Binding ElementName=ExpanderSkippedRows}" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Slide" Placement="Bottom" Closed="PopupSkipedRows_Closed">
+                <Border BorderThickness="1" Background="Ivory" BorderBrush="Gray">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxWidth="500" HorizontalScrollBarVisibility="Auto" Height="100">
+                        <TextBlock Name="TextBlockSkippedRows" Foreground="Gray" Padding="5" />
+                    </ScrollViewer>
+                </Border>
+            </Popup>
         </Expander>
         <DataGrid BorderBrush="LightGray" HorizontalGridLinesBrush="LightGray" Grid.ColumnSpan="2" VerticalGridLinesBrush="LightGray" Name="dgData" Margin="5,5,0,0" AutoGenerateColumns ="False" Grid.Row="1" Grid.RowSpan="7" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsReadOnly="True" EnableRowVirtualization="True" EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True" ItemsSource="{Binding}"/>
-        <TextBox Name="TextBoxDelimiter" Grid.Row="1" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Stretch" VerticalAlignment="Center" ToolTip="Delimiter" GotFocus="TextBoxGotFocus" LostFocus="TextBoxLostFocus"/>
-        <TextBox Name="TextBoxHeaderRow" Grid.Row="2" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Stretch" VerticalAlignment="Center" ToolTip ="Rows to skip"/>
-        <ComboBox Name="comboBoxEncoding" Grid.Row="3" Grid.Column="2" Width="145" Height="30" HorizontalAlignment="Stretch" Padding="5" FontSize="15" VerticalAlignment="Center" ToolTip ="File encoding" SelectionChanged="ComboBoxSelectionChanged" >
-           <ComboBox.ItemTemplate>
+        <TextBox Name="TextBoxDelimiter" Grid.Row="1" Grid.Column="2" Width="150" Height="30" HorizontalAlignment="Stretch" VerticalAlignment="Center" ToolTip="Delimiter" GotFocus="TextBoxGotFocus" LostFocus="TextBoxLostFocus"/>
+        <TextBox Name="TextBoxHeaderRow" Grid.Row="2" Grid.Column="2" Width="150" Height="30" HorizontalAlignment="Stretch" VerticalAlignment="Center" ToolTip ="Rows to skip"/>
+        <ComboBox Name="comboBoxEncoding" Grid.Row="3" Grid.Column="2" Width="150" Height="30" HorizontalAlignment="Stretch" Padding="5" FontSize="15" VerticalAlignment="Center" ToolTip ="File encoding" SelectionChanged="ComboBoxSelectionChanged" >
+            <ComboBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
                         <!--<Rectangle Fill="{Binding DisplayName}" Width="10" Height="10" Margin="0,2,5,2" />-->
@@ -51,29 +51,52 @@
             </ComboBox.ItemTemplate>
         </ComboBox>
         <Button Name ="ButtonExecute" Margin="5" Grid.Row="4" Grid.Column="2" Height="25" Width="70" HorizontalAlignment="Right" VerticalAlignment="Center" Content="Execute" Click="ButtonExecuteClick" />
-        <Button Name ="ButtonSuggestKey" Margin="5" Grid.Row="4" Grid.Column="2" Height="25" Width="70" HorizontalAlignment="Left" VerticalAlignment="Center" Content="Suggest Key" Click="ButtonSuggestKeyClick" />
-        <!--<GridSplitter Name="SpliterUserKeys" Margin="2,5,0,0" Grid.Column="1" Grid.Row="1" Grid.RowSpan="7" Visibility="Collapsed" Width="3" HorizontalAlignment="Left"/>-->
-        <Border Name="BorderUserKeys" Margin="0,5,0,0" BorderBrush="LightGray" Visibility="Collapsed" BorderThickness="1" Grid.Column="1" Grid.Row="1" Grid.RowSpan="7" >
+        <Button Name ="ButtonSuggestKey" Margin="5" Grid.Row="4" Grid.Column="2" Height="25" Width="70" HorizontalAlignment="Left" VerticalAlignment="Center" Content="Suggest Key" Click="ButtonSuggestKeyClick"/>
+        <GridSplitter Name="SpliterUserKeys" Margin="0,5,0,0" Grid.Column="1" Grid.Row="1" Grid.RowSpan="7" Width="3" HorizontalAlignment="Left" Background="Transparent"/>
+        <Border Name="BorderUserKeys" Margin="5,5,0,0" BorderBrush="LightGray" Visibility="Collapsed" BorderThickness="1" Grid.Column="1" Grid.Row="1" Grid.RowSpan="7">
             <Grid >
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="35"/>
+                    <RowDefinition Height="*" MinHeight="100"/>
+                    <RowDefinition Height="*" MinHeight="100"/>
+                    <RowDefinition Height="35"/>
                 </Grid.RowDefinitions>
-                <ListBox Grid.Row="0" Name="ListBoxAvailableKeys" Visibility="Collapsed" BorderBrush="Transparent">
-                <ListBox.ItemContainerStyle>
-                    <Style TargetType="{x:Type ListBoxItem}">
-                        <Setter Property="Focusable" Value="False"/>
-                    </Style>
-                </ListBox.ItemContainerStyle>
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                            <CheckBox Content="{Binding Path=Key}" IsChecked="{Binding Path=IsChecked}" />
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-            <Button Visibility="Collapsed" Name="ButtonApplyUserKey" Grid.Row="1" Content="OK" Height="25" Width="70" VerticalAlignment="Bottom" HorizontalAlignment="Center" Click="ButtonApplyUserKeyClick"/>
-            
-        </Grid>
+                <Label Name="LabelAvailableKeys" Grid.Row="0" Content="Available Fields" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="DarkGray" FontSize="14" Visibility="Collapsed"/>
+                <ListBox Grid.Row="1" Name="ListBoxAvailableKeys" Visibility="Collapsed" BorderBrush="Transparent">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="{x:Type ListBoxItem}">
+                            <Setter Property="Focusable" Value="False"/>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <CheckBox Content="{Binding Path=Key}" IsChecked="{Binding Path=IsChecked}" Checked="OnKeyChecked" Unchecked="OnKeyUnChecked"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                <GridSplitter Name="SpliterLists" Grid.Column="1" Grid.Row="2" Visibility="Collapsed" ResizeDirection="Rows" HorizontalAlignment="Stretch" VerticalAlignment="Top" Height="3" Background="Transparent"/>
+                <Separator Name="SeparatorLists" Margin="0,3,0,0" Grid.Column="1" Grid.Row="2" Visibility="Collapsed" HorizontalAlignment="Stretch" VerticalAlignment="Top" Height="1" Background="LightGray"/>
+                <Grid Name="PanelSelectedKeys" Margin="0,4,0,0" Grid.Row="2" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="35"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Label Name="LabelSelectedKeys" Grid.Row="0" Content="Selected Fields" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="14" Foreground="DarkGray" Visibility="Collapsed"/>
+                    <ListBox Name="ListBoxSelectedKeys" Visibility="Collapsed" BorderBrush="Transparent" Grid.Row="1">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="{x:Type ListBoxItem}">
+                                <Setter Property="Focusable" Value="False"/>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <CheckBox Content="{Binding Path=Key}" IsChecked="{Binding Path=IsChecked}" />
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+                <Button Visibility="Collapsed" Name="ButtonApplyUserKey" Margin="0,0,0,5" Grid.Row="3" Content="OK" Height="25" Width="70" VerticalAlignment="Bottom" HorizontalAlignment="Center" Click="ButtonApplyUserKeyClick"/>
+            </Grid>
         </Border>
     </Grid>
 

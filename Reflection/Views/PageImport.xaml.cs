@@ -30,8 +30,8 @@ namespace Reflection.Views {
         private string customDelimiter;
 
         public PageImport() {
-            InitializeComponent();            
-            ImportViewModel = new ImportViewModel();           
+            InitializeComponent();
+            ImportViewModel = new ImportViewModel();
             ComboBoxDataBinding();
         }
 
@@ -40,7 +40,7 @@ namespace Reflection.Views {
             MatchFileNamesViewModel = new MatchFileNamesViewModel();
             MatchFileNamesViewModel.SelectFiles();
             if (MatchFileNamesViewModel.IsReady) {
-                if(MatchFileNamesViewModel.MatchedFileNames.Count == 1) {
+                if (MatchFileNamesViewModel.MatchedFileNames.Count == 1) {
                     ImportViewModel.PathMasterFile = MatchFileNamesViewModel.MatchedFileNames[0].MasterFilePath;
                     ImportViewModel.PathTestFile = MatchFileNamesViewModel.MatchedFileNames[0].TestFilePath;
                     ImportViewModel.AnalyseFile(ImportViewModel.PathMasterFile);
@@ -55,7 +55,7 @@ namespace Reflection.Views {
                         ImportViewModel.AnalyseFile(ImportViewModel.PathMasterFile);
                         ImportViewModel.SetImportConfiguration();
                     }
-                }             
+                }
             }
         }
 
@@ -94,9 +94,9 @@ namespace Reflection.Views {
                     delimiter = "\\t";
                 }
                 TextBoxDelimiter.Text = delimiter;
-            }else {
+            } else {
                 TextBoxDelimiter.Text = customDelimiter;
-            }  
+            }
         }
 
         private void TextBoxLostFocus(object senderIn, RoutedEventArgs eIn) {
@@ -116,11 +116,11 @@ namespace Reflection.Views {
         private void ComboBoxSelectionChanged(object senderIn, RoutedEventArgs eIn) {
             var encodingInfo = (EncodingInfo)comboBoxEncoding.SelectedItem;
             ImportViewModel.Encoding = encodingInfo.GetEncoding();
-            if(TextBlockFileName.Text== (System.IO.Path.GetFileName(ImportViewModel.PathMasterFile))){
+            if (TextBlockFileName.Text == (System.IO.Path.GetFileName(ImportViewModel.PathMasterFile))) {
                 RenderFileToView(ImportViewModel.PathMasterFile);
-            }else {
+            } else {
                 RenderFileToView(ImportViewModel.PathTestFile);
-            }            
+            }
         }
 
         private void ComboBoxDataBinding() {
@@ -173,27 +173,84 @@ namespace Reflection.Views {
         }
 
         private void ButtonSuggestKeyClick(object senderIn, RoutedEventArgs eIn) {
+            if (AvailableKeysViewModel.SelectedKeys.Count > 0) {
+                ShowAvailableKeys();
+                ShowSelectedKeys();
+            } else {
+                ShowAvailableKeys();
+            }
+            if (AvailableKeysViewModel.UserKeys.Count == 0) {
+                int index = 0;
+                foreach (var item in ImportViewModel.FileHeaders) {
+                    var key = new UserKey(index, item);
+                    AvailableKeysViewModel.UserKeys.Add(key);
+                    index++;
+                }
+                ListBoxAvailableKeys.ItemsSource = AvailableKeysViewModel.UserKeys;
+                ListBoxSelectedKeys.ItemsSource = AvailableKeysViewModel.SelectedKeys;
+            }           
+        }
+
+        private void ShowAvailableKeys() {
+            ButtonExecute.Visibility = Visibility.Collapsed;
+            ButtonSuggestKey.Visibility = Visibility.Collapsed;
             Grid.SetColumnSpan(dgData, 1);
-            //SpliterUserKeys.Visibility = Visibility.Visible;
+            Grid.SetRowSpan(ListBoxAvailableKeys, 2);
             BorderUserKeys.Visibility = Visibility.Visible;
+            LabelAvailableKeys.Visibility = Visibility.Visible;
             ListBoxAvailableKeys.Visibility = Visibility.Visible;
             ButtonApplyUserKey.Visibility = Visibility.Visible;
-            int index = 0;
-            foreach (var item in ImportViewModel.FileHeaders) {
-                var key = new UserKey(index, item);
-                AvailableKeysViewModel.UserKeys.Add(key);
-                index++;
-            }
-            ListBoxAvailableKeys.ItemsSource = AvailableKeysViewModel.UserKeys;
+        }
+
+        private void ShowSelectedKeys() {
+            Grid.SetRowSpan(ListBoxAvailableKeys, 1);
+            PanelSelectedKeys.Visibility = Visibility.Visible;
+            SpliterLists.Visibility = Visibility.Visible;
+            SeparatorLists.Visibility = Visibility.Visible;
+            LabelSelectedKeys.Visibility = Visibility.Visible;
+            ListBoxSelectedKeys.Visibility = Visibility.Visible;
+        }
+
+        private void HideAvailableKeys() {
+            Grid.SetColumnSpan(dgData, 2);
+            ButtonExecute.Visibility = Visibility.Visible;
+            ButtonSuggestKey.Visibility = Visibility.Visible;
+            BorderUserKeys.Visibility = Visibility.Collapsed;
+            LabelAvailableKeys.Visibility = Visibility.Collapsed;
+            ListBoxAvailableKeys.Visibility = Visibility.Collapsed;
+            ButtonApplyUserKey.Visibility = Visibility.Collapsed;            
+        }
+
+        private void HideSelectedKeys() {
+            PanelSelectedKeys.Visibility = Visibility.Collapsed;
+            SpliterLists.Visibility = Visibility.Collapsed;
+            SeparatorLists.Visibility = Visibility.Collapsed;
+            LabelSelectedKeys.Visibility = Visibility.Collapsed;
+            ListBoxSelectedKeys.Visibility = Visibility.Collapsed;
+            Grid.SetRowSpan(ListBoxAvailableKeys, 2);
         }
 
         private void ButtonApplyUserKeyClick(object senderIn, RoutedEventArgs eIn) {
-            Grid.SetColumnSpan(dgData, 2);
-            //SpliterUserKeys.Visibility = Visibility.Collapsed;
-            BorderUserKeys.Visibility = Visibility.Collapsed;
-            ListBoxAvailableKeys.Visibility = Visibility.Collapsed;
-            ButtonApplyUserKey.Visibility = Visibility.Collapsed;
-            ImportViewModel.UserKeys = AvailableKeysViewModel.UserKeys.Where(item=>item.IsChecked).Select(item=>item.Id).ToList();
+            HideSelectedKeys();
+            HideAvailableKeys();
+            if (AvailableKeysViewModel.SelectedKeys.Count > 0) {
+                ButtonSuggestKey.Content = "Show Key";
+                ImportViewModel.UserKeys = AvailableKeysViewModel.SelectedKeys.Select(item => item.Id).ToList();
+            } else {
+                ButtonSuggestKey.Content = "Suggest Key";
+            }          
+        }
+
+        private void OnKeyChecked(object senderIn, RoutedEventArgs eIn) {
+            if (ListBoxSelectedKeys.Visibility == Visibility.Collapsed) {
+                ShowSelectedKeys();               
+            }
+        }
+
+        private void OnKeyUnChecked(object senderIn, RoutedEventArgs eIn) {
+            if (AvailableKeysViewModel.SelectedKeys.Count == 0) {
+                HideSelectedKeys();
+            }
         }
 
         private void ButtonGoBackClick(object senderIn, RoutedEventArgs eIn) {
@@ -206,7 +263,7 @@ namespace Reflection.Views {
                 ButtonGoBack.ToolTip = "Back to Main Page";
             } else {
                 GoBack?.Invoke(senderIn, eIn);
-            }             
+            }
         }
 
         private void ButtonGoForwardClick(object senderIn, RoutedEventArgs eIn) {
