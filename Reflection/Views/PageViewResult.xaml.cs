@@ -32,10 +32,10 @@ namespace Reflection.Views {
             GoBack?.Invoke(senderIn, eIn);
         }
 
-        public async void PrintFileContent(string path, string delimiter) {
+        public async void PrintFileContent(string path, string delimiter, Encoding encoding) {
             dgData.Columns.Clear();
             try {
-                await ComparisonResultViewModel.GetResult(path, delimiter);
+                await ComparisonResultViewModel.GetResult(path, delimiter, encoding);
             } catch (Exception ex) {
                 Error?.Invoke(ex.Message, null);
                 return;

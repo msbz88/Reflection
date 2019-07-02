@@ -50,7 +50,7 @@
                 </DataTemplate>
             </ComboBox.ItemTemplate>
         </ComboBox>
-        <Button Name ="ButtonExecute" Margin="5" Grid.Row="4" Grid.Column="2" Height="25" Width="70" HorizontalAlignment="Right" VerticalAlignment="Center" Content="Execute" Click="ButtonExecuteClick" />
+        <Button Name ="ButtonExecute" Margin="5" Grid.Row="4" Grid.Column="2" Height="25" Width="72.5" HorizontalAlignment="Right" VerticalAlignment="Center" Content="Execute" Click="ButtonExecuteClick" />
         <Button Name ="ButtonSuggestKey" Margin="5" Grid.Row="4" Grid.Column="2" Height="25" Width="70" HorizontalAlignment="Left" VerticalAlignment="Center" Content="Suggest Key" Click="ButtonSuggestKeyClick"/>
         <GridSplitter Name="SpliterUserKeys" Margin="0,5,0,0" Grid.Column="1" Grid.Row="1" Grid.RowSpan="7" Width="3" HorizontalAlignment="Left" Background="Transparent"/>
         <Border Name="BorderUserKeys" Margin="5,5,0,0" BorderBrush="LightGray" Visibility="Collapsed" BorderThickness="1" Grid.Column="1" Grid.Row="1" Grid.RowSpan="7">
@@ -95,7 +95,7 @@
                         </ListBox.ItemTemplate>
                     </ListBox>
                 </Grid>
-                <Button Visibility="Collapsed" Name="ButtonApplyUserKey" Margin="0,0,0,5" Grid.Row="3" Content="OK" Height="25" Width="70" VerticalAlignment="Bottom" HorizontalAlignment="Center" Click="ButtonApplyUserKeyClick"/>
+                <Button Visibility="Collapsed" Name="ButtonApplyUserKey" Margin="0,0,0,5" Grid.Row="3" Content="OK" Height="25" Width="72.5" VerticalAlignment="Bottom" HorizontalAlignment="Center" Click="ButtonApplyUserKeyClick"/>
             </Grid>
         </Border>
     </Grid>

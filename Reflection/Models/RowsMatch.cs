@@ -109,9 +109,11 @@ namespace Reflection.Models {
         }
 
         private void RemoveWrongCombinations(ComparedRow comparedRow) {
-            var wrongCombinations = AllCombinations.Where(row => row.MasterRowId == comparedRow.MasterRowId || row.TestRowId == comparedRow.TestRowId).ToList();
-            foreach (var item in wrongCombinations) {
-                AllCombinations.Remove(item);
+            if (comparedRow != null) {
+                var wrongCombinations = AllCombinations.Where(row => row.MasterRowId == comparedRow.MasterRowId || row.TestRowId == comparedRow.TestRowId).ToList();
+                foreach (var item in wrongCombinations) {
+                    AllCombinations.Remove(item);
+                }
             }
         }
 

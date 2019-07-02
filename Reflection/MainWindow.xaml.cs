@@ -113,7 +113,7 @@ namespace Reflection {
             Main.Content = PageViewResult;
             var comparisonTask = (ComparisonTask)sender;
             if(comparisonTask!=null)
-            PageViewResult.PrintFileContent(comparisonTask.ResultFile, comparisonTask.ImportConfiguration.Delimiter);
+            PageViewResult.PrintFileContent(comparisonTask.ResultFile, comparisonTask.ImportConfiguration.Delimiter, comparisonTask.ImportConfiguration.Encoding);
         }
 
 

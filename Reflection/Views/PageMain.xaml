@@ -171,7 +171,7 @@
                                 <Label Grid.Row="4"  Grid.Column="0" Content="{Binding StartTime}" HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="12" Foreground="DarkGray"/>
                                 <ProgressBar Grid.Row="0" Grid.Column="1" Grid.RowSpan="5" Style="{DynamicResource pbarCircularStyle}" Value="{Binding Progress}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Row="1" Grid.Column="2" Text="File Name" HorizontalAlignment="Left" />
-                                <TextBlock Grid.Row="1" Grid.Column="3" Text="Rows Count" HorizontalAlignment="Left" Margin="2,0,0,0"/>
+                                <TextBlock Grid.Row="1" Grid.Column="3" Text="Rows Count" HorizontalAlignment="Left" Margin="5,0,0,0"/>
                                 <TextBlock Grid.Row="1" Grid.Column="4" Text="Actual Rows Diff" HorizontalAlignment="Left" />
                                 <TextBlock Grid.Row="1" Grid.Column="5" Text="Deviations" HorizontalAlignment="Left" />
                                 <TextBlock Grid.Row="1" Grid.Column="6" Text="Extra Rows" HorizontalAlignment="Left" />
@@ -183,11 +183,11 @@
                                         </LinearGradientBrush>
                                     </Separator.Background>
                                 </Separator>
-                                <GridSplitter Grid.Column="2" Grid.RowSpan="3" Grid.Row="1" Width="2" Background="LightGray"/>
+                                <GridSplitter Grid.Column="3" Grid.RowSpan="3" HorizontalAlignment="Left" Margin="0,0,2,0" Grid.Row="1" Width="2" Background="LightGray"/>
                                 <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding MasterFileName}" Foreground="DarkSlateBlue" FontSize="15" FontWeight="DemiBold" Padding="0,0,10,0" HorizontalAlignment="Left" />
                                 <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding TestFileName}" Foreground="DarkSlateBlue" FontSize="15" FontWeight="DemiBold" Padding="0,0,10,0" HorizontalAlignment="Left" />
-                                <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding MasterRowsCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="2,0,0,0" FontWeight="DemiBold"/>
-                                <TextBlock Grid.Row="3" Grid.Column="3" Text="{Binding TestRowsCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="2,0,0,0" FontWeight="DemiBold"/>
+                                <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding MasterRowsCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="5,0,0,0" FontWeight="DemiBold"/>
+                                <TextBlock Grid.Row="3" Grid.Column="3" Text="{Binding TestRowsCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="5,0,0,0" FontWeight="DemiBold"/>
                                 <TextBlock Grid.Row="2" Grid.RowSpan ="2" Grid.Column="4" Text="{Binding ActualRowsDiff, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Center" FontWeight="DemiBold"/>
                                 <TextBlock Grid.Row="2" Grid.RowSpan ="2" Grid.Column="5" Text="{Binding RowsWithDeviations, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Center" FontWeight="DemiBold"/>
                                 <TextBlock Grid.Row="2" Grid.Column="6" Text="{Binding ExtraMasterCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Bottom" FontWeight="DemiBold" />

@@ -47,28 +47,28 @@ namespace Reflection.Models {
             Delimiter = SetDelimiter();
             //gather base stat  
             PerfCounter.Start();
-            BaseStat = GatherStatistics(masterTable.Rows, testTable.Rows);          
+            BaseStat = GatherStatistics(MasterTable.Rows, TestTable.Rows);          
             PerfCounter.Stop("Base Gather Stat");
             //analyse
             File.WriteAllLines(@"C:\Users\MSBZ\Desktop\baseStat.txt", BaseStat.Select(r => r.ToString()));
             PerfCounter.Start();
             if (ComparisonTask.ImportConfiguration.UserKeys.Count == 0) {
-                PivotKeysIndexes = AnalyseForPivotKey(masterTable.Rows, BaseStat);
+                PivotKeysIndexes = AnalyseForPivotKey(MasterTable.Rows, BaseStat);
             } else {
                 PivotKeysIndexes = new ComparisonKeys();
                 PivotKeysIndexes.MainKeys = ComparisonTask.ImportConfiguration.UserKeys;
-                PivotKeysIndexes.AdditionalKeys = new List<int>();
+                PivotKeysIndexes.AdditionalKeys = AnalyseForPivotKey(MasterTable.Rows, BaseStat).AdditionalKeys;
             }
                         
             PerfCounter.Stop("AnalyseForPivotKey");
-            File.AppendAllText(@"C:\Users\MSBZ\Desktop\baseStat.txt", "baseKeyIndex: " + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes.MainKeys)));
+            File.AppendAllText(@"C:\Users\MSBZ\Desktop\baseStat.txt", "baseKeyIndex: " + string.Join(";", MasterTable.Headers.ColumnIndexIn(PivotKeysIndexes.MainKeys)));
             //rows match
             RowsMatch = new RowsMatch(BaseStat, PivotKeysIndexes, ComparisonTask);
             //group
             PerfCounter.Start();
-            var groupsM = Group(masterTable.Rows, PivotKeysIndexes.MainKeys);
+            var groupsM = Group(MasterTable.Rows, PivotKeysIndexes.MainKeys);
             ComparisonTask.UpdateProgress(4);
-            var groupsT = Group(testTable.Rows, PivotKeysIndexes.MainKeys);
+            var groupsT = Group(TestTable.Rows, PivotKeysIndexes.MainKeys);
             ComparisonTask.UpdateProgress(4);
             PerfCounter.Stop("Base Group");
             //File.WriteAllText(@"C:\Users\MSBZ\Desktop\groupsM.txt", "Hash" + ";" + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes)) + Environment.NewLine);

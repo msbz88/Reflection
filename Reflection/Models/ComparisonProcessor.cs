@@ -12,9 +12,9 @@ namespace Reflection.Models {
         IFileReader FileReader { get; set; }
         IImportConfiguration ImportConfiguration { get; set; }
         PerformanceCounter perfCounter = new PerformanceCounter();
-        IWorkTable MasterTable = new WorkTable("Master");
-        IWorkTable TestTable = new WorkTable("Test");
-        public bool IsBusy { get; private set; }
+        IWorkTable MasterTable;
+        IWorkTable TestTable;
+        public bool IsBusy { get; set; }
 
         public ComparisonProcessor() {
         }
@@ -41,6 +41,8 @@ namespace Reflection.Models {
             var exceptedTestData = Except(testFileContent, masterFileContent);
             ComparisonTask.UpdateProgress(2);
             perfCounter.Stop("Except files");
+            MasterTable = new WorkTable("Master");
+            TestTable = new WorkTable("Test");
             if (ChaeckPreparison(exceptedMasterData, exceptedTestData)) {
                 perfCounter.Start();
                 MasterTable.LoadData(exceptedMasterData, ImportConfiguration.Delimiter, ImportConfiguration.IsHeadersExist, ComparisonTask);
@@ -86,7 +88,7 @@ namespace Reflection.Models {
                 dataSecond = dataSecond.Skip(1);
             }
             var uniqHashes = new HashSet<string>(dataSecond.Select(line => CalculateMD5Hash(line)));
-            //var duplicates = dataFirst.GroupBy(x => x).Where(g => g.Count() > 1).Select(y => y.Key);
+            //var duplicates = dataFirst.GroupBy(x => x).Where(g => g.Count() > 1).Select(y => y.Key).Skip(1);
             return headersLine.Concat(dataFirst.Where(x => !uniqHashes.Contains(CalculateMD5Hash(x))));
         }
 

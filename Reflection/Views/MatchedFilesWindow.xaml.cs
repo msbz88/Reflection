@@ -29,7 +29,7 @@ namespace Reflection.Views {
                 this.HideMinimizeAndMaximizeButtons();
             };
             Application curApp = Application.Current;
-            MainWindow = (MainWindow)curApp.MainWindow;
+            MainWindow = (MainWindow)curApp.MainWindow;           
         }
 
         private void MatchedFilesWindowLoaded(object senderIn, EventArgs eIn) {

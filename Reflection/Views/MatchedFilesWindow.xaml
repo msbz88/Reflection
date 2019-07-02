@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Reflection.Views"
         mc:Ignorable="d"
-        Title="Matched Files" MinHeight="300" MinWidth="300" MaxHeight="800" MaxWidth="800" SizeToContent="WidthAndHeight" Activated="MatchedFilesWindowLoaded">
+        Title="Matched Files" MinHeight="300" MinWidth="300" MaxHeight="800" MaxWidth="800" SizeToContent="WidthAndHeight" Loaded="MatchedFilesWindowLoaded">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>

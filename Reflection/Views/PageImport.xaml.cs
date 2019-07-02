@@ -154,6 +154,7 @@ namespace Reflection.Views {
                 Grid.SetRow(TextBoxHeaderRow, 3);
                 Grid.SetRow(comboBoxEncoding, 4);
                 Grid.SetRow(ButtonExecute, 5);
+                Grid.SetRow(ButtonSuggestKey, 5);
                 TextBlockSkippedRows.Text = string.Join(Environment.NewLine, ImportViewModel.SkippedLines);
                 ExpanderSkippedRows.Visibility = Visibility.Visible;
                 ExpanderSkippedRows.IsExpanded = true;
@@ -164,12 +165,14 @@ namespace Reflection.Views {
                 Grid.SetRow(TextBoxHeaderRow, 2);
                 Grid.SetRow(comboBoxEncoding, 3);
                 Grid.SetRow(ButtonExecute, 4);
+                Grid.SetRow(ButtonSuggestKey, 4);
             }
         }
 
         private void ButtonExecuteClick(object senderIn, RoutedEventArgs eIn) {
             ImportViewModel.SetImportConfiguration();
             FilesLoaded?.Invoke(senderIn, eIn);
+            ResetUserKeys();
         }
 
         private void ButtonSuggestKeyClick(object senderIn, RoutedEventArgs eIn) {
@@ -262,8 +265,17 @@ namespace Reflection.Views {
                 ButtonGoForward.Visibility = Visibility.Visible;
                 ButtonGoBack.ToolTip = "Back to Main Page";
             } else {
+                ResetUserKeys();
                 GoBack?.Invoke(senderIn, eIn);
             }
+        }
+
+        private void ResetUserKeys() {
+            AvailableKeysViewModel.UserKeys.Clear();
+            AvailableKeysViewModel.SelectedKeys.Clear();
+            HideAvailableKeys();
+            HideSelectedKeys();
+            ButtonSuggestKey.Content = "Suggest Key";
         }
 
         private void ButtonGoForwardClick(object senderIn, RoutedEventArgs eIn) {

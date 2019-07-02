@@ -48,9 +48,10 @@ namespace Reflection.Views {
                 var selectedItem = (ComparisonTask)listViewItem.DataContext;
                 string argument = "/select, \"" + selectedItem.ImportConfiguration.MasterFilePath + "\"";
                 try {
-                    Process.Start("explorer.exe", argument);
-                } catch (Exception) {
+                    //Process.Start("explorer.exe", argument);
                     Process.Start(selectedItem.CommonDirectoryPath);
+                } catch (Exception) {
+                    //Process.Start(selectedItem.CommonDirectoryPath);
                 }
             }
         }

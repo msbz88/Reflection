@@ -59,6 +59,7 @@ namespace Reflection.ViewModels {
             } catch (Exception e) {
                 comparisonTask.Status = Status.Error;
                 comparisonTask.ErrorMessage = e.Message;
+                ComparisonProcessor.IsBusy = false;
             }
         }
 

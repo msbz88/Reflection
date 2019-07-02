@@ -15,10 +15,10 @@ namespace Reflection.ViewModels {
             FileReader = new FileReader();
         }
 
-        public async Task GetResult(string path, string delimiter) {
-            var headers = FileReader.ReadFewLines(path, 1, Encoding.Default).FirstOrDefault().Split(new string[] { delimiter }, StringSplitOptions.None);
+        public async Task GetResult(string path, string delimiter, Encoding encoding) {
+            var headers = FileReader.ReadFewLines(path, 1, encoding).FirstOrDefault().Split(new string[] { delimiter }, StringSplitOptions.None);
             Headers = headers.ToList();
-            var content = await Task.Run(()=> FileReader.ReadFile(path, 1, Encoding.Default).Select(line => line.Split(new string[] { delimiter }, StringSplitOptions.None)).ToList());
+            var content = await Task.Run(()=> FileReader.ReadFile(path, 1, encoding).Select(line => line.Split(new string[] { delimiter }, StringSplitOptions.None)).ToList());
             Content = content;
         }
     }
