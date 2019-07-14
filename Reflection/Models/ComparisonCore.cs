@@ -33,11 +33,11 @@ namespace Reflection.Models {
             BaseStat = GatherStatistics(masterTable.Rows, testTable.Rows);
             PerfCounter.Stop("Base Gather Stat");
             //analyse
-            File.WriteAllLines(@"C:\Users\MSBZ\Desktop\baseStat.txt", BaseStat.Select(r => r.ToString()));
+            //File.WriteAllLines(@"C:\Users\MSBZ\Desktop\baseStat.txt", BaseStat.Select(r => r.ToString()));
             PerfCounter.Start();
             PivotKeysIndexes = AnalyseForPivotKey(masterTable.Rows, BaseStat);
             PerfCounter.Stop("AnalyseForPivotKey");
-            File.AppendAllText(@"C:\Users\MSBZ\Desktop\baseStat.txt", "baseKeyIndex: " + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes.MainKeys)));
+            //File.AppendAllText(@"C:\Users\MSBZ\Desktop\baseStat.txt", "baseKeyIndex: " + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes.MainKeys)));
             return PivotKeysIndexes;
         }
 
@@ -123,7 +123,7 @@ namespace Reflection.Models {
             CompareTable.SaveExtraRows(ComparisonTask.CommonDirectoryPath + @"\Extra_" + ComparisonTask.CommonName);
             ComparisonTask.UpdateProgress(1);
             PerfCounter.Stop("Save comparison");
-            PerfCounter.SaveAllResults();
+            //PerfCounter.SaveAllResults();
             ComparisonTask.UpdateProgress(100);
             if (CompareTable.ComparedRowsCount == 0 && CompareTable.MasterExtraCount==0 && CompareTable.TestExtraCount==0) {
                 ComparisonTask.Status = Status.Passed;

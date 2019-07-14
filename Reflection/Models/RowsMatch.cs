@@ -49,6 +49,14 @@ namespace Reflection.Models {
                     RemoveWrongCombinations(comparedRow);
                 } else {
                     var deviationsColumns = bestCombinations.SelectMany(item => item.Deviations.Select(col => col.ColumnId)).Distinct().ToList();
+                    if (deviationsColumns.Count == 0) {
+                        var masterGroup = bestCombinations.GroupBy(item => item.MasterRowId).Select(g=>g.OrderBy(r=>r.TestRowId).First());
+                        ComparedRows.AddRange(masterGroup);
+                        foreach (var item in masterGroup) {
+                            RemoveWrongCombinations(item);
+                        }
+                        continue;
+                    }
                     if (deviationsColumns.Count == minDeviation) {
                         var masterGroup = bestCombinations.GroupBy(item => item.MasterRowId).Where(item => item.Count() > 1).Select(item => item.Key);
                         var testGroup = bestCombinations.GroupBy(item => item.TestRowId).Where(item => item.Count() > 1).Select(item => item.Key);
