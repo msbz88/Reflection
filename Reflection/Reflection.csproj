@@ -62,7 +62,6 @@
     <Compile Include="Models\ComparisonCore.cs" />
     <Compile Include="Models\ComparisonKeys.cs" />
     <Compile Include="Models\ComparisonProcessor.cs" />
-    <Compile Include="Models\ComparisonQueue.cs" />
     <Compile Include="Models\Interfaces\IFileReader.cs" />
     <Compile Include="Models\Interfaces\IImportConfiguration.cs" />
     <Compile Include="Models\Interfaces\IWorkTable.cs" />
@@ -74,6 +73,7 @@
     <Compile Include="Models\RowToSave.cs" />
     <Compile Include="Models\Status.cs" />
     <Compile Include="Models\RowsMatch.cs" />
+    <Compile Include="Models\Version.cs" />
     <Compile Include="Models\WorkTable.cs" />
     <Compile Include="ViewModels\AvailableKeysViewModel.cs" />
     <Compile Include="ViewModels\ComparisonResultViewModel.cs" />

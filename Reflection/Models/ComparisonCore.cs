@@ -50,7 +50,7 @@ namespace Reflection.Models {
             BaseStat = GatherStatistics(MasterTable.Rows, TestTable.Rows);          
             PerfCounter.Stop("Base Gather Stat");
             //analyse
-            File.WriteAllLines(@"C:\Users\MSBZ\Desktop\baseStat.txt", BaseStat.Select(r => r.ToString()));
+            //File.WriteAllLines(@"C:\Users\MSBZ\Desktop\baseStat.txt", BaseStat.Select(r => r.ToString()));
             PerfCounter.Start();
             if (ComparisonTask.ImportConfiguration.UserKeys.Count == 0) {
                 PivotKeysIndexes = AnalyseForPivotKey(MasterTable.Rows, BaseStat);
@@ -61,7 +61,7 @@ namespace Reflection.Models {
             }
                         
             PerfCounter.Stop("AnalyseForPivotKey");
-            File.AppendAllText(@"C:\Users\MSBZ\Desktop\baseStat.txt", "baseKeyIndex: " + string.Join(";", MasterTable.Headers.ColumnIndexIn(PivotKeysIndexes.MainKeys)));
+            //File.AppendAllText(@"C:\Users\MSBZ\Desktop\baseStat.txt", "baseKeyIndex: " + string.Join(";", MasterTable.Headers.ColumnIndexIn(PivotKeysIndexes.MainKeys)));
             //rows match
             RowsMatch = new RowsMatch(BaseStat, PivotKeysIndexes, ComparisonTask);
             //group
@@ -76,7 +76,7 @@ namespace Reflection.Models {
             //File.WriteAllText(@"C:\Users\MSBZ\Desktop\groupsT.txt", "Hash" + ";" + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes)) + Environment.NewLine);
             //File.AppendAllLines(@"C:\Users\MSBZ\Desktop\groupsT.txt", groupsT.SelectMany(item => item.Value.Select(it => it.GetValuesHashCode(PivotKeysIndexes) + ";" + string.Join(";", it.ColumnIndexIn(PivotKeysIndexes)))));
             PerfCounter.Start();
-            CompareTable = new CompareTable(Delimiter, MasterTable.Headers, TestTable.Headers);
+            CompareTable = new CompareTable(Delimiter, MasterTable.Headers, TestTable.Headers, MasterTable.ColumnsCount, PivotKeysIndexes);
             var uMasterRows = groupsM.Where(r => r.Value.Count() == 1).ToDictionary(item => item.Key, item => item.Value.First());
             ComparisonTask.UpdateProgress(2);
             var uTestRows = groupsT.Where(r => r.Value.Count() == 1).ToDictionary(item => item.Key, item => item.Value.First());
@@ -119,9 +119,7 @@ namespace Reflection.Models {
             PerfCounter.Start();
             CompareTable.SaveComparedRows(ComparisonTask.CommonDirectoryPath+@"\Compared_"+ComparisonTask.CommonName);
             ComparisonTask.ResultFile = ComparisonTask.CommonDirectoryPath + @"\Compared_" + ComparisonTask.CommonName;
-            ComparisonTask.UpdateProgress(1);
-            CompareTable.SaveExtraRows(ComparisonTask.CommonDirectoryPath + @"\Extra_" + ComparisonTask.CommonName);
-            ComparisonTask.UpdateProgress(1);
+            ComparisonTask.UpdateProgress(2);
             PerfCounter.Stop("Save comparison");
             //PerfCounter.SaveAllResults();
             ComparisonTask.UpdateProgress(100);
@@ -201,11 +199,11 @@ namespace Reflection.Models {
 
         private ComparisonKeys AnalyseForPivotKey(IEnumerable<Row> sampleRows, List<ColumnSummary> columnsStat) {
             ComparisonKeys compKeys = new ComparisonKeys();
-            var uniqKey = columnsStat.FirstOrDefault(col => col.UniqMatchRate == 100);
-            if (uniqKey != null) {
-                compKeys.MainKeys = new List<int>() { uniqKey.ColumnId };
-                return compKeys;
-            }           
+            //var uniqKey = columnsStat.FirstOrDefault(col => col.UniqMatchRate == 100);
+            //if (uniqKey != null && uniqKey.) {
+            //    compKeys.MainKeys = new List<int>() { uniqKey.ColumnId };
+            //    return compKeys;
+            //}           
             var clearedStats = columnsStat.Where(col => !col.IsDouble && !col.HasNulls);
             var maxMatchingRate = clearedStats.Max(col => col.MatchingRate);
             var maxUniqMatchRate = clearedStats.Where(col => col.MatchingRate == maxMatchingRate).Max(col => col.UniqMatchRate);

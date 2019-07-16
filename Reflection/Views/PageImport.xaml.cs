@@ -133,7 +133,7 @@ namespace Reflection.Views {
             int index = 0;
             foreach (var item in ImportViewModel.FileHeaders) {
                 var column = new DataGridTextColumn();
-                column.Header = item;
+                column.Header = item.Replace("_","__");
                 column.Binding = new Binding(string.Format("[{0}]", index));
                 dgData.Columns.Add(column);
                 index++;
@@ -185,7 +185,7 @@ namespace Reflection.Views {
             if (AvailableKeysViewModel.UserKeys.Count == 0) {
                 int index = 0;
                 foreach (var item in ImportViewModel.FileHeaders) {
-                    var key = new UserKey(index, item);
+                    var key = new UserKey(index, item.Replace("_","__"));
                     AvailableKeysViewModel.UserKeys.Add(key);
                     index++;
                 }

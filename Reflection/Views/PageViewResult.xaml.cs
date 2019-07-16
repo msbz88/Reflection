@@ -43,7 +43,7 @@ namespace Reflection.Views {
             int index = 0;
             foreach (var item in ComparisonResultViewModel.Headers) {
                 var column = new DataGridTextColumn();
-                column.Header = item;
+                column.Header = item.Replace("_","__");
                 column.Binding = new Binding(string.Format("[{0}]", index));
                 dgData.Columns.Add(column);
                 index++;

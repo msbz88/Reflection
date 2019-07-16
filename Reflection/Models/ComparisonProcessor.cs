@@ -51,7 +51,7 @@ namespace Reflection.Models {
             } else {
                 ComparisonTask.Status = Status.Passed;
                 ComparisonTask.UpdateProgress(100);
-                perfCounter.SaveAllResults();
+                //perfCounter.SaveAllResults();
             }
         }
 

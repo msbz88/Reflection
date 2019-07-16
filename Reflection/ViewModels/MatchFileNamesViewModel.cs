@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Win32;
 using Reflection.Model;
+using Reflection.Models;
 using Reflection.Views;
 
 namespace Reflection.ViewModels {
@@ -59,16 +60,27 @@ namespace Reflection.ViewModels {
             return MessageBox.Show(message, "", messageBoxButton, MessageBoxImage.Question, MessageBoxResult.No);
         }
 
+        private string GetCorrectedFileName(string path) {
+            var originName = Path.GetFileName(path);
+            var fileName = "";
+            if (originName[0] == '[') {
+                fileName = originName.TrimStart('[');
+            }else if (originName[0] == ']') {
+                fileName = originName.TrimStart(']');
+            }
+            return fileName;
+        }
+
         private void MatchMultipleFileNames() {
             var testFiles = TestSelectedFiles.ToList();
             var prevLen = 0;
             string bestMatchedTest = "";
             foreach (var masterPath in MasterSelectedFiles) {
-                var masterFile = Path.GetFileName(masterPath);
+                var masterFile = GetCorrectedFileName(masterPath);
                 prevLen = 0;
                 MatchedFileNames pair = null;
                 foreach (var testPath in testFiles) {
-                    var testFile = Path.GetFileName(testPath);
+                    var testFile = GetCorrectedFileName(testPath);
                     int matchedLen = Lcs(masterFile, testFile);
                     if (matchedLen == masterFile.Length) {
                         pair = new MatchedFileNames(masterPath, testPath);

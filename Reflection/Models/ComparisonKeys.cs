@@ -7,6 +7,6 @@ using System.Threading.Tasks;
 namespace Reflection.Models {
    public class ComparisonKeys {
         public List<int> MainKeys { get; set; }
-        public List<int> AdditionalKeys { get; set; }
+        public List<int> AdditionalKeys { get; set; } = new List<int>();
     }
 }

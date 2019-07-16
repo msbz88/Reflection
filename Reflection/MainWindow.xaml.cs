@@ -35,6 +35,7 @@ namespace Reflection {
 
         public MainWindow() {
             InitializeComponent();
+            this.Title = "Reflection (version " + Models.Version.GetVersion() + ")";
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             ComparisonDetailViewModel = new ComparisonTasksViewModel();
             PageMain = new PageMain(ComparisonDetailViewModel);

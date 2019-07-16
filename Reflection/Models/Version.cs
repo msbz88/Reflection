@@ -5,7 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Reflection.Models {
-    public class ComparisonQueue {
-
+    class Version {
+        public static string GetVersion() {
+            return "1.0";
+        }
     }
 }
