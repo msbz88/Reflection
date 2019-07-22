@@ -77,10 +77,6 @@ namespace Reflection.Models {
             File.WriteAllLines(filePath, result);
         }
 
-        public void SetGroupId(List<int> pivotKeys) {
-            foreach (var row in Rows) {
-                row.GroupId = row.GetValuesHashCode(pivotKeys);
-            }
-        }
+       
     }
 }

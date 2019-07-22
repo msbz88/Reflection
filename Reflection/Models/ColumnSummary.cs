@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,11 +16,14 @@ namespace Reflection.Models {
         public double UniquenessRate { get; set; }
         ///<summary>Percentage of equal values to total values in column</summary>
         public double UniqMatchRate { get; set; }
+        public double UniqDistinctMatchRate { get; set; }
         public bool IsString { get; set; }
         public bool IsDouble { get; set; }
         public bool HasNulls { get; set; }
         private bool IsNumber { get; set; }
-        public bool CanBeAdditionalId { get; set; }
+        public bool IsTransNo { get; set; }
+        //public bool IsIK { get; set; }
+        public bool IsTimestamp { get; set; }
 
         public ColumnSummary(int id, int totalRowsCount, HashSet<string> masterUniqVals, HashSet<string> testUniqVals) {
             UniqMatchCount = masterUniqVals.Intersect(testUniqVals).Count();
@@ -28,11 +32,16 @@ namespace Reflection.Models {
             MatchingRate = CalculateRate(masterUniqVals.Count, testUniqVals.Count, UniqMatchCount);
             UniquenessRate = CalculatePercentage(UniqCount, totalRowsCount);
             UniqMatchRate = CalculatePercentage(UniqMatchCount, totalRowsCount);
+            UniqDistinctMatchRate = CalculatePercentage(UniqMatchCount, UniqCount);
             HasNulls = CheckIfHasNulls(masterUniqVals);
             IsNumber = CheckIfNumeric(masterUniqVals);
             IsDouble = IsNumber ? false : CheckIfDouble(masterUniqVals);
             IsString = IsDouble || IsNumber ? false : true;
-            CanBeAdditionalId = CheckIfCanBeAdditionalId(masterUniqVals);
+            IsTransNo = CheckIfTransNo(masterUniqVals);
+            //IsIK = IsTransNo ? false : CheckIfIK(masterUniqVals);
+            if (!IsTransNo && !IsNumber) {
+                IsTimestamp = CheckIfTimestamp(masterUniqVals);
+            }
         }
 
         private bool CheckIfDouble(HashSet<string> columnData) {
@@ -61,8 +70,8 @@ namespace Reflection.Models {
                 return 0;
             } else {
                 double finalRate = 0;
-                var lowerNumber = uniqueRowsMaster > uniqueRowsTest ? uniqueRowsTest : uniqueRowsMaster;
-                finalRate = ((double)matchedValues / lowerNumber) * 100;
+                var higherNumber = uniqueRowsMaster > uniqueRowsTest ? uniqueRowsMaster : uniqueRowsTest;
+                finalRate = ((double)matchedValues / higherNumber) * 100;
                 return Math.Round(finalRate, 2);
             }
         }
@@ -82,10 +91,18 @@ namespace Reflection.Models {
             sb.Append(IsString);
             sb.Append(";");
             sb.Append(HasNulls);
+            sb.Append(";");
+            sb.Append(IsTransNo);
+            sb.Append(";");
+            sb.Append(UniqDistinctMatchRate);
+            sb.Append(";");
+            sb.Append(UniqMatchCount);
+            sb.Append(";");
+            sb.Append(UniqCount);
             return sb.ToString();
         }
 
-        private bool CheckIfCanBeAdditionalId(HashSet<string> columnData) {
+        private bool CheckIfTransNo(HashSet<string> columnData) {
             if (IsNumber && !HasNulls) {
                 foreach (var item in columnData) {
                     long n = 0;
@@ -94,16 +111,72 @@ namespace Reflection.Models {
                         return false;
                     } else if (n < 0) {
                         return false;
-                    } else if(Math.Floor(Math.Log10(n) + 1) != 14) {
+                    } else if (Math.Floor(Math.Log10(n) + 1) != 14) {
                         return false;
                     }
                 }
                 return true;
             } else {
                 return false;
-            }           
+            }
         }
 
+        //not accurate, hard to identify IK 
+        private bool CheckIfIK(HashSet<string> columnData) {
+            if (IsNumber && !HasNulls) {
+                var firstVal = columnData.FirstOrDefault();
+                long l = 0;
+                long.TryParse(firstVal, out l);
+                var len = Math.Floor(Math.Log10(l) + 1);
+                if (len == 8) {
+                    return false;
+                }
+                foreach (var item in columnData) {
+                    long n = 0;
+                    long.TryParse(item, out n);
+                    if (n == 0) {
+                        return false;
+                    } else if (n < 0) {
+                        return false;
+                    } else if (Math.Floor(Math.Log10(n) + 1) != len) {
+                        return false;
+                    }
+                }
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        private bool CheckIfTimestamp(HashSet<string> columnData) {
+            string[] format = new string[] {
+                "yyyy-MM-dd HH:mm:ss", "yyyy/MM/dd HH:mm:ss", "yyyy.MM.dd HH:mm:ss",
+                "MM-dd-yyyy HH:mm:ss","MM/dd/yyyy HH:mm:ss", "MM.dd.yyyy HH:mm:ss",
+                "dd-MM-yyyy HH:mm:ss","dd/MM/yyyy HH:mm:ss", "dd.MM.yyyy HH:mm:ss",
+                "yyyy-MM-dd HH:mm", "yyyy/MM/dd HH:mm", "yyyy.MM.dd HH:mm",
+                "MM-dd-yyyy HH:mm","MM/dd/yyyy HH:mm", "MM.dd.yyyy HH:mm",
+                "dd-MM-yyyy HH:mm","dd/MM/yyyy HH:mm", "dd.MM.yyyy HH:mm"};
+            DateTime result;
+            foreach (var item in columnData) {
+                if(item == "" && columnData.Count == 1) {
+                    return false;
+                }else if (item == "") {
+                    continue;
+                }
+                if (!DateTime.TryParseExact(item, format, CultureInfo.InvariantCulture, DateTimeStyles.NoCurrentDateDefault, out result)) {
+                    if (IsDouble && item.Length > 8) {
+                        string[] format2 = new string[] { "yyyyMMdd" };
+                        var withoutTrail = item.Substring(0, 8);
+                        if (!DateTime.TryParseExact(withoutTrail, format2, CultureInfo.InvariantCulture, DateTimeStyles.NoCurrentDateDefault, out result) && item != "") {
+                            return false;
+                        }
+                    }else {
+                        return false;
+                    }
+                }              
+            }
+            return true;
+        }
 
     }
 }

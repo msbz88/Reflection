@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 namespace Reflection.Models {
     public class Row {
         public int Id { get; set; }
-        public int GroupId { get; set; }
         public string[] Data;
 
         public string this[int index] {

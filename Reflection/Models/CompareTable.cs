@@ -18,6 +18,8 @@ namespace Reflection.Models {
         public int TestExtraCount { get { return ExtraTest.Count; } }
         string Delimiter { get; set; }
         int TotalColumns { get; set; }
+        List<int> MasterPassedRows;
+        List<int> TestPassedRows;
         ComparisonKeys ComparisonKeys { get; set; }
 
         public CompareTable(string delimiter, Row masterHeaders, Row testHeaders, int totalColumns, ComparisonKeys comparisonKeys) {
@@ -29,14 +31,28 @@ namespace Reflection.Models {
             TestHeaders = testHeaders;
             TotalColumns = totalColumns;
             ComparisonKeys = comparisonKeys;
+            MasterPassedRows = new List<int>();
+            TestPassedRows = new List<int>();
         } 
 
         public void AddComparedRows(IEnumerable<ComparedRow> comparedRows) {
-            Data.AddRange(comparedRows);
+            foreach (var item in comparedRows) {
+                if (item.IsPassed) {
+                    MasterPassedRows.Add(item.MasterRowId);
+                    TestPassedRows.Add(item.TestRowId);
+                }else {
+                    Data.Add(item);
+                }
+            }            
         }
 
         public void AddComparedRow(ComparedRow comparedRow) {
-            Data.Add(comparedRow);
+            if (comparedRow.IsPassed) {
+                MasterPassedRows.Add(comparedRow.MasterRowId);
+                TestPassedRows.Add(comparedRow.TestRowId);
+            } else {
+                Data.Add(comparedRow);
+            }
         }
 
         public void AddMasterExtraRows(IEnumerable<Row> extraRows) {
@@ -46,11 +62,11 @@ namespace Reflection.Models {
         }
 
         public IEnumerable<int> GetMasterComparedRowsId() {
-            return Data.Select(row=>row.MasterRowId);
+            return Data.Select(row=>row.MasterRowId).Concat(MasterPassedRows);
         }
 
         public IEnumerable<int> GetTestComparedRowsId() {
-            return Data.Select(row => row.TestRowId);
+            return Data.Select(row => row.TestRowId).Concat(TestPassedRows);
         }
 
         public void AddTestExtraRows(IEnumerable<Row> extraRows) {
@@ -88,7 +104,7 @@ namespace Reflection.Models {
         }
 
         public void SaveComparedRows(string filePath) {
-            var transNo = ComparisonKeys.AdditionalKeys;     
+            var transNo = ComparisonKeys.TransactionKeys;     
             var mainKeys = ComparisonKeys.MainKeys;
             var deviationsColumns = Data.SelectMany(row => row.Deviations.Select(col => col.ColumnId)).Distinct().OrderBy(colId => colId).ToList(); 
             var allColumns = mainKeys.Concat(deviationsColumns).ToList();
@@ -96,8 +112,9 @@ namespace Reflection.Models {
             var headers = GenerateHeadersForFile(transNo, allColumns, remaining);
             File.WriteAllText(filePath, headers);
             StringBuilder lines = new StringBuilder();
-            StringBuilder cell = new StringBuilder();       
-            foreach (var comparedRow in Data) {
+            StringBuilder cell = new StringBuilder();
+            var rowsWithDeviations = Data.Where(row=>!row.IsPassed);
+            foreach (var comparedRow in rowsWithDeviations) {
                 var rowToSave = CreateRowToSave(transNo, allColumns);
                 foreach (var deviation in comparedRow.Deviations) {
                     cell.Clear();

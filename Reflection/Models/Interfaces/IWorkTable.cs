@@ -12,7 +12,6 @@ namespace Reflection.Models.Interfaces {
         int ColumnsCount { get; }
         int RowsCount { get; }
         string Delimiter { get; }
-        void SetGroupId(List<int> pivotKeys);
         //Task<Dictionary<int, HashSet<string>>> GetColumnsAsync();
         void LoadData(IEnumerable<string> data, string delimiter, bool isHeadersExist, ComparisonTask comparisonTask);
         void SaveToFile(string filePath);
