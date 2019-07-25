@@ -63,13 +63,9 @@ namespace Reflection.Models {
             ComparisonTask.UpdateProgress(4);
             var groupsT = Group(TestTable.Rows, ComparisonKeys.MainKeys);
             ComparisonTask.UpdateProgress(4);
-            PerfCounter.Stop("Base Group");
-            //File.WriteAllText(@"C:\Users\MSBZ\Desktop\groupsM.txt", "Hash" + ";" + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes)) + Environment.NewLine);
-            //File.AppendAllLines(@"C:\Users\MSBZ\Desktop\groupsM.txt", groupsM.SelectMany(item => item.Value.Select(it => it.GetValuesHashCode(PivotKeysIndexes) + ";" + string.Join(";", it.ColumnIndexIn(PivotKeysIndexes)))));
-            //File.WriteAllText(@"C:\Users\MSBZ\Desktop\groupsT.txt", "Hash" + ";" + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes)) + Environment.NewLine);
-            //File.AppendAllLines(@"C:\Users\MSBZ\Desktop\groupsT.txt", groupsT.SelectMany(item => item.Value.Select(it => it.GetValuesHashCode(PivotKeysIndexes) + ";" + string.Join(";", it.ColumnIndexIn(PivotKeysIndexes)))));
+            PerfCounter.Stop("Base Group");           
             PerfCounter.Start();
-            CompareTable = new CompareTable(Delimiter, MasterTable.Headers, TestTable.Headers, MasterTable.ColumnsCount, ComparisonKeys);
+            CompareTable = new CompareTable(Delimiter, MasterTable.Headers, TestTable.Headers, MasterTable.ColumnsCount, ComparisonKeys, ComparisonTask.IsLinearView);
             var uMasterRows = groupsM.Where(r => r.Value.Count() == 1).ToDictionary(item => item.Key, item => item.Value.First());
             ComparisonTask.UpdateProgress(2);
             var uTestRows = groupsT.Where(r => r.Value.Count() == 1).ToDictionary(item => item.Key, item => item.Value.First());
@@ -91,7 +87,6 @@ namespace Reflection.Models {
                 CompareTable.AddComparedRows(item.ComparedRows);
             }
             PerfCounter.Stop("Process");
-
             //extra
             PerfCounter.Start();
             ComparisonTask.RowsWithDeviations = CompareTable.ComparedRowsCount;
@@ -104,14 +99,9 @@ namespace Reflection.Models {
             ComparisonTask.UpdateProgress(1);
             ComparisonTask.ExtraTestCount = CompareTable.TestExtraCount;
             PerfCounter.Stop("Extra");
-
-            //save to file
-            //string comparedRecordsFile = @"C:\Users\MSBZ\Desktop\comparedRecords.txt";
-            //string extraRecordsFile = @"C:\Users\MSBZ\Desktop\extra.txt";
-
-            PerfCounter.Start();
-            CompareTable.SaveComparedRows(ComparisonTask.CommonDirectoryPath + @"\Compared_" + ComparisonTask.CommonName);
+            PerfCounter.Start();           
             ComparisonTask.ResultFile = ComparisonTask.CommonDirectoryPath + @"\Compared_" + ComparisonTask.CommonName;
+            CompareTable.SaveComparedRows(ComparisonTask.ResultFile);
             ComparisonTask.UpdateProgress(2);
             PerfCounter.Stop("Save comparison");
             //PerfCounter.SaveAllResults();
@@ -178,6 +168,9 @@ namespace Reflection.Models {
                 }
                 ComparisonTask.UpdateProgress(20.0 / additionalKeys.Count);
             }
+            if (compositeKey.Count == 1) {
+                compositeKey.AddRange(AddKeysToAcceptExtra(clearedStats, maxMatchingRate, mainPivotKey));
+            }
             var excludeColumns = BaseStat.Where(item => item.IsTimestamp).Select(item => item.ColumnId).ToList();
             compKeys.TransactionKeys = BaseStat.Where(item => item.IsTransNo).Select(item => item.ColumnId).ToList();
             compKeys.MainKeys = compositeKey;
@@ -187,14 +180,24 @@ namespace Reflection.Models {
 
         private List<int> FindAdditionalKeys(List<ColumnSummary> clearedStats, double maxMatchingRate, int mainPivotKey) {
             var statForAdditionalKeys = clearedStats.Where(col => col.MatchingRate == maxMatchingRate && col.ColumnId != mainPivotKey).ToList();
-            var standartDeviation = StandartDeviation(statForAdditionalKeys.Select(col => col.UniqMatchRate).ToList());
             var maxDistinctMatch = clearedStats.Max(item => item.UniqDistinctMatchRate);
             var notStringKeys = statForAdditionalKeys.Where(col => !col.IsString && col.UniqMatchCount > 2 && col.UniqDistinctMatchRate >= maxDistinctMatch).Select(col => col.ColumnId);
             var stringKeys = statForAdditionalKeys.Where(col => col.IsString && col.UniqDistinctMatchRate >= maxDistinctMatch).Select(col => col.ColumnId);
             return stringKeys.Concat(notStringKeys).Distinct().ToList();
         }
 
+        private List<int> AddKeysToAcceptExtra(List<ColumnSummary> clearedStats, double maxMatchingRate, int mainPivotKey) {
+            var statForAdditionalKeys = clearedStats.Where(col => col.MatchingRate < maxMatchingRate && col.ColumnId != mainPivotKey).ToList();
+            var standartDeviation = StandartDeviation(statForAdditionalKeys.Select(col => col.MatchingRate).ToList());
+            var notStringKeys = statForAdditionalKeys.Where(col => !col.IsString && col.UniqMatchCount > 2 && col.MatchingRate >= standartDeviation).Select(col => col.ColumnId);
+            var stringKeys = statForAdditionalKeys.Where(col => col.IsString && col.MatchingRate >= standartDeviation).Select(col => col.ColumnId);
+            return stringKeys.Concat(notStringKeys).Distinct().ToList();
+        }
+
         private double StandartDeviation(List<double> values) {
+            if (values.Count == 0) {
+                return 0;
+            }
             var avg = values.Average();
             var variance = (1.0 / values.Count) * values.Select(item => Math.Pow(item - avg, 2)).Sum();
             return Math.Sqrt(variance);

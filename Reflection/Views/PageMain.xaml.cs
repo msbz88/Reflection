@@ -25,6 +25,7 @@ namespace Reflection.Views {
         public EventHandler Error { get; set; }
         public EventHandler OpenFiles { get; set; }
         public EventHandler ShowViewResult { get; set; }
+        public EventHandler ChangeDeviationsView { get; set; }
         public ComparisonTasksViewModel ComparisonTasksViewModel { get; set; }
         
         public PageMain(ComparisonTasksViewModel comparisonTasksViewModel) {
@@ -60,7 +61,10 @@ namespace Reflection.Views {
             var listViewItem = GetAncestorOfType<ListViewItem>(senderIn as Button);
             if (listViewItem != null) {
                 var selectedItem = (ComparisonTask)listViewItem.DataContext;
-                ShowViewResult?.Invoke(selectedItem, null);
+                var isExcelOpened = Task.Run(()=> ComparisonTasksViewModel.TryOpenExcel(selectedItem));
+                if (!isExcelOpened.Result) {
+                    ShowViewResult?.Invoke(selectedItem, null);
+                } 
             }
         }
 
@@ -90,6 +94,14 @@ namespace Reflection.Views {
             if (parent != null && !(parent is T))
                 return (T)GetAncestorOfType<T>((FrameworkElement)parent);
             return (T)parent;
+        }
+
+        private void TabularDeviationsView_Checked(object sender, RoutedEventArgs e) {
+            ChangeDeviationsView?.Invoke(false, null);
+        }
+
+        private void LinearDeviationsView_Checked(object sender, RoutedEventArgs e) {
+            ChangeDeviationsView?.Invoke(true, null);
         }
     }
 }

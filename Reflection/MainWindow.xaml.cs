@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -48,6 +49,7 @@ namespace Reflection {
             PageImport.GoBack += OnGoBack;
             PageImport.ImportViewModel.PropertyChanged += ComparisonDetailViewModel.ImportConfigurationPropertyChanged;
             ChildWindowRaised += OnChildWindowRaised;
+            PageMain.ChangeDeviationsView += OnChangeDeviationsView;
         }
 
         private void OnOpenFiles(object sender, EventArgs e) {
@@ -105,6 +107,7 @@ namespace Reflection {
             var erorrMessage = (string)sender;
             StatusBarContent.Foreground = new SolidColorBrush(Colors.Red);
             StatusBarContent.Text = erorrMessage;
+            //CleanUpStatusBarTimer();
         }
 
         private void OnShowViewResult(object sender, EventArgs e) {
@@ -114,7 +117,22 @@ namespace Reflection {
             Main.Content = PageViewResult;
             var comparisonTask = (ComparisonTask)sender;
             if(comparisonTask!=null)
-            PageViewResult.PrintFileContent(comparisonTask.ResultFile, comparisonTask.ImportConfiguration.Delimiter, comparisonTask.ImportConfiguration.Encoding);
+            PageViewResult.PrintFileContent(comparisonTask.ResultFile + ".txt", comparisonTask.ImportConfiguration.Delimiter, comparisonTask.ImportConfiguration.Encoding);
+        }
+
+        private void CleanUpStatusBarTimer() {
+            System.Timers.Timer aTimer = new System.Timers.Timer();
+            aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
+            aTimer.Interval = 5000;
+            aTimer.Enabled = true;
+        }
+
+        private void OnTimedEvent(object source, ElapsedEventArgs e) {
+            StatusBarContent.Text = "";
+        }
+
+        private void OnChangeDeviationsView(object senderIn, EventArgs eIn) {
+            ComparisonDetailViewModel.IsLinearView = (bool)senderIn;
         }
 
 

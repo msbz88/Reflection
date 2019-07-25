@@ -9,21 +9,21 @@ namespace Reflection.Models {
         public int MasterRowId { get; set; }
         public int TestRowId { get; set; }
         public bool IsPassed { get; set; }
-        public List<PrintIdFields> IdFields { get; private set; }
+        public List<IdField> IdFields { get; private set; }
         public List<Deviation> Deviations { get; private set; }
 
         public ComparedRow(int masterRowId, int testRowId) {
             MasterRowId = masterRowId;
             TestRowId = testRowId;
             Deviations = new List<Deviation>();
-            IdFields = new List<PrintIdFields>();
+            IdFields = new List<IdField>();
         }
 
         public void AddDeviation(Deviation deviation) {
             Deviations.Add(deviation);
         }
 
-        public void AddIdFields(List<PrintIdFields> idFields) {
+        public void AddIdFields(List<IdField> idFields) {
             IdFields = idFields;
         }
 
@@ -42,5 +42,6 @@ namespace Reflection.Models {
             }
             return sb.ToString();
         }
+
     }
 }

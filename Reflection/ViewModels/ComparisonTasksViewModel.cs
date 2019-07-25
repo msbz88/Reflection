@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Data;
+using Microsoft.Office.Interop.Excel;
 using Reflection.Models;
 using Reflection.Models.Interfaces;
 
@@ -20,12 +22,15 @@ namespace Reflection.ViewModels {
         }
         IFileReader FileReader { get; set; }
         ComparisonProcessor ComparisonProcessor;
+        bool IsExcelInstaled = Type.GetTypeFromProgID("Excel.Application") == null ? false : true;
+        public bool IsLinearView { get; set; } = true;
 
         public ComparisonTasksViewModel() {
             AllComparisonDetails = new ObservableCollection<ComparisonTask>();
             comparisonCount = 1;
             FileReader = new FileReader();
             ComparisonProcessor = new ComparisonProcessor();
+            IsExcelInstaled = Type.GetTypeFromProgID("Excel.Application") == null ? false : true;
         }
 
         public async void ImportConfigurationPropertyChanged(object sender, PropertyChangedEventArgs e) {
@@ -36,6 +41,7 @@ namespace Reflection.ViewModels {
                     comparisonCount = 1;
                 }
                 var comparisonTask = new ComparisonTask(comparisonCount++, importConfiguration);
+                comparisonTask.IsLinearView = IsLinearView;
                 AllComparisonDetails.Add(comparisonTask);
                 if (!ComparisonProcessor.IsBusy) {
                     while (true) {
@@ -59,9 +65,22 @@ namespace Reflection.ViewModels {
             } catch (Exception e) {
                 comparisonTask.Status = Status.Error;
                 comparisonTask.ErrorMessage = e.Message;
+                if (comparisonTask.ExcelApplication!=null) {
+                    comparisonTask.ExcelApplication.Result.Quit();
+                }              
                 ComparisonProcessor.IsBusy = false;
             }
         }
+
+        public bool TryOpenExcel(ComparisonTask comparisonTask) {
+            if (IsExcelInstaled) {
+                Task.Run(() => Process.Start(comparisonTask.ResultFile + ".xlsx"));
+                return true;
+            } else {
+                return false;
+            }
+        }
+
 
 
     }

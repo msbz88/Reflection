@@ -4,9 +4,11 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
+using Microsoft.Office.Interop.Excel;
 
 namespace Reflection.Models {
     public class ComparisonTask : INotifyPropertyChanged {
@@ -90,7 +92,13 @@ namespace Reflection.Models {
         public string CommonDirectoryPath { get; set; }
         public string CommonName { get; set; }
         public ImportConfiguration ImportConfiguration { get; set; }
-        public string ResultFile { get; set; }
+        string resultFile;
+        public string ResultFile {
+            get { return resultFile; }
+            set { resultFile = SetResultFile(value); }
+        }
+        public Task<Application> ExcelApplication { get; set; }
+        public bool IsLinearView { get; set; } = true;
 
         public ComparisonTask(int comparisonId, ImportConfiguration importConfiguration) {
             ComparisonId = comparisonId;
@@ -124,7 +132,10 @@ namespace Reflection.Models {
         }
 
         private string GetCommonName() {
-            return MasterFileName[0]=='['? MasterFileName.TrimStart('['): MasterFileName;
+            var masterFile = MasterFileName[0] == '[' ? MasterFileName.TrimStart('[') : MasterFileName;
+            var testFile = TestFileName[0] == ']' ? TestFileName.TrimStart(']') : TestFileName;
+            var commonName = GetLongestCommonPrefix(new string[] { masterFile, testFile });
+            return Path.GetFileNameWithoutExtension(commonName).TrimEnd('_').TrimEnd('.').TrimEnd('-');
         }
 
         private string FindCommonDirectory(string masterPath, string testPath) {
@@ -140,6 +151,24 @@ namespace Reflection.Models {
             }
             return result;
         }
+
+        private string GetLongestCommonPrefix(string[] s) {
+            int k = s[0].Length;
+            for (int i = 1; i < s.Length; i++) {
+                k = Math.Min(k, s[i].Length);
+                for (int j = 0; j < k; j++)
+                    if (s[i][j] != s[0][j]) {
+                        k = j;
+                        break;
+                    }
+            }
+            return s[0].Substring(0, k);
+        }
+
+        private string SetResultFile(string value) {
+            return value + "_" + DateTime.Now.ToString("ddMMyyyy_HH-mm-ss");
+        }
+
 
     }
 }

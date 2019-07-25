@@ -66,17 +66,17 @@ namespace Reflection.Models {
             }
         }
 
-        private List<PrintIdFields> GetIdFields(Row masterRow, Row testRow) {
-            List<PrintIdFields> idFields = new List<PrintIdFields>();
+        private List<IdField> GetIdFields(Row masterRow, Row testRow) {
+            List<IdField> idFields = new List<IdField>();
             foreach (var item in IdColumns.TransactionKeys) {
-                PrintIdFields printFields = new PrintIdFields();
-                printFields.AdditionalKey = item;
-                printFields.MasterAdditionalKeyVal = masterRow.Data[item];
-                printFields.TestAdditionalKeyVal = testRow.Data[item];
+                IdField printFields = new IdField();
+                printFields.TransactionNo = item;
+                printFields.MasterTransactionNoVal = masterRow.Data[item];
+                printFields.TestTransactionNoVal = testRow.Data[item];
                 idFields.Add(printFields);
             }
             foreach (var item in IdColumns.MainKeys) {
-                PrintIdFields printFields = new PrintIdFields();
+                IdField printFields = new IdField();
                 printFields.MainKey = item;
                 printFields.MainVal = masterRow.Data[item];
                 idFields.Add(printFields);
