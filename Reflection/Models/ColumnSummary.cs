@@ -47,7 +47,19 @@ namespace Reflection.Models {
         private bool CheckIfDouble(HashSet<string> columnData) {
             double d;
             var clearSeq = columnData.Where(item => item != "" && item.ToUpper() != "NULL");
-            return clearSeq.Any() ? clearSeq.All(item => double.TryParse(item, out d)) : false;
+            return clearSeq.Any() ? clearSeq.All(item => double.TryParse(CleanUpDouble(item), out d)) : false;
+        }
+
+        private string CleanUpDouble(string str) {
+            string result = str;
+           if(str.Contains(',') && str.Contains('.')) {
+                if(str.IndexOf(',') > str.IndexOf('.')) {
+                    result = str.Replace(".", "");
+                }else {
+                    result = str.Replace(",", "");
+                }             
+            }
+            return result;
         }
 
         private bool CheckIfHasNulls(HashSet<string> columnData) {

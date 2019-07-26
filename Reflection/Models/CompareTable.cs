@@ -39,6 +39,7 @@ namespace Reflection.Models {
         List<int> DeviationColumns;
         int RowCount = 0;
         bool IsLinearView { get; set; }
+        int _deviations = 0;
 
         public CompareTable(string delimiter, Row masterHeaders, Row testHeaders, int totalColumns, ComparisonKeys comparisonKeys, bool isLinearView) {
             Data = new List<ComparedRow>();
@@ -122,6 +123,7 @@ namespace Reflection.Models {
             for (int col = 0; col < Headers.Count; col++) {
                 outputArray[RowCount, col] = Headers[col];
             }
+            _deviations = DeviationColumns.Count;
             var rowsWithDeviations = Data.Where(row => !row.IsPassed);
             foreach (var row in rowsWithDeviations) {
                 var rowToSave = new RowToSave(row.IdFields, Delimiter, DeviationColumns);                
@@ -142,11 +144,15 @@ namespace Reflection.Models {
             var mainKeys = ComparisonKeys.MainKeys;
             Headers = GenerateHeadersForFile(transNo, mainKeys);
             var rowsWithDeviations = Data.Where(row => !row.IsPassed);
-            Headers.Add("Column Name");
-            Headers.Add("Master Value");
-            Headers.Add("Test Value");
             var deviations = Data.Where(row => !row.IsPassed).SelectMany(item => item.Deviations.Select(col => col.ColumnId)).Distinct().ToList();
-            int rowCount = rowsWithDeviations.Sum(item => item.Deviations.Count) + 1 + ((ExtraMaster.Count + ExtraTest.Count) * deviations.Count);
+            if (deviations.Count > 0) {
+                Headers.Add("Column Name");
+                Headers.Add("Master Value");
+                Headers.Add("Test Value");
+            }
+            _deviations = deviations.Count;
+            var deviationsCount = deviations.Count == 0 ? 1 : deviations.Count;
+            int rowCount = rowsWithDeviations.Sum(item => item.Deviations.Count) + 1 + ((ExtraMaster.Count + ExtraTest.Count) * deviationsCount);
             int columnCount = Headers.Count;
             string[,] outputArray = new string[rowCount, columnCount];
             for (int col = 0; col < Headers.Count; col++) {
@@ -243,8 +249,12 @@ namespace Reflection.Models {
         }
 
         public void SaveComparedRows(string filePath) {
-            if (IsExcelInstaled) {               
-                SaveToExcel(filePath + ".xlsx");               
+            if (IsExcelInstaled) {
+                if (IsLinearView) {
+                    SaveToExcel(filePath + ".xlsx", PrepareDataLinar());
+                } else {
+                    SaveToExcel(filePath + ".xlsx", PrepareDataTabular());
+                }          
             } else {
                 //SaveToFlatFile(filePath + ".txt");
             }
@@ -298,18 +308,12 @@ namespace Reflection.Models {
             return Task.Run(() => new Application());
         }
 
-        private void SaveToExcel(string filePath) {
+        private void SaveToExcel(string filePath, string[,] outputArray) {
             Application excelApplication = null;
             Workbook workbook = null;
             Worksheet sheet = null;
             Range range = null;
             object misvalue = System.Reflection.Missing.Value;
-            string[,] outputArray;
-            if (IsLinearView) {
-                outputArray = PrepareDataLinar();
-            } else {
-                outputArray = PrepareDataTabular();
-            }
             try {
                 excelApplication = new Application();
                 excelApplication.DisplayAlerts = false;
@@ -318,12 +322,13 @@ namespace Reflection.Models {
                 sheet = (Worksheet)workbook.ActiveSheet;
                 sheet.Name = "Comparison";
                 excelApplication.ActiveWindow.Zoom = 80;
+                excelApplication.Calculation = XlCalculation.xlCalculationSemiautomatic;
                 int columnCount = Headers.Count;
                 range = (Range)sheet.Cells[1, 1];
                 RowCount++;
                 range = range.Resize[RowCount, columnCount];
                 range.set_Value(XlRangeValueDataType.xlRangeValueDefault, outputArray);
-                FormatExcelSheet(sheet, range, columnCount);
+                FormatExcelSheet(sheet, range, columnCount, _deviations);
                 workbook.SaveAs(filePath, XlFileFormat.xlWorkbookDefault, Type.Missing, Type.Missing, false, false, XlSaveAsAccessMode.xlNoChange, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing);
                 workbook.Close();
                 excelApplication.Quit();
@@ -339,7 +344,7 @@ namespace Reflection.Models {
             }
         }
 
-        private void FormatExcelSheet(Worksheet sheet, Range range, int columnCount) {
+        private void FormatExcelSheet(Worksheet sheet, Range range, int columnCount, int deviations) {
             //headers row to bold
             sheet.get_Range("A1", GetExcelColumnName(Headers.Count) + 1).Font.Bold = true;
             //color deviation columns with red
@@ -361,14 +366,16 @@ namespace Reflection.Models {
             FormatCondition formatCondExplained = null;
             Interior interior = null;
             try {
-                sheetFormatConditions = sheet.get_Range(GetExcelColumnName(deviationColumns) + "2", GetExcelColumnName(columnCount) + RowCount).FormatConditions;
-                formatCondNotExplained = (FormatCondition)sheetFormatConditions.Add(XlFormatConditionType.xlExpression, Type.Missing, condNotExplained);
-                interior = formatCondNotExplained.Interior;
-                interior.Color = XlRgbColor.rgbIndianRed;
-                //color deviation columns when explained
-                formatCondExplained = (FormatCondition)sheetFormatConditions.Add(XlFormatConditionType.xlCellValue, XlFormatConditionOperator.xlNotEqual, condExplained);
-                interior = formatCondExplained.Interior;
-                interior.Color = XlRgbColor.rgbLightGreen;
+                if (deviations != 0){
+                    sheetFormatConditions = sheet.get_Range(GetExcelColumnName(deviationColumns) + "2", GetExcelColumnName(columnCount) + RowCount).FormatConditions;
+                    formatCondNotExplained = (FormatCondition)sheetFormatConditions.Add(XlFormatConditionType.xlExpression, Type.Missing, condNotExplained);
+                    interior = formatCondNotExplained.Interior;
+                    interior.Color = XlRgbColor.rgbIndianRed;
+                    //color deviation columns when explained
+                    formatCondExplained = (FormatCondition)sheetFormatConditions.Add(XlFormatConditionType.xlCellValue, XlFormatConditionOperator.xlNotEqual, condExplained);
+                    interior = formatCondExplained.Interior;
+                    interior.Color = XlRgbColor.rgbLightGreen;
+                }
                 //frize 1 row + add filter
                 sheet.Activate();
                 sheet.Application.ActiveWindow.SplitRow = 1;
@@ -376,7 +383,11 @@ namespace Reflection.Models {
                 range = (Range)sheet.Rows[1];
                 range.AutoFilter(1, Type.Missing, XlAutoFilterOperator.xlAnd, Type.Missing, true);
                 //color id columns
-                range = sheet.get_Range("A2", GetExcelColumnName(deviationColumns - 1) + RowCount);
+                if (deviations != 0) {
+                    range = sheet.get_Range("A2", GetExcelColumnName(deviationColumns - 1) + RowCount);                  
+                }else {
+                    range = sheet.get_Range("A2", GetExcelColumnName(columnCount) + RowCount);
+                }              
                 range.Interior.Color = XlRgbColor.rgbLightGray;
                 //color header row
                 range = sheet.get_Range("A1", GetExcelColumnName(columnCount) + 1);

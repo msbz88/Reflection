@@ -116,9 +116,25 @@ namespace Reflection.Models {
             return res;
         }
 
+        private string[,] SetIdFields(string version) {
+            int columnsCount = 3 + IdFields.Count;
+            string[,] res = new string[1, columnsCount];
+            int col = 0;
+            res[0, col++] = DefectNo;
+            res[0, col++] = version;
+            res[0, col++] = Diff.ToString();
+            for (int colId = 0; colId < IdFields.Count; colId++) {
+                res[0, col++] = IdFields[colId];
+            }
+            return res;
+        }
+
         public string[,] TransposeExtraRow(List<string> deviations, string[] headers, string version) {
             Diff = deviations.Count;
             int columnsCount = 3 + IdFields.Count + 3;
+            if (deviations.Count == 0) {
+                return SetIdFields(version);
+            }
             string[,] res = new string[deviations.Count, columnsCount];
             for (int row = 0; row < deviations.Count; row++) {
                 int col = 0;

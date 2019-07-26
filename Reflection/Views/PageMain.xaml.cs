@@ -103,5 +103,18 @@ namespace Reflection.Views {
         private void LinearDeviationsView_Checked(object sender, RoutedEventArgs e) {
             ChangeDeviationsView?.Invoke(true, null);
         }
+
+        //private void MasterFileNamePreviewMouseDown(object sender, MouseButtonEventArgs e) {
+        //    var listViewItem = GetAncestorOfType<ListViewItem>(sender as TextBlock);
+        //    if (listViewItem != null) {
+        //        var selectedItem = (ComparisonTask)listViewItem.DataContext;
+        //        try {
+        //            Process.Start("notepad++.exe", selectedItem.ImportConfiguration.MasterFilePath);
+        //        } catch (Exception ex) {
+        //            Error?.Invoke(ex.Message, null);
+        //        }
+        //    }           
+        //}
+
     }
 }
