@@ -32,7 +32,7 @@ namespace Reflection.ViewModels {
         public ImportConfiguration ImportConfiguration { get; private set; }
 
         public ImportViewModel() {
-        }            
+        }
 
         public void AnalyseFile(string path) {
             var fileReader = new FileReader();

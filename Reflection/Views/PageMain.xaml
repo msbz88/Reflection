@@ -201,8 +201,8 @@
         <TextBox Grid.Row="0" Grid.Column="2" Name="TextBoxSearchFile" Width="150" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center" TextChanged="TextBoxSearchFileTextChanged"/>
         <Button Name ="btnOpenFiles" Grid.Row="2" Grid.Column="1" Height="25" Width="80" HorizontalAlignment="Center" VerticalAlignment="Top" Margin ="0,10,0,0" Content="Open Files" Click="ButtonOpenFilesClick"/>
         <StackPanel Grid.Row="1" Grid.Column="1" Margin="5,0,5,0" Height="30" VerticalAlignment="Bottom">
-            <RadioButton Name="LinearDeviationsView" Content="Linear Deviations View" FontFamily="Segoe UI" IsChecked="True" Checked="LinearDeviationsView_Checked"/>
-            <RadioButton Name="TabularDeviationsView" Content="Tabular Deviations View" FontFamily="Segoe UI" Checked="TabularDeviationsView_Checked"/>
+            <RadioButton Name="LinearDeviationsView" Content="Linear Deviations View" FontFamily="Segoe UI" ToolTip="Will be applied to the next comparison" IsChecked="True" Checked="LinearDeviationsView_Checked"/>
+            <RadioButton Name="TabularDeviationsView" Content="Tabular Deviations View" FontFamily="Segoe UI" ToolTip="Will be applied to the next comparison" Checked="TabularDeviationsView_Checked"/>
         </StackPanel>
     </Grid>
 </Page>

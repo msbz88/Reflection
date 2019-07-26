@@ -69,6 +69,7 @@ namespace Reflection {
 
         private void OnGoBack(object sender, EventArgs e) {
             Main.Content = PageMain;
+            StatusBarContent.Text = "";
         }
 
         private void OnClosing(object sender, CancelEventArgs e) {

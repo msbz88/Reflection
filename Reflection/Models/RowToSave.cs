@@ -27,6 +27,10 @@ namespace Reflection.Models {
             IdFields = GetIdFields(idFields);
         }
 
+        public RowToSave(List<string> idFields) {
+            IdFields = idFields;
+        }
+
         private List<string> GetIdFields(List<IdField> idFields) {
             List<string> result = new List<string>();
             var transNo = idFields.Where(item => item.MasterTransactionNoVal != null);
@@ -108,6 +112,28 @@ namespace Reflection.Models {
                 res[row, col++] = headers[deviations[row].ColumnId];
                 res[row, col++] = deviations[row].MasterValue;
                 res[row, col++] = deviations[row].TestValue;
+            }
+            return res;
+        }
+
+        public string[,] TransposeExtraRow(List<string> deviations, string[] headers, string version) {
+            Diff = deviations.Count;
+            int columnsCount = 3 + IdFields.Count + 3;
+            string[,] res = new string[deviations.Count, columnsCount];
+            for (int row = 0; row < deviations.Count; row++) {
+                int col = 0;
+                res[row, col++] = DefectNo;
+                res[row, col++] = version;
+                res[row, col++] = Diff.ToString();
+                for (int colId = 0; colId < IdFields.Count; colId++) {
+                    res[row, col++] = IdFields[colId];
+                }
+                res[row, col++] = headers[row];
+                if(version == "Master") {
+                    res[row, col++] = deviations[row];
+                }else {
+                    res[row, col++ + 1] = deviations[row];
+                }                
             }
             return res;
         }
