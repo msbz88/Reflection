@@ -31,45 +31,55 @@ namespace Reflection.ViewModels {
             FileReader = new FileReader();
             ComparisonProcessor = new ComparisonProcessor();
             IsExcelInstaled = Type.GetTypeFromProgID("Excel.Application") == null ? false : true;
+        }       
+
+        public void ImportConfigurationPropertyChanged(object sender, PropertyChangedEventArgs e) {
+            if (e.PropertyName == "ImportConfiguration") {
+                var importConfiguration = (ImportConfiguration)sender;              
+                AddComparisonTask(importConfiguration);
+            }
         }
 
-        public async void ImportConfigurationPropertyChanged(object sender, PropertyChangedEventArgs e) {
-            if (e.PropertyName == "ImportConfiguration") {
-                var importConfiguration = (ImportConfiguration)sender;
-                if (AllComparisonDetails.Count == 99) {
-                    AllComparisonDetails.RemoveAt(0);
-                    comparisonCount = 1;
-                }
-                var comparisonTask = new ComparisonTask(comparisonCount++, importConfiguration);
-                comparisonTask.IsLinearView = IsLinearView;
-                AllComparisonDetails.Add(comparisonTask);
+        public void AddComparisonTask(ImportConfiguration importConfiguration) {
+            var comparisonTask = new ComparisonTask(comparisonCount++, importConfiguration);
+            if (AllComparisonDetails.Count == 99) {
+                AllComparisonDetails.RemoveAt(0);
+                comparisonCount = 1;
+            }
+            comparisonTask.IsLinearView = IsLinearView;
+            AllComparisonDetails.Add(comparisonTask);
+            TriggerComparison();
+        }
+
+        private async void TriggerComparison() {
+            while (true) {
                 if (!ComparisonProcessor.IsBusy) {
-                    while (true) {
-                        await TriggerComparison(comparisonTask);
-                        var nextTask = AllComparisonDetails.Where(task => task.Status == Status.Queued).FirstOrDefault();
-                        if (nextTask != null) {
-                            comparisonTask = nextTask;
+                    var comparisonTask = AllComparisonDetails.Where(item => item.Status == Status.Queued).FirstOrDefault();
+                    if (comparisonTask == null) {
+                        return;
+                    }
+                    try {
+                        await Task.Run(() => ComparisonProcessor.StartComparison(FileReader, comparisonTask));
+                    } catch (Exception e) {
+                        var cancelTask = e as OperationCanceledException;
+                        if (cancelTask != null) {
+                            comparisonTask.Status = Status.Canceled;
+                            comparisonTask.ErrorMessage = "Task was canceled by user";
+                            ComparisonProcessor.IsBusy = false;
                         } else {
-                            break;
+                            comparisonTask.Status = Status.Error;
+                            comparisonTask.ErrorMessage = e.Message;
+                            ComparisonProcessor.IsBusy = false;
                         }
                     }
+                } else {
+                    return;
                 }
             }
         }
 
-        private async Task TriggerComparison(ComparisonTask comparisonTask) {
-            var task = new Task(() => ComparisonProcessor.StartComparison(FileReader, comparisonTask));
-            task.Start();
-            try {
-                await task;
-            } catch (Exception e) {
-                comparisonTask.Status = Status.Error;
-                comparisonTask.ErrorMessage = e.Message;
-                if (comparisonTask.ExcelApplication!=null) {
-                    comparisonTask.ExcelApplication.Result.Quit();
-                }              
-                ComparisonProcessor.IsBusy = false;
-            }
+        private async Task<bool> RunComparison(ComparisonTask comparisonTask) {
+            return await Task.Run(() => ComparisonProcessor.StartComparison(FileReader, comparisonTask));
         }
 
         public bool TryOpenExcel(ComparisonTask comparisonTask) {
@@ -81,6 +91,10 @@ namespace Reflection.ViewModels {
             }
         }
 
+        public void DeleteTask(ComparisonTask comparisonTask) {
+            AllComparisonDetails.Remove(comparisonTask);
+            comparisonTask.CancellationToken.Cancel();
+        }
 
 
     }

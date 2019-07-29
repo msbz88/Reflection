@@ -108,7 +108,6 @@ namespace Reflection {
             var erorrMessage = (string)sender;
             StatusBarContent.Foreground = new SolidColorBrush(Colors.Red);
             StatusBarContent.Text = erorrMessage;
-            //CleanUpStatusBarTimer();
         }
 
         private void OnShowViewResult(object sender, EventArgs e) {
@@ -119,17 +118,6 @@ namespace Reflection {
             var comparisonTask = (ComparisonTask)sender;
             if(comparisonTask!=null)
             PageViewResult.PrintFileContent(comparisonTask.ResultFile + ".txt", comparisonTask.ImportConfiguration.Delimiter, comparisonTask.ImportConfiguration.Encoding);
-        }
-
-        private void CleanUpStatusBarTimer() {
-            System.Timers.Timer aTimer = new System.Timers.Timer();
-            aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
-            aTimer.Interval = 5000;
-            aTimer.Enabled = true;
-        }
-
-        private void OnTimedEvent(object source, ElapsedEventArgs e) {
-            StatusBarContent.Text = "";
         }
 
         private void OnChangeDeviationsView(object senderIn, EventArgs eIn) {

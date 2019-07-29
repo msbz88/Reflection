@@ -10,6 +10,7 @@ namespace Reflection.Models {
         Executing,
         Passed,
         Failed,
-        Error
+        Error,
+        Canceled
     }
 }

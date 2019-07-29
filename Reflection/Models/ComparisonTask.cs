@@ -99,6 +99,7 @@ namespace Reflection.Models {
         }
         public Task<Application> ExcelApplication { get; set; }
         public bool IsLinearView { get; set; } = true;
+        public CancellationTokenSource CancellationToken { get; set; }
 
         public ComparisonTask(int comparisonId, ImportConfiguration importConfiguration) {
             ComparisonId = comparisonId;
@@ -109,6 +110,8 @@ namespace Reflection.Models {
             CommonDirectoryPath = FindCommonDirectory(importConfiguration.MasterFilePath, importConfiguration.TestFilePath);
             CommonName = GetCommonName();
             Status = Status.Queued;
+            CancellationToken = new CancellationTokenSource();
+            ErrorMessage = "";
             //SimulateProgress();
         }
 
@@ -167,6 +170,13 @@ namespace Reflection.Models {
 
         private string SetResultFile(string value) {
             return value + "_" + DateTime.Now.ToString("ddMMyyyy_HH-mm-ss");
+        }
+
+        public void IfCancelRequested() {
+            var cancelationToken = CancellationToken.Token;
+            if (cancelationToken.IsCancellationRequested) {
+                cancelationToken.ThrowIfCancellationRequested();
+            }
         }
 
 

@@ -28,8 +28,10 @@ namespace Reflection.Models {
         private List<ComparedRow> CreateAllCombinations(List<Row> masterRows, List<Row> testRows) {
             AllCombinations.Clear();
             foreach (var mRow in masterRows) {
+                ComparisonTask.IfCancelRequested();
                 int minDeviations = columnsCount;
                 foreach (var tRow in testRows) {
+                    ComparisonTask.IfCancelRequested();
                     var comparedRow = Comparator.Compare(AllCombinations, mRow, tRow, ref minDeviations);
                     if (comparedRow != null) {
                         AllCombinations.Add(comparedRow);
@@ -44,6 +46,7 @@ namespace Reflection.Models {
             CreateAllCombinations(masterRows, testRows);
             FindPassedRows();
             while (AllCombinations.Count > 0) {
+                ComparisonTask.IfCancelRequested();
                 int minDeviation = AllCombinations.Min(row => row.Deviations.Count);
                 BestCombinations.Clear();
                 BestCombinations.AddRange(AllCombinations.Where(row => row.Deviations.Count == minDeviation).ToList());
@@ -116,6 +119,7 @@ namespace Reflection.Models {
             List<ComparedRow> bestMatched = new List<ComparedRow>();
             ComparedRow comparedRow = null;
             foreach (var item in columnsOrderedByPriority) {
+                ComparisonTask.IfCancelRequested();
                 var firstMatched = BestCombinations.SelectMany(row => row.Deviations.Where(col => col.ColumnId == item).Select(col => col.TestValue)).OrderBy(val => val).FirstOrDefault();
                 if (string.IsNullOrEmpty(firstMatched)) {
                     continue;

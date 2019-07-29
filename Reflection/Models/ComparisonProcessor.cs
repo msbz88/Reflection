@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -26,10 +27,12 @@ namespace Reflection.Models {
             int headerRowCount = ImportConfiguration.IsHeadersExist ? 1 : 0;
             var masterFileContent = FileReader.ReadFile(ImportConfiguration.MasterFilePath, ImportConfiguration.RowsToSkip, ImportConfiguration.Encoding);
             ComparisonTask.UpdateProgress(1);
+            ComparisonTask.IfCancelRequested();
             var countMasterLines = FileReader.CountLines(ImportConfiguration.MasterFilePath) - (ImportConfiguration.RowsToSkip + headerRowCount);
             ComparisonTask.MasterRowsCount = countMasterLines;
             var testFileContent = FileReader.ReadFile(ImportConfiguration.TestFilePath, ImportConfiguration.RowsToSkip, ImportConfiguration.Encoding);
             ComparisonTask.UpdateProgress(1);
+            ComparisonTask.IfCancelRequested();
             var countTestLines = FileReader.CountLines(ImportConfiguration.TestFilePath) - (ImportConfiguration.RowsToSkip + headerRowCount);
             ComparisonTask.TestRowsCount = countTestLines;
             ComparisonTask.ActualRowsDiff = ComparisonTask.MasterRowsCount - ComparisonTask.TestRowsCount;
@@ -37,6 +40,7 @@ namespace Reflection.Models {
             CheckIfEqualColumns(masterFileContent.FirstOrDefault(), testFileContent.FirstOrDefault());
             perfCounter.Start();
             var exceptedMasterData = Except(masterFileContent, testFileContent);
+            ComparisonTask.IfCancelRequested();
             ComparisonTask.UpdateProgress(2);
             var exceptedTestData = Except(testFileContent, masterFileContent);
             ComparisonTask.UpdateProgress(2);
@@ -45,7 +49,9 @@ namespace Reflection.Models {
             TestTable = new WorkTable("Test");
             if (ChaeckPreparison(exceptedMasterData, exceptedTestData)) {
                 perfCounter.Start();
+                ComparisonTask.IfCancelRequested();
                 MasterTable.LoadData(exceptedMasterData, ImportConfiguration.Delimiter, ImportConfiguration.IsHeadersExist, ComparisonTask);
+                ComparisonTask.IfCancelRequested();
                 TestTable.LoadData(exceptedTestData, ImportConfiguration.Delimiter, ImportConfiguration.IsHeadersExist, ComparisonTask);
                 perfCounter.Stop("Load two files to WorkTable");
             } else {
@@ -55,17 +61,21 @@ namespace Reflection.Models {
             }
         }
 
-        public void StartComparison(IFileReader fileReader, ComparisonTask comparisonTask) {
+        public bool StartComparison(IFileReader fileReader, ComparisonTask comparisonTask) {
             IsBusy = true;
             ComparisonTask = comparisonTask;
             ComparisonTask.Status = Status.Executing;
             FileReader = fileReader;
+            ComparisonTask.IfCancelRequested();
             PrepareData(ComparisonTask.ImportConfiguration);
             if (MasterTable.RowsCount > 0 || TestTable.RowsCount > 0) {
                 ComparisonCore comparisonCore = new ComparisonCore(perfCounter, ComparisonTask);
+                ComparisonTask.IfCancelRequested();
                 comparisonCore.Execute(MasterTable, TestTable);
             }
-            IsBusy = false;
+            WriteLog();
+            IsBusy = false;        
+            return true;
         }
 
         private bool ChaeckPreparison(IEnumerable<string> master, IEnumerable<string> test) {
@@ -117,6 +127,28 @@ namespace Reflection.Models {
                 ComparisonCore comparisonCore = new ComparisonCore(perfCounter, ComparisonTask);
                 comparisonCore.RunEarlyAnalysis(MasterTable, TestTable);
             }
+        }
+
+        private void WriteLog() {
+            try {
+                string userName = System.Security.Principal.WindowsIdentity.GetCurrent().Name.Replace("SCDOM\\", "");
+                string logFile = @"O:\DATA\COMMON\core\log\" + userName + "_result.log";
+                List<string> content = new List<string>();
+                content.Add("StartTime: " + ComparisonTask.StartTime);
+                content.Add("MasterFilePath: " + ComparisonTask.ImportConfiguration.MasterFilePath);
+                content.Add("TestFilePath: " + ComparisonTask.ImportConfiguration.TestFilePath);
+                content.Add("IsLinearView: " + ComparisonTask.IsLinearView.ToString());
+                content.Add("MasterRowsCount: " + ComparisonTask.MasterRowsCount.ToString());
+                content.Add("TestRowsCount: " + ComparisonTask.TestRowsCount.ToString());
+                content.Add("ActualRowsDiff: " + ComparisonTask.ActualRowsDiff.ToString());
+                content.Add("RowsWithDeviations: " + ComparisonTask.RowsWithDeviations.ToString());
+                content.Add("ExtraMasterCount: " + ComparisonTask.ExtraMasterCount.ToString());
+                content.Add("ExtraTestCount: " + ComparisonTask.ExtraTestCount.ToString());
+                content.Add("Status: " + ComparisonTask.Status);
+                content.Add("ErrorMessage: " + ComparisonTask.ErrorMessage);
+                content.Add("--------------------------------------------------------------------------");
+                File.AppendAllLines(logFile, content);
+            } catch (Exception) { }
         }
     }
 }

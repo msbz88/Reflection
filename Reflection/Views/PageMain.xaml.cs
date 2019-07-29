@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -27,12 +28,14 @@ namespace Reflection.Views {
         public EventHandler ShowViewResult { get; set; }
         public EventHandler ChangeDeviationsView { get; set; }
         public ComparisonTasksViewModel ComparisonTasksViewModel { get; set; }
-        
+        ComparisonTask currectComparisonTask;
+        Button stopRestartButton;
+
         public PageMain(ComparisonTasksViewModel comparisonTasksViewModel) {
             ComparisonTasksViewModel = comparisonTasksViewModel;
             this.DataContext = ComparisonTasksViewModel;
             InitializeComponent();
-            CollectionViewSource.GetDefaultView(lvComparisonDetails.ItemsSource).Filter = UserFilter;          
+            CollectionViewSource.GetDefaultView(lvComparisonDetails.ItemsSource).Filter = UserFilter;
         }
 
         private void ButtonOpenFilesClick(object senderIn, RoutedEventArgs eIn) {
@@ -61,10 +64,10 @@ namespace Reflection.Views {
             var listViewItem = GetAncestorOfType<ListViewItem>(senderIn as Button);
             if (listViewItem != null) {
                 var selectedItem = (ComparisonTask)listViewItem.DataContext;
-                var isExcelOpened = Task.Run(()=> ComparisonTasksViewModel.TryOpenExcel(selectedItem));
+                var isExcelOpened = Task.Run(() => ComparisonTasksViewModel.TryOpenExcel(selectedItem));
                 if (!isExcelOpened.Result) {
                     ShowViewResult?.Invoke(selectedItem, null);
-                } 
+                }
             }
         }
 
@@ -81,12 +84,12 @@ namespace Reflection.Views {
         private void ListViewItemSelected(object sender, SelectionChangedEventArgs e) {
             var comparisonTask = (ComparisonTask)lvComparisonDetails.SelectedItem;
             if (comparisonTask != null) {
-                if (comparisonTask.Status == Status.Error) {
+                if (comparisonTask.Status == Status.Error || comparisonTask.Status == Status.Canceled) {
                     Error?.Invoke(comparisonTask.ErrorMessage, null);
                 } else {
                     Error?.Invoke("", null);
                 }
-            }  
+            }
         }
 
         private T GetAncestorOfType<T>(FrameworkElement child) where T : FrameworkElement {
@@ -104,17 +107,83 @@ namespace Reflection.Views {
             ChangeDeviationsView?.Invoke(true, null);
         }
 
-        //private void MasterFileNamePreviewMouseDown(object sender, MouseButtonEventArgs e) {
-        //    var listViewItem = GetAncestorOfType<ListViewItem>(sender as TextBlock);
-        //    if (listViewItem != null) {
-        //        var selectedItem = (ComparisonTask)listViewItem.DataContext;
-        //        try {
-        //            Process.Start("notepad++.exe", selectedItem.ImportConfiguration.MasterFilePath);
-        //        } catch (Exception ex) {
-        //            Error?.Invoke(ex.Message, null);
-        //        }
-        //    }           
-        //}
+        private void ProgressBarMouseEnter(object sender, MouseEventArgs e) {
+            var progressBar = sender as ProgressBar;
+            stopRestartButton = progressBar.Template.FindName("StopRestartButton", progressBar) as Button;
+            if (stopRestartButton != null) {
+                currectComparisonTask = (ComparisonTask)progressBar.DataContext;
+                if (currectComparisonTask.Status == Status.Executing) {
+                    stopRestartButton.Background = new SolidColorBrush(Colors.Red);
+                    stopRestartButton.Content = "Stop";
+                    currectComparisonTask.PropertyChanged += OnComparisonTaskStatusChanged;
+                    stopRestartButton.Visibility = Visibility.Visible;
+                } else if (currectComparisonTask.Status == Status.Failed || currectComparisonTask.Status == Status.Canceled) {
+                    stopRestartButton.Background = new SolidColorBrush(Color.FromArgb(0xFF, 20, 0xC5, 20));
+                    stopRestartButton.Content = "Restart";
+                    currectComparisonTask.PropertyChanged += OnComparisonTaskStatusChanged;
+                    stopRestartButton.Visibility = Visibility.Visible;
+                }
+            }
+        }
 
+        public void OnComparisonTaskStatusChanged(object sender, PropertyChangedEventArgs e) {
+            if (e.PropertyName == "Status") {
+                this.Dispatcher.Invoke(() => {
+                    if (currectComparisonTask.Status == Status.Executing) {
+                        stopRestartButton.Background = new SolidColorBrush(Colors.Red);
+                        stopRestartButton.Content = "Stop";
+                    } else if (currectComparisonTask.Status == Status.Failed || currectComparisonTask.Status == Status.Canceled) {
+                        stopRestartButton.Background = new SolidColorBrush(Color.FromArgb(0xFF, 20, 0xC5, 20));
+                        stopRestartButton.Content = "Restart";
+                    }
+                });
+            }
+        }
+
+        private void ProgressBarMouseLeave(object sender, MouseEventArgs e) {
+            if (stopRestartButton != null) {
+                stopRestartButton.Visibility = Visibility.Collapsed;
+                currectComparisonTask.PropertyChanged -= OnComparisonTaskStatusChanged;
+            }
+        }
+
+        private void StopRestartButtonClick(object sender, RoutedEventArgs e) {
+            if (stopRestartButton.Content.ToString() == "Stop") {
+                currectComparisonTask.CancellationToken.Cancel();
+            } else if (stopRestartButton.Content.ToString() == "Restart") {
+                ComparisonTasksViewModel.AddComparisonTask(currectComparisonTask.ImportConfiguration);
+            }
+        }
+
+        private void OpenOrigFile(string path) {
+            try {
+                Process.Start("notepad++.exe", path);
+            } catch (Exception ex) {
+                Error?.Invoke(ex.Message, null);
+            }
+        }
+
+        private void MenuItemOpenMasterClick(object sender, RoutedEventArgs e) {
+            var comparisonTask = lvComparisonDetails.SelectedItem as ComparisonTask;
+            if (comparisonTask != null) {
+                OpenOrigFile(comparisonTask.ImportConfiguration.MasterFilePath);
+            }
+        }
+
+        private void MenuItemOpenTestClick(object sender, RoutedEventArgs e) {
+            var comparisonTask = lvComparisonDetails.SelectedItem as ComparisonTask;
+            if (comparisonTask != null) {
+                OpenOrigFile(comparisonTask.ImportConfiguration.TestFilePath);
+            }
+        }
+
+        private void ButtonDeleteComparisonTaskClick(object sender, RoutedEventArgs e) {
+            var listViewItem = GetAncestorOfType<ListViewItem>(sender as Button);
+            if (listViewItem != null) {
+                var selectedTask = (ComparisonTask)listViewItem.DataContext;
+                ComparisonTasksViewModel.DeleteTask(selectedTask);
+                Error?.Invoke("", null);
+            }
+        }
     }
 }

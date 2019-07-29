@@ -38,6 +38,7 @@ namespace Reflection.Models {
             //gather base stat  
             PerfCounter.Start();
             BaseStat = GatherStatistics(MasterTable.Rows, TestTable.Rows);
+            ComparisonTask.IfCancelRequested();
             PerfCounter.Stop("Base Gather Stat");
             //analyse
             //File.WriteAllLines(@"C:\Users\MSBZ\Desktop\baseStat.txt", BaseStat.Select(r => r.ToString()));
@@ -51,7 +52,7 @@ namespace Reflection.Models {
                 ComparisonKeys.TransactionKeys = autoKeys.TransactionKeys;
                 ComparisonKeys.ExcludeColumns = autoKeys.ExcludeColumns;
             }
-
+            ComparisonTask.IfCancelRequested();
             PerfCounter.Stop("AnalyseForPivotKey");
             //File.AppendAllText(@"C:\Users\MSBZ\Desktop\baseStat.txt", "baseKeyIndex: " + string.Join(";", MasterTable.Headers.ColumnIndexIn(PivotKeysIndexes.MainKeys)));
             //rows match
@@ -60,23 +61,29 @@ namespace Reflection.Models {
             //group
             PerfCounter.Start();
             var groupsM = Group(MasterTable.Rows, ComparisonKeys.MainKeys);
+            ComparisonTask.IfCancelRequested();
             ComparisonTask.UpdateProgress(4);
             var groupsT = Group(TestTable.Rows, ComparisonKeys.MainKeys);
             ComparisonTask.UpdateProgress(4);
             PerfCounter.Stop("Base Group");           
             PerfCounter.Start();
             CompareTable = new CompareTable(Delimiter, MasterTable.Headers, TestTable.Headers, MasterTable.ColumnsCount, ComparisonKeys, ComparisonTask.IsLinearView);
+            ComparisonTask.IfCancelRequested();
             var uMasterRows = groupsM.Where(r => r.Value.Count() == 1).ToDictionary(item => item.Key, item => item.Value.First());
             ComparisonTask.UpdateProgress(2);
+            ComparisonTask.IfCancelRequested();
             var uTestRows = groupsT.Where(r => r.Value.Count() == 1).ToDictionary(item => item.Key, item => item.Value.First());
             ComparisonTask.UpdateProgress(2);
             var resU = GroupMatch(uMasterRows, uTestRows).ToList();
             CompareTable.AddComparedRows(resU);
             ComparisonTask.UpdateProgress(2);
+            ComparisonTask.IfCancelRequested();
             var mRemainings = Group(GetRemainings(MasterTable.Rows, CompareTable.GetMasterComparedRowsId()), ComparisonKeys.MainKeys);
             ComparisonTask.UpdateProgress(2);
+            ComparisonTask.IfCancelRequested();
             var tRemainings = Group(GetRemainings(TestTable.Rows, CompareTable.GetTestComparedRowsId()), ComparisonKeys.MainKeys);
             ComparisonTask.UpdateProgress(2);
+            ComparisonTask.IfCancelRequested();
             PerfCounter.Stop("Preparison");
             PerfCounter.Start();
             var groups = from m in mRemainings
@@ -84,22 +91,28 @@ namespace Reflection.Models {
                          select new { Key = m.Key, ComparedRows = RowsMatch.ProcessGroup(m.Value, t.Value, mRemainings.Count) };
 
             foreach (var item in groups) {
+                ComparisonTask.IfCancelRequested();
                 CompareTable.AddComparedRows(item.ComparedRows);
             }
             PerfCounter.Stop("Process");
             //extra
             PerfCounter.Start();
             ComparisonTask.RowsWithDeviations = CompareTable.ComparedRowsCount;
+            ComparisonTask.IfCancelRequested();
             var masterExtra = GetRemainings(MasterTable.Rows, CompareTable.GetMasterComparedRowsId());
+            ComparisonTask.IfCancelRequested();
             var testExtra = GetRemainings(TestTable.Rows, CompareTable.GetTestComparedRowsId());
             ComparisonTask.UpdateProgress(1);
+            ComparisonTask.IfCancelRequested();
             CompareTable.AddMasterExtraRows(masterExtra);
             ComparisonTask.ExtraMasterCount = CompareTable.MasterExtraCount;
+            ComparisonTask.IfCancelRequested();
             CompareTable.AddTestExtraRows(testExtra);
             ComparisonTask.UpdateProgress(1);
             ComparisonTask.ExtraTestCount = CompareTable.TestExtraCount;
             PerfCounter.Stop("Extra");
-            PerfCounter.Start();           
+            PerfCounter.Start();
+            ComparisonTask.IfCancelRequested();
             ComparisonTask.ResultFile = ComparisonTask.CommonDirectoryPath + @"\Compared_" + ComparisonTask.CommonName;
             CompareTable.SaveComparedRows(ComparisonTask.ResultFile);
             ComparisonTask.UpdateProgress(2);

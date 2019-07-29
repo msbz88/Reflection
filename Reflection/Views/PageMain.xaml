@@ -50,6 +50,80 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <!--Circular button-->
+        <Style x:Key="MyFocusVisual">
+            <Setter Property="Control.Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Control}">
+                        <Grid Margin="8">
+                            <Ellipse
+                    Name="r1"
+                    Stroke="Black"
+                    StrokeDashArray="2 2"
+                    StrokeThickness="1"/>
+                            <Border
+                    Name="border"
+                    Width="{TemplateBinding ActualWidth}"
+                    Height="{TemplateBinding ActualHeight}"
+                    BorderThickness="1"
+                    CornerRadius="2"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="CircleButton" TargetType="Button">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource MyFocusVisual}"/>
+            <Setter Property="Background" Value="#FF6DB4EF"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Ellipse Fill="{TemplateBinding Background}"/>
+                            <Ellipse>
+                                <Ellipse.Fill>
+                                    <RadialGradientBrush>
+                                        <GradientStop Offset="0" Color="#00000000"/>
+                                        <GradientStop Offset="0.88" Color="#00000000"/>
+                                        <GradientStop Offset="1" Color="#80000000"/>
+                                    </RadialGradientBrush>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <Ellipse Margin="10" x:Name="highlightCircle" >
+                                <Ellipse.Fill >
+                                    <LinearGradientBrush >
+                                        <GradientStop Offset="0" Color="#50FFFFFF"/>
+                                        <GradientStop Offset="0.5" Color="#00FFFFFF"/>
+                                        <GradientStop Offset="1" Color="#50FFFFFF"/>
+                                    </LinearGradientBrush>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <ContentPresenter x:Name="content" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="highlightCircle" Property="Fill">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0.3,0" EndPoint="0.7,1">
+                                            <GradientStop Offset="0" Color="#50FFFFFF"/>
+                                            <GradientStop Offset="0.5" Color="#00FFFFFF"/>
+                                            <GradientStop Offset="1" Color="#50FFFFFF"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="content" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <TranslateTransform Y="0.5" X="0.5"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <!--Progress bar-->
         <local:DoubleToPctConverter x:Key="dblToPct"/>
         <Style x:Key="pbarCircularStyle" TargetType="{x:Type ProgressBar}">
@@ -66,10 +140,13 @@
                             <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="26" Foreground="DarkGray"
                             Text="{TemplateBinding Value, Converter={StaticResource dblToPct}}"/>
                             <local:CircularProgress Stroke="{TemplateBinding Foreground}" Value="{TemplateBinding Value}"/>
+                            <Button Name="StopRestartButton" Width="70" Height="70" Style="{StaticResource CircleButton}" Visibility="Collapsed" FontSize="15" Foreground="White" Click="StopRestartButtonClick"/>
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+            <EventSetter Event="MouseEnter" Handler="ProgressBarMouseEnter" />
+            <EventSetter Event="MouseLeave" Handler="ProgressBarMouseLeave" />
         </Style>
     </Page.Resources>
     <Grid>
@@ -93,10 +170,16 @@
                     </Style.Triggers>
                 </Style>
             </ListView.ItemContainerStyle>
+            <ListView.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Open Master original file" Click="MenuItemOpenMasterClick"/>
+                    <MenuItem Header="Open Test original file" Click="MenuItemOpenTestClick"/>
+                </ContextMenu>
+            </ListView.ContextMenu>
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <Border Name="BorderListItem" BorderBrush="LightGray" MaxWidth="1200" BorderThickness="1" Padding="5" Margin="5">
-                        <StackPanel Orientation="Horizontal" Height="115" AutomationProperties.Name="{Binding ComparisonId}">
+                        <Grid Height="115" AutomationProperties.Name="{Binding ComparisonId}" HorizontalAlignment="Stretch">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="25"/>
@@ -112,7 +195,7 @@
                                     <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="100"/>
-                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <Grid Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top" Height="25" Width="25">
                                     <Ellipse Stroke="DarkGray" Fill="DarkGray" StrokeThickness="2"/>
@@ -137,6 +220,9 @@
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding Path=Status}" Value="Passed" >
                                                     <Setter Property="Foreground" Value="Green"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Path=Status}" Value="Canceled" >
+                                                    <Setter Property="Foreground" Value="Red"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -192,8 +278,9 @@
                                 <TextBlock Grid.Row="2" Grid.RowSpan ="2" Grid.Column="5" Text="{Binding RowsWithDeviations, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Center" FontWeight="DemiBold"/>
                                 <TextBlock Grid.Row="2" Grid.Column="6" Text="{Binding ExtraMasterCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Bottom" FontWeight="DemiBold" />
                                 <TextBlock Grid.Row="3" Grid.Column="6" Text="{Binding ExtraTestCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Bottom" FontWeight="DemiBold"/>
+                                <Button Grid.Row="0" Grid.Column="6" Style="{StaticResource NavButtton}" Content="&#xE711;" HorizontalAlignment="Right" VerticalAlignment="Top" Click="ButtonDeleteComparisonTaskClick"/>
                             </Grid>
-                        </StackPanel>
+                        </Grid>
                     </Border>
                 </DataTemplate>
             </ListView.ItemTemplate>

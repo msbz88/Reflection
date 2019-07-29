@@ -22,7 +22,7 @@ namespace Reflection.Models {
 
         public void LoadData(IEnumerable<string> data, string delimiter, bool isHeadersExist, ComparisonTask comparisonTask) {
             Delimiter = delimiter;
-            var firstLine = Parse(data.First());
+            var firstLine = Parse(data.First());           
             ColumnsCount = firstLine.Length;
             if (isHeadersExist) {
                 Headers = new Row(0, firstLine);
@@ -33,6 +33,7 @@ namespace Reflection.Models {
             RowsCount = 0;
             var totalLines = comparisonTask.MasterRowsCount > comparisonTask.TestRowsCount ? comparisonTask.MasterRowsCount : comparisonTask.TestRowsCount;
             foreach (var line in data) {
+                comparisonTask.IfCancelRequested();
                 var row = new Row(++RowsCount, Parse(line));
                 if (row.Data.Length == ColumnsCount) {
                     Rows.Add(row);
