@@ -11,6 +11,7 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
@@ -36,9 +37,11 @@ namespace Reflection.Views {
             this.DataContext = ComparisonTasksViewModel;
             InitializeComponent();
             CollectionViewSource.GetDefaultView(lvComparisonDetails.ItemsSource).Filter = UserFilter;
+            SetWelcomeTextBlock();
         }
 
         private void ButtonOpenFilesClick(object senderIn, RoutedEventArgs eIn) {
+            ClearWelcomeTextBlock();
             OpenFiles?.Invoke(senderIn, eIn);
         }
 
@@ -50,7 +53,7 @@ namespace Reflection.Views {
             var listViewItem = GetAncestorOfType<ListViewItem>(senderIn as Button);
             if (listViewItem != null) {
                 var selectedItem = (ComparisonTask)listViewItem.DataContext;
-                string argument = "/select, \"" + selectedItem.ImportConfiguration.MasterFilePath + "\"";
+                //string argument = "/select, \"" + selectedItem.ResultFile + ".xlsx";
                 try {
                     //Process.Start("explorer.exe", argument);
                     Process.Start(selectedItem.CommonDirectoryPath);
@@ -184,6 +187,46 @@ namespace Reflection.Views {
                 ComparisonTasksViewModel.DeleteTask(selectedTask);
                 Error?.Invoke("", null);
             }
+        }
+
+        private void ClearWelcomeTextBlock() {
+            WelcomeTextBlock.Text = "";
+            WelcomeTextBlock.Visibility = Visibility.Collapsed;
+        }
+
+        private async void SetWelcomeTextBlock() {
+            string userName = "";
+            try {
+                userName = await Task.Run(() => System.DirectoryServices.AccountManagement.UserPrincipal.Current.DisplayName);
+                WelcomeTextBlock.Text = "Hello, " + userName.Split(' ')[0] + "!";
+            } catch (Exception) {
+                WelcomeTextBlock.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void TextBlockStatusTargetUpdated(object sender, DataTransferEventArgs e) {
+            var listViewItem = GetAncestorOfType<ListViewItem>(sender as TextBlock);
+            ContentPresenter myContentPresenter = FindVisualChild<ContentPresenter>(listViewItem);
+            DataTemplate myDataTemplate = myContentPresenter.ContentTemplate;
+            Border BorderListItem = (Border)myDataTemplate.FindName("BorderListItem", myContentPresenter);
+            var comparisonTask = (ComparisonTask)listViewItem.DataContext;
+            if (BorderListItem != null && comparisonTask.Status == Status.Error) {
+                BorderListItem.Effect = new DropShadowEffect {Color = Color.FromArgb(255, 255, 00, 00), BlurRadius= 5, Opacity=0.2};
+            }
+        }
+
+        private childItem FindVisualChild<childItem>(DependencyObject obj) where childItem : DependencyObject {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++) {
+                DependencyObject child = VisualTreeHelper.GetChild(obj, i);
+                if (child != null && child is childItem)
+                    return (childItem)child;
+                else {
+                    childItem childOfChild = FindVisualChild<childItem>(child);
+                    if (childOfChild != null)
+                        return childOfChild;
+                }
+            }
+            return null;
         }
     }
 }

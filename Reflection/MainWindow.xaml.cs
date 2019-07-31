@@ -73,15 +73,26 @@ namespace Reflection {
         }
 
         private void OnClosing(object sender, CancelEventArgs e) {
+            DeleteInstance(@"O:\DATA\COMMON\core\");
             var isTasksExist = ComparisonDetailViewModel.AllComparisonDetails.Any();
             if (isTasksExist) {
                 var userAnswer = MessageBox.Show("Do you want to exit?\nComparison history will be lost.", "", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
-                if (userAnswer == MessageBoxResult.Yes) {
+                if (userAnswer == MessageBoxResult.Yes) {                  
                     e.Cancel = false;
                 } else {
                     e.Cancel = true;
                 }
             }
+        }
+
+        private void DeleteInstance(string pathOrigin) {
+            try {
+                string userName = System.Security.Principal.WindowsIdentity.GetCurrent().Name.Replace("SCDOM\\", "");
+                string path = pathOrigin + "Reflection_" + userName + ".exe";
+                if (File.Exists(path)) {
+                    File.Delete(path);
+                }
+            } catch (Exception) {}
         }
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e) {

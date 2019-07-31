@@ -65,6 +65,7 @@ namespace Reflection.Models {
             IsBusy = true;
             ComparisonTask = comparisonTask;
             ComparisonTask.Status = Status.Executing;
+            ComparisonTask.StartClock();
             FileReader = fileReader;
             ComparisonTask.IfCancelRequested();
             PrepareData(ComparisonTask.ImportConfiguration);
@@ -73,6 +74,7 @@ namespace Reflection.Models {
                 ComparisonTask.IfCancelRequested();
                 comparisonCore.Execute(MasterTable, TestTable);
             }
+            ComparisonTask.StopClock();
             WriteLog();
             IsBusy = false;        
             return true;

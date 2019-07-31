@@ -178,57 +178,28 @@
             </ListView.ContextMenu>
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <Border Name="BorderListItem" BorderBrush="LightGray" MaxWidth="1200" BorderThickness="1" Padding="5" Margin="5">
-                        <Grid Height="115" AutomationProperties.Name="{Binding ComparisonId}" HorizontalAlignment="Stretch">
-                            <Grid>
+                    <Border Name="BorderListItem" MaxWidth="1200" BorderThickness="1" BorderBrush="LightGray" Margin="5" >
+                        <Grid Name="ItemGrid" Height="150" AutomationProperties.Name="{Binding ComparisonId}" HorizontalAlignment="Stretch">
+                            <Grid >
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="25"/>
-                                    <RowDefinition Height="20"/>
-                                    <RowDefinition Height="25"/>
-                                    <RowDefinition Height="20"/>
+                                    <RowDefinition Height="35"/>
+                                    <RowDefinition Height="30"/>
+                                    <RowDefinition Height="30"/>
+                                    <RowDefinition Height="30"/>
                                     <RowDefinition Height="25"/>
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="100"/>
-                                    <ColumnDefinition Width="250" MinWidth="150"/>
-                                    <ColumnDefinition Width="100"/>
-                                    <ColumnDefinition Width="100"/>
-                                    <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Grid Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top" Height="25" Width="25">
+                                <!--comparison number-->
+                                <Grid Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top" Height="25" Width="25" Margin="5">
                                     <Ellipse Stroke="DarkGray" Fill="DarkGray" StrokeThickness="2"/>
                                     <Label Name="lbl" Foreground="White" Content="{Binding Path=ComparisonId}" Padding="5" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Grid>
-                                <TextBlock Name="TextBlockStatus" Grid.Row="2" Grid.Column="0" Text="{Binding Path=Status, NotifyOnTargetUpdated=True}" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="15" >
-                                    <TextBlock.Style>
-                                        <Style TargetType="{x:Type TextBlock}">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Path=Status}" Value="Queued" >
-                                                    <Setter Property="Foreground" Value="DarkGray"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding Path=Status}" Value="Executing" >
-                                                    <Setter Property="Foreground" Value="Orange"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding Path=Status}" Value="Error" >
-                                                    <Setter Property="Foreground" Value="Red"/>
-                                                    <!--<Setter Property="Border.BorderBrush" Value="Red"/>-->
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding Path=Status}" Value="Failed" >
-                                                    <Setter Property="Foreground" Value="Red"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding Path=Status}" Value="Passed" >
-                                                    <Setter Property="Foreground" Value="Green"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding Path=Status}" Value="Canceled" >
-                                                    <Setter Property="Foreground" Value="Red"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                                <Button Name="btnViewResult" Grid.Column="0" Grid.Row="1" Content="View Result" Height="20" Width="70" HorizontalAlignment="Center" VerticalAlignment="Center" Click="ButtonViewResult">
+                                <!--status block-->
+                                    <Button Name="btnViewResult" Grid.Column="0" Grid.Row="1" Content="View Result" Height="20" Width="70" HorizontalAlignment="Center" VerticalAlignment="Top" Click="ButtonViewResult">
                                     <Button.Style>
                                         <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
                                             <Setter Property="FontSize" Value="10" />
@@ -246,7 +217,33 @@
                                         </Style>
                                     </Button.Style>
                                 </Button>
-                                <Button Name ="btnOpenFolder" Grid.Column="0" Grid.Row="3" Content="Open Folder" Height="20" Width="70" VerticalAlignment="Center" HorizontalAlignment="Center" Click="ButtonOpenFolder">
+                                <TextBlock Name="TextBlockStatus" Grid.Row="2" Grid.Column="0" Text="{Binding Path=Status, NotifyOnTargetUpdated=True}" VerticalAlignment="Top" HorizontalAlignment="Center" FontSize="15" TargetUpdated="TextBlockStatusTargetUpdated">
+                                    <TextBlock.Style>
+                                        <Style TargetType="{x:Type TextBlock}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Path=Status}" Value="Queued" >
+                                                    <Setter Property="Foreground" Value="DarkGray"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Path=Status}" Value="Executing" >
+                                                    <Setter Property="Foreground" Value="Orange"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Path=Status}" Value="Error" >
+                                                    <Setter Property="Foreground" Value="Red"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Path=Status}" Value="Failed" >
+                                                    <Setter Property="Foreground" Value="Red"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Path=Status}" Value="Passed" >
+                                                    <Setter Property="Foreground" Value="Green"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Path=Status}" Value="Canceled" >
+                                                    <Setter Property="Foreground" Value="Red"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <Button Name ="btnOpenFolder" Grid.Column="0" Grid.Row="3" Content="Open Folder" Height="20" Width="70" VerticalAlignment="Top" HorizontalAlignment="Center" Click="ButtonOpenFolder">
                                     <Button.Style>
                                         <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
                                             <Setter Property="FontSize" Value="10" />
@@ -254,37 +251,67 @@
                                         </Style>
                                     </Button.Style>
                                 </Button>
-                                <Label Grid.Row="4"  Grid.Column="0" Content="{Binding StartTime}" HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="12" Foreground="DarkGray"/>
-                                <ProgressBar Grid.Row="0" Grid.Column="1" Grid.RowSpan="5" Style="{DynamicResource pbarCircularStyle}" Value="{Binding Progress}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Row="1" Grid.Column="2" Text="File Name" HorizontalAlignment="Left" />
-                                <TextBlock Grid.Row="1" Grid.Column="3" Text="Rows Count" HorizontalAlignment="Left" Margin="5,0,0,0"/>
-                                <TextBlock Grid.Row="1" Grid.Column="4" Text="Actual Rows Diff" HorizontalAlignment="Left" />
-                                <TextBlock Grid.Row="1" Grid.Column="5" Text="Deviations" HorizontalAlignment="Left" />
-                                <TextBlock Grid.Row="1" Grid.Column="6" Text="Extra Rows" HorizontalAlignment="Left" />
-                                <Separator Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="5" VerticalAlignment="Bottom" Height="5">
-                                    <Separator.Background>
-                                        <LinearGradientBrush StartPoint="0,0.5" EndPoint="1.0,0.5">
-                                            <GradientStop Color="DarkSlateBlue" Offset="0.0"/>
-                                            <GradientStop Color="SkyBlue" Offset="1.0"/>
-                                        </LinearGradientBrush>
-                                    </Separator.Background>
-                                </Separator>
-                                <GridSplitter Grid.Column="3" Grid.RowSpan="3" HorizontalAlignment="Left" Margin="0,0,2,0" Grid.Row="1" Width="2" Background="LightGray"/>
-                                <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding MasterFileName}" Foreground="DarkSlateBlue" FontSize="15" FontWeight="DemiBold" Padding="0,0,10,0" HorizontalAlignment="Left" />
-                                <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding TestFileName}" Foreground="DarkSlateBlue" FontSize="15" FontWeight="DemiBold" Padding="0,0,10,0" HorizontalAlignment="Left" />
-                                <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding MasterRowsCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="5,0,0,0" FontWeight="DemiBold"/>
-                                <TextBlock Grid.Row="3" Grid.Column="3" Text="{Binding TestRowsCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="5,0,0,0" FontWeight="DemiBold"/>
-                                <TextBlock Grid.Row="2" Grid.RowSpan ="2" Grid.Column="4" Text="{Binding ActualRowsDiff, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Center" FontWeight="DemiBold"/>
-                                <TextBlock Grid.Row="2" Grid.RowSpan ="2" Grid.Column="5" Text="{Binding RowsWithDeviations, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Center" FontWeight="DemiBold"/>
-                                <TextBlock Grid.Row="2" Grid.Column="6" Text="{Binding ExtraMasterCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Bottom" FontWeight="DemiBold" />
-                                <TextBlock Grid.Row="3" Grid.Column="6" Text="{Binding ExtraTestCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Bottom" FontWeight="DemiBold"/>
-                                <Button Grid.Row="0" Grid.Column="6" Style="{StaticResource NavButtton}" Content="&#xE711;" HorizontalAlignment="Right" VerticalAlignment="Top" Click="ButtonDeleteComparisonTaskClick"/>
+                                <!--progress-->
+                                <ProgressBar Grid.Row="0" Grid.Column="1" Grid.RowSpan="4" Margin="0,20,0,0" Style="{DynamicResource pbarCircularStyle}" Value="{Binding Progress}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                               <!--result table-->
+                                <StackPanel Grid.Row="0" Grid.RowSpan="4" Grid.Column="2" Margin="25,40,0,0" HorizontalAlignment="Stretch">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="25"/>
+                                            <RowDefinition Height="25"/>
+                                            <RowDefinition Height="25"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="250" MinWidth="150"/>
+                                            <ColumnDefinition Width="*" MinWidth="100"/>
+                                            <ColumnDefinition Width="*" MinWidth="100"/>
+                                            <ColumnDefinition Width="*" MinWidth="100"/>
+                                            <ColumnDefinition Width="*" MinWidth="100"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="File Name" HorizontalAlignment="Left" />
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="Rows Count" HorizontalAlignment="Left" Margin="5,0,0,0"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Actual Rows Diff" HorizontalAlignment="Left" />
+                                        <TextBlock Grid.Row="0" Grid.Column="3" Text="Deviations" HorizontalAlignment="Left" />
+                                        <TextBlock Grid.Row="0" Grid.Column="4" Text="Extra Rows" HorizontalAlignment="Left" />
+                                        <Separator Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="5" VerticalAlignment="Bottom" Height="5" Margin="0,0,5,0">
+                                            <Separator.Background>
+                                                <LinearGradientBrush StartPoint="0,0.5" EndPoint="1.0,0.5">
+                                                    <GradientStop Color="DarkSlateBlue" Offset="0.0"/>
+                                                    <GradientStop Color="SkyBlue" Offset="1.0"/>
+                                                </LinearGradientBrush>
+                                            </Separator.Background>
+                                        </Separator>
+                                        <GridSplitter Grid.Column="1" Grid.RowSpan="3" HorizontalAlignment="Left" Margin="0,0,2,0" Grid.Row="0" Width="2" Background="LightGray"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding MasterFileName}" Foreground="DarkSlateBlue" FontSize="15" Padding="0,0,0,3" FontWeight="DemiBold" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding TestFileName}" Foreground="DarkSlateBlue" FontSize="15" Padding="0,0,0,3" FontWeight="DemiBold" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding MasterRowsCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0" FontWeight="DemiBold"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding TestRowsCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0" FontWeight="DemiBold"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="2" Grid.RowSpan ="2"  Text="{Binding ActualRowsDiff, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Center" FontWeight="DemiBold"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="3" Grid.RowSpan ="2" Text="{Binding RowsWithDeviations, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Center" FontWeight="DemiBold"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="4" Text="{Binding ExtraMasterCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Center" FontWeight="DemiBold" />
+                                        <TextBlock Grid.Row="2" Grid.Column="4" Text="{Binding ExtraTestCount, StringFormat={}{0:N0}}" HorizontalAlignment="Left" VerticalAlignment="Center" FontWeight="DemiBold"/>
+                                    </Grid>
+                                </StackPanel>
+                                   <!--close button-->
+                                <Button Grid.Row="0" Grid.Column="3" Margin="5" Style="{StaticResource NavButtton}" Content="&#xE711;" HorizontalAlignment="Right" VerticalAlignment="Top" Click="ButtonDeleteComparisonTaskClick"/>
+                                <Separator Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="7" Margin="5,0,5,0" VerticalAlignment="Top" Height="5" Background="LightGray"/>
+                                <!--time-->
+                                <Label Grid.Row="4" Grid.Column="0" Content="{Binding StartTime}" HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="12" Foreground="DarkGray"/>
+                                <Label Grid.Row="4" Grid.Column="1" Content="{Binding ElapsedTime}" HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="12" Foreground="DarkGray"/>
+                                <Label Grid.Row="4" Grid.Column="2" Margin="20,0,0,0" Content="{Binding DeviationsView}" HorizontalAlignment="Left" VerticalAlignment="Bottom" FontSize="12" Foreground="DarkGray"/>
                             </Grid>
                         </Grid>
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="5" Opacity="0.2"/>
+                        </Border.Effect>
+                        <Border.Background>
+                            <SolidColorBrush Color="White"></SolidColorBrush>
+                        </Border.Background>
                     </Border>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
+        <TextBlock Name ="WelcomeTextBlock" Foreground="DarkGray" HorizontalAlignment="Center" FontFamily="Segoe UI" FontSize="30" Grid.Row="1" Grid.RowSpan="2" Grid.Column="0"/>
         <TextBox Grid.Row="0" Grid.Column="2" Name="TextBoxSearchFile" Width="150" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center" TextChanged="TextBoxSearchFileTextChanged"/>
         <Button Name ="btnOpenFiles" Grid.Row="2" Grid.Column="1" Height="25" Width="80" HorizontalAlignment="Center" VerticalAlignment="Top" Margin ="0,10,0,0" Content="Open Files" Click="ButtonOpenFilesClick"/>
         <StackPanel Grid.Row="1" Grid.Column="1" Margin="5,0,5,0" Height="30" VerticalAlignment="Bottom">

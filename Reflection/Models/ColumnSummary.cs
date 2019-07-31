@@ -167,7 +167,10 @@ namespace Reflection.Models {
                 "dd-MM-yyyy HH:mm:ss","dd/MM/yyyy HH:mm:ss", "dd.MM.yyyy HH:mm:ss",
                 "yyyy-MM-dd HH:mm", "yyyy/MM/dd HH:mm", "yyyy.MM.dd HH:mm",
                 "MM-dd-yyyy HH:mm","MM/dd/yyyy HH:mm", "MM.dd.yyyy HH:mm",
-                "dd-MM-yyyy HH:mm","dd/MM/yyyy HH:mm", "dd.MM.yyyy HH:mm"};
+                "dd-MM-yyyy HH:mm","dd/MM/yyyy HH:mm", "dd.MM.yyyy HH:mm",
+                "dd-MM-yyyy HH:mm:ss AM","dd/MM/yyyy HH:mm:ss AM", "dd.MM.yyyy HH:mm:ss AM",
+                "dd-MM-yyyy HH:mm:ss PM","dd/MM/yyyy HH:mm:ss PM", "dd.MM.yyyy HH:mm:ss PM"
+            };
             DateTime result;
             foreach (var item in columnData) {
                 if(item == "" && columnData.Count == 1) {
@@ -175,6 +178,7 @@ namespace Reflection.Models {
                 }else if (item == "") {
                     continue;
                 }
+                //var str = item.Replace("AM", "").Replace("PM","");
                 if (!DateTime.TryParseExact(item, format, CultureInfo.InvariantCulture, DateTimeStyles.NoCurrentDateDefault, out result)) {
                     if (IsDouble && item.Length > 8) {
                         string[] format2 = new string[] { "yyyyMMdd" };

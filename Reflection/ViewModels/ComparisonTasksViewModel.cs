@@ -48,7 +48,7 @@ namespace Reflection.ViewModels {
             }
             comparisonTask.IsLinearView = IsLinearView;
             AllComparisonDetails.Add(comparisonTask);
-            TriggerComparison();
+            TriggerComparison();          
         }
 
         private async void TriggerComparison() {
@@ -58,15 +58,17 @@ namespace Reflection.ViewModels {
                     if (comparisonTask == null) {
                         return;
                     }
-                    try {
+                    try {                       
                         await Task.Run(() => ComparisonProcessor.StartComparison(FileReader, comparisonTask));
                     } catch (Exception e) {
                         var cancelTask = e as OperationCanceledException;
                         if (cancelTask != null) {
+                            comparisonTask.StopClock();
                             comparisonTask.Status = Status.Canceled;
                             comparisonTask.ErrorMessage = "Task was canceled by user";
                             ComparisonProcessor.IsBusy = false;
                         } else {
+                            comparisonTask.StopClock();
                             comparisonTask.Status = Status.Error;
                             comparisonTask.ErrorMessage = e.Message;
                             ComparisonProcessor.IsBusy = false;

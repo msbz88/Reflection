@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -98,8 +99,33 @@ namespace Reflection.Models {
             set { resultFile = SetResultFile(value); }
         }
         public Task<Application> ExcelApplication { get; set; }
-        public bool IsLinearView { get; set; } = true;
+        bool isLinearView;
+        public bool IsLinearView {
+            get { return isLinearView; }
+            set {
+                isLinearView = value;
+                SetDeviationsView();
+            }
+        }
         public CancellationTokenSource CancellationToken { get; set; }
+        string elapsedTime;
+        public string ElapsedTime {
+            get { return elapsedTime; }
+            set {
+                elapsedTime = value;
+                OnPropertyChanged("ElapsedTime");
+            }
+        }
+        DispatcherTimer Timer { get; set; }
+        Stopwatch Stopwatch { get; set; }
+        string deviationsView;
+        public string DeviationsView {
+            get {return deviationsView; }
+            set {
+                deviationsView = value;
+                OnPropertyChanged("DeviationsView");
+            }
+        }
 
         public ComparisonTask(int comparisonId, ImportConfiguration importConfiguration) {
             ComparisonId = comparisonId;
@@ -112,7 +138,9 @@ namespace Reflection.Models {
             Status = Status.Queued;
             CancellationToken = new CancellationTokenSource();
             ErrorMessage = "";
-            //SimulateProgress();
+            IsLinearView = true;
+            Timer = new DispatcherTimer();
+            Stopwatch = new Stopwatch();
         }
 
         public void UpdateProgress(double val) {
@@ -121,17 +149,6 @@ namespace Reflection.Models {
 
         public void OnPropertyChanged(string propName) {
             this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
-        }
-
-        public void SimulateProgress() {
-            new Thread(() => {               
-                for (int i = 0; i <= 100; i++) {
-                    Progress = i;
-                    Thread.Sleep(50);
-                    Status = Status.Executing;
-                }
-                Status = Status.Passed;
-            }).Start();
         }
 
         private string GetCommonName() {
@@ -179,6 +196,34 @@ namespace Reflection.Models {
             }
         }
 
+        private void InitializeClock() {
+            Timer.Interval = TimeSpan.FromSeconds(1);
+            Timer.Tick += TimerTick;
+        }
 
+        public void StartClock() {
+            InitializeClock();
+            Stopwatch.Start();
+            Timer.Start();
+        }
+
+        private void TimerTick(object sender, EventArgs e) {
+            if (Stopwatch.IsRunning) {
+                TimeSpan ts = Stopwatch.Elapsed;
+                ElapsedTime = string.Format("{0:00}:{1:00}:{2:00}", ts.Hours, ts.Minutes, ts.Seconds);
+            }
+        }
+
+        public void StopClock() {
+            Timer.Stop();
+        }
+
+        private void SetDeviationsView() {
+            if (IsLinearView) {
+                DeviationsView = "Linear Deviations View";
+            }else {
+                DeviationsView = "Tabular Deviations View";
+            }
+        }
     }
 }
