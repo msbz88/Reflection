@@ -33,6 +33,7 @@ namespace Reflection.Views {
             InitializeComponent();
             ImportViewModel = new ImportViewModel();
             ComboBoxDataBinding();
+            this.DataContext = ImportViewModel;
         }
 
         public void SelectFiles() {
@@ -87,7 +88,7 @@ namespace Reflection.Views {
             return viewDelimiter;
         }
 
-        private void TextBoxGotFocus(object senderIn, RoutedEventArgs eIn) {
+        private void TextBoxDelimiterGotFocus(object senderIn, RoutedEventArgs eIn) {
             if (PresentDelimiter(ImportViewModel.Delimiter) == TextBoxDelimiter.Text) {
                 var delimiter = ImportViewModel.Delimiter;
                 if (delimiter == "\t") {
@@ -99,7 +100,7 @@ namespace Reflection.Views {
             }
         }
 
-        private void TextBoxLostFocus(object senderIn, RoutedEventArgs eIn) {
+        private void TextBoxDelimiterLostFocus(object senderIn, RoutedEventArgs eIn) {
             if (TextBoxDelimiter.Text != ImportViewModel.Delimiter && TextBoxDelimiter.Text != "\\t") {
                 customDelimiter = TextBoxDelimiter.Text;
                 TextBoxDelimiter.Text = PresentDelimiter(TextBoxDelimiter.Text);
@@ -110,7 +111,11 @@ namespace Reflection.Views {
 
         private void RenderFileToView(string path) {
             PrintFileContent(System.IO.Path.GetFileName(path));
-            TextBoxHeaderRow.Text = ImportViewModel.RowsToSkip.ToString();
+            if (ImportViewModel.RowsToSkip == 0 && !ImportViewModel.IsHeadersExist) {
+                TextBoxHeaderRow.Text = "No header found";
+            } else {
+                TextBoxHeaderRow.Text = ImportViewModel.RowsToSkip.ToString();
+            }
         }
 
         private void ComboBoxSelectionChanged(object senderIn, RoutedEventArgs eIn) {
@@ -138,7 +143,8 @@ namespace Reflection.Views {
                 dgData.Columns.Add(column);
                 index++;
             }
-            dgData.DataContext = ImportViewModel.PreviewContent;
+            //dgData.DataContext = ImportViewModel.PreviewContent;
+            dgData.UpdateLayout();
             PrintSkippedLines();
             PrintFileDettails(fileName);
         }
@@ -166,6 +172,7 @@ namespace Reflection.Views {
                 Grid.SetRow(comboBoxEncoding, 3);
                 Grid.SetRow(ButtonExecute, 4);
                 Grid.SetRow(ButtonSuggestKey, 4);
+                PopupSkipedRows.IsOpen = false;
             }
         }
 
@@ -182,16 +189,22 @@ namespace Reflection.Views {
             } else {
                 ShowAvailableKeys();
             }
-            if (ColumnNamesViewModel.AvailableKeys.Count == 0) {
-                int index = 0;
-                foreach (var item in ImportViewModel.FileHeaders) {
-                    var key = new ColumnName(index, item.Replace("_", "__"));
-                    ColumnNamesViewModel.AvailableKeys.Add(key);
-                    index++;
+            LoadColumnNames();
+        }
+
+        private void LoadColumnNames() {
+            ColumnNamesViewModel.AvailableKeys.Clear();
+            int index = 0;
+            foreach (var item in ImportViewModel.FileHeaders) {
+                var key = new ColumnName(index, item.Replace("_", "__"));
+                ColumnNamesViewModel.AvailableKeys.Add(key);
+                if (ColumnNamesViewModel.SelectedKeys.Any(k => k.Id == index)) {
+                    key.IsChecked = true;
                 }
-                ListBoxAvailableKeys.ItemsSource = ColumnNamesViewModel.AvailableKeys;
-                ListBoxSelectedKeys.ItemsSource = ColumnNamesViewModel.SelectedKeys;
+                index++;
             }
+            ListBoxAvailableKeys.ItemsSource = ColumnNamesViewModel.AvailableKeys;
+            ListBoxSelectedKeys.ItemsSource = ColumnNamesViewModel.SelectedKeys;
         }
 
         private void ShowAvailableKeys() {
@@ -306,5 +319,43 @@ namespace Reflection.Views {
         private void PopupSkipedRows_Closed(object sender, EventArgs e) {
             ExpanderSkippedRows.IsExpanded = false;
         }
+
+        private void TextBoxHeaderRowGotFocus(object senderIn, RoutedEventArgs eIn) {
+            if (TextBoxHeaderRow.Text == "No header found") {
+                TextBoxHeaderRow.Text = "";
+            }
+        }
+
+        private void TextBoxHeaderRowLostFocus(object senderIn, RoutedEventArgs eIn) {
+            if (TextBoxHeaderRow.Text == "") {
+                TextBoxHeaderRow.Text = "No header found";
+            }
+        }
+
+        private void TextBoxHeaderRowTextChanged(object sender, TextChangedEventArgs e) {
+            if (TextBoxHeaderRow.Text != "No header found" && !string.IsNullOrEmpty(TextBoxHeaderRow.Text)) {
+                var val = int.Parse(TextBoxHeaderRow.Text);
+                if (val == 0 && !ImportViewModel.IsHeadersExist) {
+                    ImportViewModel.RowsToSkip = val;
+                    ImportViewModel.IsHeadersExist = true;
+                    ImportViewModel.SetPreview(ImportViewModel.PathMasterFile);
+                    RenderFileToView(ImportViewModel.PathMasterFile);
+                    LoadColumnNames();
+                } else if (ImportViewModel.RowsToSkip != val) {
+                    ImportViewModel.RowsToSkip = val;
+                    ImportViewModel.IsHeadersExist = true;
+                    ImportViewModel.SetPreview(ImportViewModel.PathMasterFile);
+                    RenderFileToView(ImportViewModel.PathMasterFile);
+                    LoadColumnNames();
+                }
+            } else if (TextBoxHeaderRow.Text == "No header found" && ImportViewModel.IsHeadersExist) {
+                ImportViewModel.RowsToSkip = 0;
+                ImportViewModel.IsHeadersExist = false;
+                ImportViewModel.SetPreview(ImportViewModel.PathMasterFile);
+                RenderFileToView(ImportViewModel.PathMasterFile);
+                LoadColumnNames();
+            }
+        }
     }
 }
+

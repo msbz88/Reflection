@@ -87,7 +87,7 @@ namespace Reflection {
 
         private void DeleteInstance(string pathOrigin) {
             try {
-                string userName = System.Security.Principal.WindowsIdentity.GetCurrent().Name.Replace("SCDOM\\", "");
+                string userName = System.Security.Principal.WindowsIdentity.GetCurrent().Name.Replace("SCDOM\\", "").ToUpper();
                 string path = pathOrigin + "Reflection_" + userName + ".exe";
                 if (File.Exists(path)) {
                     File.Delete(path);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -26,13 +27,14 @@ namespace Reflection.ViewModels {
         public bool IsHeadersExist { get; set; }
         public Encoding Encoding { get; set; }
         public string[] FileHeaders { get; set; }
-        public List<string[]> PreviewContent { get; set; }
+        public ObservableCollection<string[]> PreviewContent { get; set; }
         public string[] SkippedLines { get; set; }
         public int PreviewCount { get; private set; } = 200;
         public ImportConfiguration ImportConfiguration { get; private set; }
 
         public ImportViewModel() {
             UserKeys = new List<int>();
+            PreviewContent = new ObservableCollection<string[]>();
         }
 
         public void AnalyseFile(string path) {
@@ -42,13 +44,22 @@ namespace Reflection.ViewModels {
             RowsToSkip = FindDataBeginning(fileContent.Take(50));
             var firstRow = fileContent.Skip(RowsToSkip).FirstOrDefault().Split(new[] { Delimiter }, StringSplitOptions.None);
             IsHeadersExist = IsHeadersRow(firstRow);
+
+            SetPreview(path);
+        }
+
+        public void SetPreview(string path) {
+            var fileReader = new FileReader();
+            var fileContent = fileReader.ReadFewLines(path, PreviewCount, Encoding);
+            var firstRow = fileContent.Skip(RowsToSkip).FirstOrDefault().Split(new[] { Delimiter }, StringSplitOptions.None);
             if (IsHeadersExist) {
                 FileHeaders = firstRow;
             } else {
                 FileHeaders = GenerateDefaultHeaders(firstRow.Length);
             }
-            PreviewContent = new List<string[]>();
-            foreach (var line in fileContent.Skip(RowsToSkip + 1)) {
+            var fileContentCorr = IsHeadersExist ? fileContent.Skip(RowsToSkip + 1) : fileContent.Skip(RowsToSkip);
+            PreviewContent.Clear();
+            foreach (var line in fileContentCorr) {
                 PreviewContent.Add(line.Split(new[] { Delimiter }, StringSplitOptions.None));
             }
             SkippedLines = fileContent.Take(RowsToSkip).ToArray();

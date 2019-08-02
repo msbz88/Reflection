@@ -35,6 +35,8 @@ namespace Reflection.ViewModels {
         public void OnCheckedPropertyChanged(object sender, PropertyChangedEventArgs e) {
             var userKey = (ColumnName)sender;
             if (userKey.IsChecked) {
+                var prevUserKey = SelectedKeys.Where(item => item.Id == userKey.Id).FirstOrDefault();
+                SelectedKeys.Remove(prevUserKey);
                 SelectedKeys.Add(userKey);
             } else {
                 SelectedKeys.Remove(userKey);

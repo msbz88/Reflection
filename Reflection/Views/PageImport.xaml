@@ -37,9 +37,9 @@
                 </Border>
             </Popup>
         </Expander>
-        <DataGrid BorderBrush="LightGray" HorizontalGridLinesBrush="LightGray" Grid.ColumnSpan="2" VerticalGridLinesBrush="LightGray" Name="dgData" Margin="5,5,0,0" AutoGenerateColumns ="False" Grid.Row="1" Grid.RowSpan="7" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsReadOnly="True" EnableRowVirtualization="True" EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True" ItemsSource="{Binding}"/>
-        <TextBox Name="TextBoxDelimiter" Grid.Row="1" Grid.Column="2" Width="150" Height="30" HorizontalAlignment="Stretch" VerticalAlignment="Center" ToolTip="Delimiter" GotFocus="TextBoxGotFocus" LostFocus="TextBoxLostFocus"/>
-        <TextBox Name="TextBoxHeaderRow" Grid.Row="2" Grid.Column="2" Width="150" Height="30" HorizontalAlignment="Stretch" VerticalAlignment="Center" ToolTip ="Rows to skip"/>
+        <DataGrid BorderBrush="LightGray" HorizontalGridLinesBrush="LightGray" Grid.ColumnSpan="2" VerticalGridLinesBrush="LightGray" Name="dgData" Margin="5,5,0,0" AutoGenerateColumns ="False" Grid.Row="1" Grid.RowSpan="7" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsReadOnly="True" EnableRowVirtualization="True" EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True" ItemsSource="{Binding Path=PreviewContent}"/>
+        <TextBox Name="TextBoxDelimiter" Grid.Row="1" Grid.Column="2" Width="150" Height="30" HorizontalAlignment="Stretch" VerticalAlignment="Center" ToolTip="Delimiter" GotFocus="TextBoxDelimiterGotFocus" LostFocus="TextBoxDelimiterLostFocus"/>
+        <TextBox Name="TextBoxHeaderRow" Grid.Row="2" Grid.Column="2" Width="150" Height="30" HorizontalAlignment="Stretch" VerticalAlignment="Center" ToolTip ="Header row" TextChanged="TextBoxHeaderRowTextChanged" GotFocus="TextBoxHeaderRowGotFocus" LostFocus="TextBoxHeaderRowLostFocus"/>
         <ComboBox Name="comboBoxEncoding" Grid.Row="3" Grid.Column="2" Width="150" Height="30" HorizontalAlignment="Stretch" Padding="5" FontSize="15" VerticalAlignment="Center" ToolTip ="File encoding" SelectionChanged="ComboBoxSelectionChanged" >
             <ComboBox.ItemTemplate>
                 <DataTemplate>
