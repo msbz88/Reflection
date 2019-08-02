@@ -69,8 +69,7 @@ namespace Reflection.Models {
 
         public void SaveToFile(string filePath) {
             List<string> result = new List<string>();
-            var delimiter = Delimiter.ToString();
-            var headres = "RowNum" + delimiter + "Id" + delimiter + string.Join(delimiter, Headers);
+            var headres = "RowNum" + Delimiter + "Id" + Delimiter + string.Join(Delimiter, Headers);
             result.Add(headres);
             foreach (var item in Rows) {
                 result.Add(item.ToString());

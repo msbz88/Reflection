@@ -23,7 +23,7 @@ namespace Reflection.Views {
     public partial class PageImport : Page {
         public ImportViewModel ImportViewModel { get; set; }
         public MatchFileNamesViewModel MatchFileNamesViewModel { get; set; }
-        AvailableKeysViewModel AvailableKeysViewModel = new AvailableKeysViewModel();
+        ColumnNamesViewModel ColumnNamesViewModel = new ColumnNamesViewModel();
         public bool IsSingle { get; private set; }
         public EventHandler FilesLoaded { get; set; }
         public EventHandler GoBack { get; set; }
@@ -133,7 +133,7 @@ namespace Reflection.Views {
             int index = 0;
             foreach (var item in ImportViewModel.FileHeaders) {
                 var column = new DataGridTextColumn();
-                column.Header = item.Replace("_","__");
+                column.Header = item.Replace("_", "__");
                 column.Binding = new Binding(string.Format("[{0}]", index));
                 dgData.Columns.Add(column);
                 index++;
@@ -176,22 +176,22 @@ namespace Reflection.Views {
         }
 
         private void ButtonSuggestKeyClick(object senderIn, RoutedEventArgs eIn) {
-            if (AvailableKeysViewModel.SelectedKeys.Count > 0) {
+            if (ColumnNamesViewModel.SelectedKeys.Count > 0) {
                 ShowAvailableKeys();
                 ShowSelectedKeys();
             } else {
                 ShowAvailableKeys();
             }
-            if (AvailableKeysViewModel.UserKeys.Count == 0) {
+            if (ColumnNamesViewModel.AvailableKeys.Count == 0) {
                 int index = 0;
                 foreach (var item in ImportViewModel.FileHeaders) {
-                    var key = new UserKey(index, item.Replace("_","__"));
-                    AvailableKeysViewModel.UserKeys.Add(key);
+                    var key = new ColumnName(index, item.Replace("_", "__"));
+                    ColumnNamesViewModel.AvailableKeys.Add(key);
                     index++;
                 }
-                ListBoxAvailableKeys.ItemsSource = AvailableKeysViewModel.UserKeys;
-                ListBoxSelectedKeys.ItemsSource = AvailableKeysViewModel.SelectedKeys;
-            }           
+                ListBoxAvailableKeys.ItemsSource = ColumnNamesViewModel.AvailableKeys;
+                ListBoxSelectedKeys.ItemsSource = ColumnNamesViewModel.SelectedKeys;
+            }
         }
 
         private void ShowAvailableKeys() {
@@ -221,7 +221,7 @@ namespace Reflection.Views {
             BorderUserKeys.Visibility = Visibility.Collapsed;
             LabelAvailableKeys.Visibility = Visibility.Collapsed;
             ListBoxAvailableKeys.Visibility = Visibility.Collapsed;
-            ButtonApplyUserKey.Visibility = Visibility.Collapsed;            
+            ButtonApplyUserKey.Visibility = Visibility.Collapsed;
         }
 
         private void HideSelectedKeys() {
@@ -236,22 +236,22 @@ namespace Reflection.Views {
         private void ButtonApplyUserKeyClick(object senderIn, RoutedEventArgs eIn) {
             HideSelectedKeys();
             HideAvailableKeys();
-            if (AvailableKeysViewModel.SelectedKeys.Count > 0) {
+            if (ColumnNamesViewModel.SelectedKeys.Count > 0) {
                 ButtonSuggestKey.Content = "Show Key";
-                ImportViewModel.UserKeys = AvailableKeysViewModel.SelectedKeys.Select(item => item.Id).ToList();
+                ImportViewModel.UserKeys = ColumnNamesViewModel.SelectedKeys.Select(item => item.Id).ToList();
             } else {
                 ButtonSuggestKey.Content = "Suggest Key";
-            }          
+            }
         }
 
         private void OnKeyChecked(object senderIn, RoutedEventArgs eIn) {
             if (ListBoxSelectedKeys.Visibility == Visibility.Collapsed) {
-                ShowSelectedKeys();               
+                ShowSelectedKeys();
             }
         }
 
         private void OnKeyUnChecked(object senderIn, RoutedEventArgs eIn) {
-            if (AvailableKeysViewModel.SelectedKeys.Count == 0) {
+            if (ColumnNamesViewModel.SelectedKeys.Count == 0) {
                 HideSelectedKeys();
             }
         }
@@ -271,8 +271,8 @@ namespace Reflection.Views {
         }
 
         private void ResetUserKeys() {
-            AvailableKeysViewModel.UserKeys.Clear();
-            AvailableKeysViewModel.SelectedKeys.Clear();
+            ColumnNamesViewModel.AvailableKeys.Clear();
+            ColumnNamesViewModel.SelectedKeys.Clear();
             HideAvailableKeys();
             HideSelectedKeys();
             ButtonSuggestKey.Content = "Suggest Key";

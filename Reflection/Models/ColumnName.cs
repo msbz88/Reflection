@@ -6,10 +6,10 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Reflection.Models {
-    public class UserKey : INotifyPropertyChanged {
+    public class ColumnName : INotifyPropertyChanged {
         public event PropertyChangedEventHandler PropertyChanged;
         public int Id { get; set; }
-        public string Key { get; set; }
+        public string Value { get; set; }
         bool isChecked;
         public bool IsChecked {
             get { return isChecked; }
@@ -21,9 +21,9 @@ namespace Reflection.Models {
             }
         }
 
-        public UserKey(int id, string key) {
+        public ColumnName(int id, string value) {
             Id = id;
-            Key = key;
+            Value = value;
             IsChecked = false;
         }
 

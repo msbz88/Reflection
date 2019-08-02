@@ -11,6 +11,7 @@ namespace Reflection.Models {
         Passed,
         Failed,
         Error,
+        Canceling,
         Canceled
     }
 }

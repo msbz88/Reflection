@@ -60,7 +60,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Models\Comparator.cs" />
-    <Compile Include="Models\UserKey.cs" />
+    <Compile Include="Models\ColumnName.cs" />
     <Compile Include="Models\ColumnSummary.cs" />
     <Compile Include="Models\ComparedRow.cs" />
     <Compile Include="Models\CompareTable.cs" />
@@ -80,7 +80,7 @@
     <Compile Include="Models\RowsMatch.cs" />
     <Compile Include="Models\Version.cs" />
     <Compile Include="Models\WorkTable.cs" />
-    <Compile Include="ViewModels\AvailableKeysViewModel.cs" />
+    <Compile Include="ViewModels\ColumnNamesViewModel.cs" />
     <Compile Include="ViewModels\ComparisonResultViewModel.cs" />
     <Compile Include="ViewModels\MatchFileNamesViewModel.cs" />
     <Compile Include="Views\CircularProgress.cs" />

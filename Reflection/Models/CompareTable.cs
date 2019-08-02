@@ -23,7 +23,7 @@ namespace Reflection.Models {
                 } else {
                     return comparedRowsCount;
                 }
-            }  
+            }
         }
         List<string> ExtraMaster { get; set; }
         public int MasterExtraCount { get { return ExtraMaster.Count; } }
@@ -40,6 +40,13 @@ namespace Reflection.Models {
         int RowCount = 0;
         bool IsLinearView { get; set; }
         int _deviations = 0;
+
+        public CompareTable() {
+            Data = new List<ComparedRow>();
+            ExtraMaster = new List<string>();
+            ExtraTest = new List<string>();
+            IsExcelInstaled = Type.GetTypeFromProgID("Excel.Application") == null ? false : true;
+        }
 
         public CompareTable(string delimiter, Row masterHeaders, Row testHeaders, int totalColumns, ComparisonKeys comparisonKeys, bool isLinearView) {
             Data = new List<ComparedRow>();
@@ -99,7 +106,7 @@ namespace Reflection.Models {
         private List<string> GenerateHeadersForFile(List<int> transNo, List<int> allColumns) {
             List<string> headers = new List<string>();
             headers.Add("Defect No");
-            headers.Add("Version");
+            headers.Add("Comparison Result");
             headers.Add("Diff");
             foreach (var item in transNo) {
                 headers.Add("M_" + MasterHeaders[item]);
@@ -126,7 +133,7 @@ namespace Reflection.Models {
             _deviations = DeviationColumns.Count;
             var rowsWithDeviations = Data.Where(row => !row.IsPassed);
             foreach (var row in rowsWithDeviations) {
-                var rowToSave = new RowToSave(row.IdFields, Delimiter, DeviationColumns);                
+                var rowToSave = new RowToSave(row.IdFields, Delimiter, DeviationColumns);
                 rowToSave.FillValues(row.Deviations);
                 rowToSave.SetData();
                 RowCount++;
@@ -173,7 +180,7 @@ namespace Reflection.Models {
             return outputArray;
         }
 
-        private void AddExtraRowsLinear(string[,] outputArray, string version, List<string> extraLines, List<int> transNo, List<int> mainKeys, List<int> deviations) {          
+        private void AddExtraRowsLinear(string[,] outputArray, string version, List<string> extraLines, List<int> transNo, List<int> mainKeys, List<int> deviations) {
             foreach (var row in extraLines) {
                 var extraRow = row.Split(new string[] { Delimiter }, StringSplitOptions.None);
                 List<string> transNoPart = new List<string>();
@@ -217,7 +224,7 @@ namespace Reflection.Models {
                 }
                 var mainRowPart = GetValuesByPositions(extraRow, allColumns);
                 rowToSave.Add("");
-                rowToSave.Add(version);
+                rowToSave.Add("Extra from " + version);
                 extraDiff = extraDiff == 0 ? rowToSave.Count() : extraDiff;
                 rowToSave.Add(extraDiff.ToString());
                 rowToSave.AddRange(transNoPart.Concat(mainRowPart));
@@ -230,7 +237,7 @@ namespace Reflection.Models {
             RowCount++;
             for (int col = 0; col < columnCount; col++) {
                 twoDimArray[RowCount, col] = list[col];
-            }          
+            }
         }
 
         private void SaveToFlatFile(string filePath) {
@@ -251,10 +258,10 @@ namespace Reflection.Models {
         public void SaveComparedRows(string filePath) {
             if (IsExcelInstaled) {
                 if (IsLinearView) {
-                    SaveToExcel(filePath + ".xlsx", PrepareDataLinar());
+                    SaveToExcel(filePath + ".xlsx", PrepareDataLinar(), false);
                 } else {
-                    SaveToExcel(filePath + ".xlsx", PrepareDataTabular());
-                }          
+                    SaveToExcel(filePath + ".xlsx", PrepareDataTabular(), false);
+                }
             } else {
                 //SaveToFlatFile(filePath + ".txt");
             }
@@ -308,12 +315,13 @@ namespace Reflection.Models {
             return Task.Run(() => new Application());
         }
 
-        private void SaveToExcel(string filePath, string[,] outputArray) {
+        private void SaveToExcel(string filePath, string[,] outputArray, bool isPassed) {
             Application excelApplication = null;
             Workbook workbook = null;
             Worksheet sheet = null;
             Range range = null;
             object misvalue = System.Reflection.Missing.Value;
+            var columnsCount = outputArray.GetLength(1);
             try {
                 excelApplication = new Application();
                 excelApplication.DisplayAlerts = false;
@@ -322,13 +330,12 @@ namespace Reflection.Models {
                 sheet = (Worksheet)workbook.ActiveSheet;
                 sheet.Name = "Comparison";
                 excelApplication.ActiveWindow.Zoom = 80;
-                excelApplication.Calculation = XlCalculation.xlCalculationSemiautomatic;
-                int columnCount = Headers.Count;
+                excelApplication.Calculation = XlCalculation.xlCalculationAutomatic;
                 range = (Range)sheet.Cells[1, 1];
-                RowCount++;
-                range = range.Resize[RowCount, columnCount];
+                int rowsCount = outputArray.GetLength(0);
+                range = range.Resize[rowsCount, columnsCount];
                 range.set_Value(XlRangeValueDataType.xlRangeValueDefault, outputArray);
-                FormatExcelSheet(sheet, range, columnCount, _deviations);
+                FormatExcelSheet(sheet, range, columnsCount, _deviations, rowsCount, isPassed);
                 workbook.SaveAs(filePath, XlFileFormat.xlWorkbookDefault, Type.Missing, Type.Missing, false, false, XlSaveAsAccessMode.xlNoChange, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing);
                 workbook.Close();
                 excelApplication.Quit();
@@ -344,13 +351,13 @@ namespace Reflection.Models {
             }
         }
 
-        private void FormatExcelSheet(Worksheet sheet, Range range, int columnCount, int deviations) {
+        private void FormatExcelSheet(Worksheet sheet, Range range, int columnsCount, int deviations, int rowsCount, bool isPassed) {
             //headers row to bold
-            sheet.get_Range("A1", GetExcelColumnName(Headers.Count) + 1).Font.Bold = true;
+            sheet.get_Range("A1", GetExcelColumnName(columnsCount) + 1).Font.Bold = true;
             //color deviation columns with red
-            int deviationColumns = columnCount - 2;
+            int deviationColumns = columnsCount - 2;
             if (DeviationColumns != null) {
-                deviationColumns = (columnCount - DeviationColumns.Count) + 1;
+                deviationColumns = (columnsCount - DeviationColumns.Count) + 1;
             }
             string condNotExplained = "";
             string condExplained = "";
@@ -366,8 +373,8 @@ namespace Reflection.Models {
             FormatCondition formatCondExplained = null;
             Interior interior = null;
             try {
-                if (deviations != 0){
-                    sheetFormatConditions = sheet.get_Range(GetExcelColumnName(deviationColumns) + "2", GetExcelColumnName(columnCount) + RowCount).FormatConditions;
+                if (deviations != 0) {
+                    sheetFormatConditions = sheet.get_Range(GetExcelColumnName(deviationColumns) + "2", GetExcelColumnName(columnsCount) + rowsCount).FormatConditions;
                     formatCondNotExplained = (FormatCondition)sheetFormatConditions.Add(XlFormatConditionType.xlExpression, Type.Missing, condNotExplained);
                     interior = formatCondNotExplained.Interior;
                     interior.Color = XlRgbColor.rgbIndianRed;
@@ -384,13 +391,13 @@ namespace Reflection.Models {
                 range.AutoFilter(1, Type.Missing, XlAutoFilterOperator.xlAnd, Type.Missing, true);
                 //color id columns
                 if (deviations != 0) {
-                    range = sheet.get_Range("A2", GetExcelColumnName(deviationColumns - 1) + RowCount);                  
-                }else {
-                    range = sheet.get_Range("A2", GetExcelColumnName(columnCount) + RowCount);
-                }              
+                    range = sheet.get_Range("A2", GetExcelColumnName(deviationColumns - 1) + rowsCount);
+                } else {
+                    range = sheet.get_Range("A2", GetExcelColumnName(columnsCount) + rowsCount);
+                }
                 range.Interior.Color = XlRgbColor.rgbLightGray;
                 //color header row
-                range = sheet.get_Range("A1", GetExcelColumnName(columnCount) + 1);
+                range = sheet.get_Range("A1", GetExcelColumnName(columnsCount) + 1);
                 range.Interior.Color = XlRgbColor.rgbBlack;
                 range.Font.Color = XlRgbColor.rgbWhite;
                 //autofit id columns
@@ -403,9 +410,11 @@ namespace Reflection.Models {
                 //color deviation No column
                 range = sheet.get_Range("A1");
                 range.Interior.Color = XlRgbColor.rgbGreen;
-                //color Version and Diff columns
-                range = sheet.get_Range("B1", "C1");
-                range.Interior.Color = XlRgbColor.rgbOrange;
+                if (!isPassed) {
+                    //color Version and Diff columns
+                    range = sheet.get_Range("B1", "C1");
+                    range.Interior.Color = XlRgbColor.rgbOrange;
+                }
             } finally {
                 if (sheetFormatConditions != null)
                     Marshal.ReleaseComObject(sheetFormatConditions);
@@ -430,7 +439,11 @@ namespace Reflection.Models {
             return columnName;
         }
 
-
+        public void SavePassed(string path, string[,] array) {
+            if (IsExcelInstaled) {
+                SaveToExcel(path + ".xlsx", array, true);
+            }
+        }
 
     }
 }

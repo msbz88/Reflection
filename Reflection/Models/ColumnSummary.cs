@@ -168,8 +168,7 @@ namespace Reflection.Models {
                 "yyyy-MM-dd HH:mm", "yyyy/MM/dd HH:mm", "yyyy.MM.dd HH:mm",
                 "MM-dd-yyyy HH:mm","MM/dd/yyyy HH:mm", "MM.dd.yyyy HH:mm",
                 "dd-MM-yyyy HH:mm","dd/MM/yyyy HH:mm", "dd.MM.yyyy HH:mm",
-                "dd-MM-yyyy HH:mm:ss AM","dd/MM/yyyy HH:mm:ss AM", "dd.MM.yyyy HH:mm:ss AM",
-                "dd-MM-yyyy HH:mm:ss PM","dd/MM/yyyy HH:mm:ss PM", "dd.MM.yyyy HH:mm:ss PM"
+                "dd-MM-yyyy H:mm:ss","dd/MM/yyyy H:mm:ss", "dd.MM.yyyy H:mm:ss"
             };
             DateTime result;
             foreach (var item in columnData) {
@@ -178,12 +177,12 @@ namespace Reflection.Models {
                 }else if (item == "") {
                     continue;
                 }
-                //var str = item.Replace("AM", "").Replace("PM","");
-                if (!DateTime.TryParseExact(item, format, CultureInfo.InvariantCulture, DateTimeStyles.NoCurrentDateDefault, out result)) {
-                    if (IsDouble && item.Length > 8) {
+                var str = item.ToLower().Replace(" am", "").Replace(" pm","");
+                if (!DateTime.TryParseExact(str, format, CultureInfo.InvariantCulture, DateTimeStyles.NoCurrentDateDefault, out result)) {
+                    if (IsDouble && str.Length > 8) {
                         string[] format2 = new string[] { "yyyyMMdd" };
-                        var withoutTrail = item.Substring(0, 8);
-                        if (!DateTime.TryParseExact(withoutTrail, format2, CultureInfo.InvariantCulture, DateTimeStyles.NoCurrentDateDefault, out result) && item != "") {
+                        var withoutTrail = str.Substring(0, 8);
+                        if (!DateTime.TryParseExact(withoutTrail, format2, CultureInfo.InvariantCulture, DateTimeStyles.NoCurrentDateDefault, out result) && str != "") {
                             return false;
                         }
                     }else {

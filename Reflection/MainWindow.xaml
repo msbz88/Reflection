@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Reflection.Views"
         mc:Ignorable="d"
-        Height="500" Width="1100" MinHeight="350" MinWidth="750" SizeChanged="Window_SizeChanged" LocationChanged="Window_LocationChanged" Closing="OnClosing">
+        Height="500" Width="1150" MinHeight="350" MinWidth="750" SizeChanged="Window_SizeChanged" LocationChanged="Window_LocationChanged" Closing="OnClosing">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>

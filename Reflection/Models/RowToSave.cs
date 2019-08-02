@@ -55,7 +55,7 @@ namespace Reflection.Models {
 
         public void FillValues(List<Deviation> deviations) {
             Diff = deviations.Count;
-            Version = "Master | Test";
+            Version = "Deviations";
             foreach (var deviation in deviations) {
                 Cell.Clear();
                 Cell.Append(deviation.MasterValue);
@@ -98,7 +98,7 @@ namespace Reflection.Models {
 
         public string[,] TransposeRow(List<Deviation> deviations, string[] headers) {
             Diff = deviations.Count;
-            Version = "Master | Test";
+            Version = "Deviations";
             int columnsCount = 3 + IdFields.Count + 3;
             string[,] res = new string[deviations.Count, columnsCount];
             for (int row = 0; row < deviations.Count; row++) {
@@ -121,7 +121,7 @@ namespace Reflection.Models {
             string[,] res = new string[1, columnsCount];
             int col = 0;
             res[0, col++] = DefectNo;
-            res[0, col++] = version;
+            res[0, col++] = "Extra from " + version;
             res[0, col++] = Diff.ToString();
             for (int colId = 0; colId < IdFields.Count; colId++) {
                 res[0, col++] = IdFields[colId];
@@ -139,7 +139,7 @@ namespace Reflection.Models {
             for (int row = 0; row < deviations.Count; row++) {
                 int col = 0;
                 res[row, col++] = DefectNo;
-                res[row, col++] = version;
+                res[row, col++] = "Extra from " + version;
                 res[row, col++] = Diff.ToString();
                 for (int colId = 0; colId < IdFields.Count; colId++) {
                     res[row, col++] = IdFields[colId];

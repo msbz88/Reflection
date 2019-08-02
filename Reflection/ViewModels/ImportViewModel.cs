@@ -19,7 +19,7 @@ namespace Reflection.ViewModels {
                 Encoding = GetEncoding(PathMasterFile);
             }
         }
-        public List<int> UserKeys { get; set; } = new List<int>();
+        public List<int> UserKeys { get; set; }
         public string PathTestFile { get; set; }
         public string Delimiter { get; set; }
         public int RowsToSkip { get; set; }
@@ -32,6 +32,7 @@ namespace Reflection.ViewModels {
         public ImportConfiguration ImportConfiguration { get; private set; }
 
         public ImportViewModel() {
+            UserKeys = new List<int>();
         }
 
         public void AnalyseFile(string path) {

@@ -18,20 +18,13 @@ namespace Reflection.Models {
         ComparisonTask ComparisonTask { get; set; }
         string Delimiter;
         public List<ColumnSummary> BaseStat;
-        ComparisonKeys ComparisonKeys { get; set; }
 
         public ComparisonCore(PerformanceCounter perfCounter, ComparisonTask comparisonTask) {
             PerfCounter = perfCounter;
             ComparisonTask = comparisonTask;
         }
 
-        public ComparisonKeys RunEarlyAnalysis(IWorkTable masterTable, IWorkTable testTable) {
-            BaseStat = GatherStatistics(masterTable.Rows, testTable.Rows);
-            ComparisonKeys = AnalyseForPivotKey(masterTable.Rows);
-            return ComparisonKeys;
-        }
-
-        public void Execute(IWorkTable masterTable, IWorkTable testTable) {
+        public CompareTable Execute(IWorkTable masterTable, IWorkTable testTable) {
             MasterTable = masterTable;
             TestTable = testTable;
             Delimiter = SetDelimiter();
@@ -43,31 +36,30 @@ namespace Reflection.Models {
             //analyse
             //File.WriteAllLines(@"C:\Users\MSBZ\Desktop\baseStat.txt", BaseStat.Select(r => r.ToString()));
             PerfCounter.Start();
-            if (ComparisonTask.ImportConfiguration.UserKeys.Count == 0) {
-                ComparisonKeys = AnalyseForPivotKey(MasterTable.Rows);
+            var comparisonKeys = AnalyseForPivotKey(MasterTable.Rows, BaseStat);
+            if (ComparisonTask.ComparisonKeys.UserKeys.Count == 0) {               
+                ComparisonTask.ComparisonKeys.MainKeys = comparisonKeys.MainKeys;
             } else {
-                ComparisonKeys = new ComparisonKeys();
-                ComparisonKeys.MainKeys = ComparisonTask.ImportConfiguration.UserKeys;
-                var autoKeys = AnalyseForPivotKey(MasterTable.Rows);
-                ComparisonKeys.TransactionKeys = autoKeys.TransactionKeys;
-                ComparisonKeys.ExcludeColumns = autoKeys.ExcludeColumns;
+                ComparisonTask.ComparisonKeys.MainKeys = ComparisonTask.ComparisonKeys.UserKeys;
             }
+            ComparisonTask.ComparisonKeys.TransactionKeys = comparisonKeys.TransactionKeys;
+            ComparisonTask.ComparisonKeys.ExcludeColumns = comparisonKeys.ExcludeColumns;
             ComparisonTask.IfCancelRequested();
             PerfCounter.Stop("AnalyseForPivotKey");
             //File.AppendAllText(@"C:\Users\MSBZ\Desktop\baseStat.txt", "baseKeyIndex: " + string.Join(";", MasterTable.Headers.ColumnIndexIn(PivotKeysIndexes.MainKeys)));
             //rows match
-            RowsMatch = new RowsMatch(BaseStat, ComparisonKeys, ComparisonTask);
-            Comparator = new Comparator(ComparisonKeys);
+            RowsMatch = new RowsMatch(BaseStat, ComparisonTask.ComparisonKeys, ComparisonTask);
+            Comparator = new Comparator(ComparisonTask.ComparisonKeys);
             //group
             PerfCounter.Start();
-            var groupsM = Group(MasterTable.Rows, ComparisonKeys.MainKeys);
+            var groupsM = Group(MasterTable.Rows, ComparisonTask.ComparisonKeys.MainKeys);
             ComparisonTask.IfCancelRequested();
             ComparisonTask.UpdateProgress(4);
-            var groupsT = Group(TestTable.Rows, ComparisonKeys.MainKeys);
+            var groupsT = Group(TestTable.Rows, ComparisonTask.ComparisonKeys.MainKeys);
             ComparisonTask.UpdateProgress(4);
             PerfCounter.Stop("Base Group");           
             PerfCounter.Start();
-            CompareTable = new CompareTable(Delimiter, MasterTable.Headers, TestTable.Headers, MasterTable.ColumnsCount, ComparisonKeys, ComparisonTask.IsLinearView);
+            CompareTable = new CompareTable(Delimiter, MasterTable.Headers, TestTable.Headers, MasterTable.ColumnsCount, ComparisonTask.ComparisonKeys, ComparisonTask.IsLinearView);
             ComparisonTask.IfCancelRequested();
             var uMasterRows = groupsM.Where(r => r.Value.Count() == 1).ToDictionary(item => item.Key, item => item.Value.First());
             ComparisonTask.UpdateProgress(2);
@@ -78,10 +70,10 @@ namespace Reflection.Models {
             CompareTable.AddComparedRows(resU);
             ComparisonTask.UpdateProgress(2);
             ComparisonTask.IfCancelRequested();
-            var mRemainings = Group(GetRemainings(MasterTable.Rows, CompareTable.GetMasterComparedRowsId()), ComparisonKeys.MainKeys);
+            var mRemainings = Group(GetRemainings(MasterTable.Rows, CompareTable.GetMasterComparedRowsId()), ComparisonTask.ComparisonKeys.MainKeys);
             ComparisonTask.UpdateProgress(2);
             ComparisonTask.IfCancelRequested();
-            var tRemainings = Group(GetRemainings(TestTable.Rows, CompareTable.GetTestComparedRowsId()), ComparisonKeys.MainKeys);
+            var tRemainings = Group(GetRemainings(TestTable.Rows, CompareTable.GetTestComparedRowsId()), ComparisonTask.ComparisonKeys.MainKeys);
             ComparisonTask.UpdateProgress(2);
             ComparisonTask.IfCancelRequested();
             PerfCounter.Stop("Preparison");
@@ -113,17 +105,10 @@ namespace Reflection.Models {
             PerfCounter.Stop("Extra");
             PerfCounter.Start();
             ComparisonTask.IfCancelRequested();
-            ComparisonTask.ResultFile = ComparisonTask.CommonDirectoryPath + @"\Compared_" + ComparisonTask.CommonName;
-            CompareTable.SaveComparedRows(ComparisonTask.ResultFile);
             ComparisonTask.UpdateProgress(2);
             PerfCounter.Stop("Save comparison");
-            //PerfCounter.SaveAllResults();
-            ComparisonTask.UpdateProgress(100);
-            if (CompareTable.ComparedRowsCount == 0 && CompareTable.MasterExtraCount == 0 && CompareTable.TestExtraCount == 0) {
-                ComparisonTask.Status = Status.Passed;
-            } else {
-                ComparisonTask.Status = Status.Failed;
-            }
+            //PerfCounter.SaveAllResults();      
+            return CompareTable;     
         }
 
         private string SetDelimiter() {
@@ -164,9 +149,9 @@ namespace Reflection.Models {
             return rows.Any(grp => grp.Value.Select(row => row[analysisColumn]).Distinct().Count() > 1);
         }
 
-        private ComparisonKeys AnalyseForPivotKey(IEnumerable<Row> sampleRows) {
+        public ComparisonKeys AnalyseForPivotKey(IEnumerable<Row> sampleRows, List<ColumnSummary> baseStat) {
             ComparisonKeys compKeys = new ComparisonKeys();
-            var clearedStats = BaseStat.Where(col => !col.IsDouble && !col.HasNulls && !col.IsTransNo && !col.IsTimestamp).ToList();
+            var clearedStats = baseStat.Where(col => !col.IsDouble && !col.HasNulls && !col.IsTransNo && !col.IsTimestamp).ToList();
             var maxMatchingRate = clearedStats.Max(col => col.MatchingRate);
             var maxUniqMatchRate = clearedStats.Where(col => col.MatchingRate == maxMatchingRate).Max(col => col.UniqMatchRate);
             var mainPivotKey = clearedStats.Where(col => col.MatchingRate == maxMatchingRate && col.UniqMatchRate == maxUniqMatchRate).First().ColumnId;
@@ -184,8 +169,8 @@ namespace Reflection.Models {
             if (compositeKey.Count == 1) {
                 compositeKey.AddRange(AddKeysToAcceptExtra(clearedStats, maxMatchingRate, mainPivotKey));
             }
-            var excludeColumns = BaseStat.Where(item => item.IsTimestamp).Select(item => item.ColumnId).ToList();
-            compKeys.TransactionKeys = BaseStat.Where(item => item.IsTransNo).Select(item => item.ColumnId).ToList();
+            var excludeColumns = baseStat.Where(item => item.IsTimestamp).Select(item => item.ColumnId).ToList();
+            compKeys.TransactionKeys = baseStat.Where(item => item.IsTransNo).Select(item => item.ColumnId).ToList();
             compKeys.MainKeys = compositeKey;
             compKeys.ExcludeColumns = excludeColumns;
             return compKeys;

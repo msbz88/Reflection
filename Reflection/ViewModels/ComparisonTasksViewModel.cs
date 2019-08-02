@@ -23,7 +23,7 @@ namespace Reflection.ViewModels {
         IFileReader FileReader { get; set; }
         ComparisonProcessor ComparisonProcessor;
         bool IsExcelInstaled = Type.GetTypeFromProgID("Excel.Application") == null ? false : true;
-        public bool IsLinearView { get; set; } = true;
+        public bool IsLinearView { get; set; }
 
         public ComparisonTasksViewModel() {
             AllComparisonDetails = new ObservableCollection<ComparisonTask>();

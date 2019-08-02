@@ -151,7 +151,8 @@ namespace Reflection.Views {
         }
 
         private void StopRestartButtonClick(object sender, RoutedEventArgs e) {
-            if (stopRestartButton.Content.ToString() == "Stop") {
+            if (stopRestartButton.Content.ToString() == "Stop" && currectComparisonTask.Status != Status.Canceling) {
+                currectComparisonTask.Status = Status.Canceling;
                 currectComparisonTask.CancellationToken.Cancel();
             } else if (stopRestartButton.Content.ToString() == "Restart") {
                 ComparisonTasksViewModel.AddComparisonTask(currectComparisonTask.ImportConfiguration);
@@ -211,7 +212,7 @@ namespace Reflection.Views {
             Border BorderListItem = (Border)myDataTemplate.FindName("BorderListItem", myContentPresenter);
             var comparisonTask = (ComparisonTask)listViewItem.DataContext;
             if (BorderListItem != null && comparisonTask.Status == Status.Error) {
-                BorderListItem.Effect = new DropShadowEffect {Color = Color.FromArgb(255, 255, 00, 00), BlurRadius= 5, Opacity=0.2};
+                BorderListItem.Effect = new DropShadowEffect { Color = Color.FromArgb(255, 255, 00, 00), BlurRadius = 5, Opacity = 0.2 };
             }
         }
 

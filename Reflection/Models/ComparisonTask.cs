@@ -93,11 +93,7 @@ namespace Reflection.Models {
         public string CommonDirectoryPath { get; set; }
         public string CommonName { get; set; }
         public ImportConfiguration ImportConfiguration { get; set; }
-        string resultFile;
-        public string ResultFile {
-            get { return resultFile; }
-            set { resultFile = SetResultFile(value); }
-        }
+        public string ResultFile { get; private set; }
         public Task<Application> ExcelApplication { get; set; }
         bool isLinearView;
         public bool IsLinearView {
@@ -126,6 +122,7 @@ namespace Reflection.Models {
                 OnPropertyChanged("DeviationsView");
             }
         }
+        public ComparisonKeys ComparisonKeys { get; set; }
 
         public ComparisonTask(int comparisonId, ImportConfiguration importConfiguration) {
             ComparisonId = comparisonId;
@@ -141,6 +138,8 @@ namespace Reflection.Models {
             IsLinearView = true;
             Timer = new DispatcherTimer();
             Stopwatch = new Stopwatch();
+            ComparisonKeys = new ComparisonKeys();
+            ComparisonKeys.UserKeys = importConfiguration.UserKeys;
         }
 
         public void UpdateProgress(double val) {
@@ -185,8 +184,16 @@ namespace Reflection.Models {
             return s[0].Substring(0, k);
         }
 
-        private string SetResultFile(string value) {
-            return value + "_" + DateTime.Now.ToString("ddMMyyyy_HH-mm-ss");
+        public void SetResultFile(bool isPassed) {
+            string viewType = "";
+            string resultType = "";
+            if (isPassed) {
+                resultType = "Passed";
+            }else {
+                resultType = "Compared";
+                viewType = IsLinearView ? "LV_" : "TV_";
+            }
+            ResultFile = CommonDirectoryPath + @"\" + resultType + "_" + viewType + CommonName + "_" + DateTime.Now.ToString("ddMMyyyy_HH-mm-ss");
         }
 
         public void IfCancelRequested() {

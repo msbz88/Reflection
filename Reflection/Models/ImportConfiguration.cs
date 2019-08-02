@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Reflection.Models.Interfaces;
 
 namespace Reflection.Models {
-    public class ImportConfiguration: IImportConfiguration {
+    public class ImportConfiguration : IImportConfiguration {
         public string MasterFilePath { get; set; }
         public string TestFilePath { get; set; }
         public string Delimiter { get; set; }
@@ -23,6 +23,6 @@ namespace Reflection.Models {
             IsHeadersExist = isHeadersExist;
             Encoding = encoding;
             UserKeys = userKeys;
-    }
+        }
     }
 }
