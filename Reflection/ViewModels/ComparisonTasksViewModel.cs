@@ -35,8 +35,8 @@ namespace Reflection.ViewModels {
 
         public void ImportConfigurationPropertyChanged(object sender, PropertyChangedEventArgs e) {
             if (e.PropertyName == "ImportConfiguration") {
-                var importConfiguration = (ImportConfiguration)sender;              
-                AddComparisonTask(importConfiguration);
+                var importViewModel = (ImportViewModel)sender;              
+                AddComparisonTask(importViewModel.ImportConfiguration);
             }
         }
 

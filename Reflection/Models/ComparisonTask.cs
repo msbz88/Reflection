@@ -85,6 +85,9 @@ namespace Reflection.Models {
             set {
                 if (status != value) {
                     status = value;
+                    if (value == Status.Passed) {
+                        DeviationsView = "";
+                    }
                     OnPropertyChanged("Status");
                 }
             }

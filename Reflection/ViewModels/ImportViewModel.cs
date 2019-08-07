@@ -2,10 +2,13 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 using Reflection.Model;
 using Reflection.Models;
 
@@ -20,49 +23,125 @@ namespace Reflection.ViewModels {
                 Encoding = GetEncoding(PathMasterFile);
             }
         }
+        public string Version { get; set; }
         public List<int> UserKeys { get; set; }
         public string PathTestFile { get; set; }
         public string Delimiter { get; set; }
         public int RowsToSkip { get; set; }
-        public bool IsHeadersExist { get; set; }
+        bool isHeadersExist;
+        public bool IsHeadersExist {
+            get { return isHeadersExist; }
+            set {
+                if (isHeadersExist != value) {
+                    isHeadersExist = value;
+                    RaisePropertyChanged("IsHeadersExist");
+                }
+            }
+        }
         public Encoding Encoding { get; set; }
-        public string[] FileHeaders { get; set; }
+        public List<string> FileHeaders { get; set; }
         public ObservableCollection<string[]> PreviewContent { get; set; }
-        public string[] SkippedLines { get; set; }
+        public List<string> SkippedLines { get; set; }
         public int PreviewCount { get; private set; } = 200;
         public ImportConfiguration ImportConfiguration { get; private set; }
+        FileReader FileReader;
+        string[] FileContent;
+        string[] FirstRow;
+        string[] SecondRow;
+        public bool IsGeneratedHeaders { get; set; }
+        string previewFileName;
+        public string PreviewFileName {
+            get { return previewFileName; }
+            set {
+                if (previewFileName != value) {
+                    previewFileName = value;
+                    RaisePropertyChanged("PreviewFileName");
+                }
+            }
+        }
+        public bool IsFirstStart { get; set; }
 
         public ImportViewModel() {
             UserKeys = new List<int>();
-            PreviewContent = new ObservableCollection<string[]>();
+            FileHeaders = new List<string>();
+            PreviewContent = new AsyncObservableCollection<string[]>();
+            SkippedLines = new List<string>();
+            FileReader = new FileReader();
+            Version = "Master";
+        }
+
+        private void UpdateHeaders(string[] headers) {
+            FileHeaders.Clear();
+            FileHeaders.AddRange(headers);
         }
 
         public void AnalyseFile(string path) {
-            var fileReader = new FileReader();
-            var fileContent = fileReader.ReadFewLines(path, PreviewCount, Encoding);
-            Delimiter = FindDelimiter(fileContent.Take(50));
-            RowsToSkip = FindDataBeginning(fileContent.Take(50));
-            var firstRow = fileContent.Skip(RowsToSkip).FirstOrDefault().Split(new[] { Delimiter }, StringSplitOptions.None);
-            IsHeadersExist = IsHeadersRow(firstRow);
+            IsFirstStart = true;
+            FileContent = FileReader.ReadFewLines(path, PreviewCount, Encoding).ToArray();
+            if (FileContent.Any()) {
+                Delimiter = FindDelimiter(FileContent.Take(50));
+                RowsToSkip = FindDataBeginning(FileContent.Take(50));
+                if (FileContent.Skip(RowsToSkip).Count() > 1) {
+                    FirstRow = FileContent.Skip(RowsToSkip).FirstOrDefault().Split(new[] { Delimiter }, StringSplitOptions.None);
+                    SecondRow = FileContent.Skip(RowsToSkip + 1).FirstOrDefault().Split(new[] { Delimiter }, StringSplitOptions.None);
+                    var headers = HeaderCheck(FirstRow, SecondRow);
+                    if (headers == null) {
+                        UpdateHeaders(GenerateDefaultHeaders(FirstRow.Length));
+                        IsHeadersExist = false;
+                    } else {
+                        UpdateHeaders(headers);
+                        IsHeadersExist = true;
+                    }
+                    SetPreview(path);
+                } else {
+                    var headers = FileContent.First().Split(new[] { Delimiter }, StringSplitOptions.None);
+                    IsHeadersExist = IsHeadersRow(headers);
+                    if (IsHeadersExist) {
+                        UpdateHeaders(headers);
+                    } else {
+                        UpdateHeaders(GenerateDefaultHeaders(FirstRow.Length));
+                    }
+                }
+            }
+            IsFirstStart = false;
+        }
 
+        public void ManualUpdate(string path) {
+            if (RowsToSkip >= FileContent.Length - 1) {
+                UpdateHeaders(GenerateDefaultHeaders(FirstRow.Length));
+                SkippedLines.Clear();
+                SkippedLines.AddRange(FileContent.Take(RowsToSkip));
+                UpdatePreview();
+                return;
+            }
+            if (IsHeadersExist) {
+                FirstRow = FileContent.Skip(RowsToSkip).FirstOrDefault().Split(new[] { Delimiter }, StringSplitOptions.None);
+                SecondRow = FileContent.Skip(RowsToSkip + 1).FirstOrDefault().Split(new[] { Delimiter }, StringSplitOptions.None);
+                var headers = HeaderCheck(FirstRow, SecondRow);
+                if (headers == null) {
+                    UpdateHeaders(FirstRow);
+                } else {
+                    UpdateHeaders(headers);
+                }
+            } else {
+                UpdateHeaders(GenerateDefaultHeaders(FirstRow.Length));
+            }
             SetPreview(path);
         }
 
-        public void SetPreview(string path) {
-            var fileReader = new FileReader();
-            var fileContent = fileReader.ReadFewLines(path, PreviewCount, Encoding);
-            var firstRow = fileContent.Skip(RowsToSkip).FirstOrDefault().Split(new[] { Delimiter }, StringSplitOptions.None);
-            if (IsHeadersExist) {
-                FileHeaders = firstRow;
-            } else {
-                FileHeaders = GenerateDefaultHeaders(firstRow.Length);
-            }
-            var fileContentCorr = IsHeadersExist ? fileContent.Skip(RowsToSkip + 1) : fileContent.Skip(RowsToSkip);
+        private void SetPreview(string path) {
+            UpdatePreview();
+            IsGeneratedHeaders = FileHeaders.Any(item => item.Contains("Column"));
+            SkippedLines.Clear();
+            SkippedLines.AddRange(FileContent.Take(RowsToSkip));
+        }
+
+        private void UpdatePreview() {
+            var fileContentCorr = IsHeadersExist ? FileContent.Skip(RowsToSkip + 1) : FileContent.Skip(RowsToSkip);
             PreviewContent.Clear();
-            foreach (var line in fileContentCorr) {
-                PreviewContent.Add(line.Split(new[] { Delimiter }, StringSplitOptions.None));
+            foreach (var item in fileContentCorr) {
+                PreviewContent.Add(item.Split(new[] { Delimiter }, StringSplitOptions.None));
             }
-            SkippedLines = fileContent.Take(RowsToSkip).ToArray();
         }
 
         public string FindDelimiter(IEnumerable<string> fileContent) {
@@ -76,6 +155,9 @@ namespace Reflection.ViewModels {
         }
 
         private int FindDataBeginning(IEnumerable<string> fileContent) {
+            if (!fileContent.Any()) {
+                return 0;
+            }
             var data = fileContent.Select(line => line.Split(new string[] { Delimiter }, StringSplitOptions.None).Length);
             var max = data.Max();
             return data.ToList().IndexOf(max);
@@ -93,6 +175,38 @@ namespace Reflection.ViewModels {
             return true;
         }
 
+        private string[] HeaderCheck(string[] firstRow, string[] secondRow) {
+            var result = new string[firstRow.Length];
+            for (int i = 0; i < firstRow.Length; i++) {
+                var isFirstString = IsString(firstRow[i]);
+                var isSecondString = IsString(secondRow[i]);
+                if (firstRow[i] == "") {
+                    result[i] = ApplyHeadersCount(firstRow[i], i);
+                } else if (isFirstString && !isSecondString) {
+                    result[i] = ApplyHeadersCount(firstRow[i], i);
+                } else if (isFirstString && isSecondString) {
+                    if (firstRow[i] == secondRow[i]) {
+                        return null;
+                    } else {
+                        result[i] = ApplyHeadersCount(firstRow[i], i);
+                    }
+                } else if (!isFirstString && !isSecondString || !isFirstString && isSecondString) {
+                    double d;
+                    DateTime t;
+                    if (double.TryParse(firstRow[i], out d) || DateTime.TryParse(firstRow[i], out t)) {
+                        return null;
+                    } else {
+                        result[i] = ApplyHeadersCount(firstRow[i], i);
+                    }
+                }
+            }
+            return result;
+        }
+
+        private string ApplyHeadersCount(string header, int i) {
+            return "[" + (i + 1) + "] " + header;
+        }
+
         private bool IsString(string item) {
             int i;
             long l;
@@ -107,7 +221,7 @@ namespace Reflection.ViewModels {
         private string[] GenerateDefaultHeaders(int columnsCount) {
             var headers = new string[columnsCount];
             for (int i = 0; i < columnsCount; i++) {
-                headers[i] = "Column" + i;
+                headers[i] = "Column" + (i + 1);
             }
             return headers;
         }
@@ -144,8 +258,9 @@ namespace Reflection.ViewModels {
         }
 
         private void RaisePropertyChanged(string propertyName) {
-            this.PropertyChanged?.Invoke(this.ImportConfiguration, new PropertyChangedEventArgs(propertyName));
+            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
 
 
     }

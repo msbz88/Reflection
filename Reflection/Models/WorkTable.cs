@@ -62,7 +62,7 @@ namespace Reflection.Models {
         private Row GenerateDefaultHeaders() {
             var row = new Row(0, ColumnsCount);
             for (int i = 0; i < ColumnsCount; i++) {
-                row[i] = "Column" + i;
+                row[i] = "Column" + (i + 1);
             }
             return row;
         }

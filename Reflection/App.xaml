@@ -4,7 +4,7 @@
              xmlns:local="clr-namespace:Reflection.Views"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <!--Button main-->
+<!--Button main-->
         <Style TargetType="{x:Type Button}">
             <Setter Property="Background" Value="#373737" />
             <Setter Property="Foreground" Value="White" />
@@ -35,7 +35,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <!--Button Nav-->
+<!--Button Nav-->
         <Style TargetType="{x:Type Button}" x:Key="NavButtton" >
             <Setter Property="FontSize" Value="18" />
             <Setter Property="Foreground" Value="Black" />
@@ -64,9 +64,9 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <!--TextBox-->
+ <!--TextBox-->
         <Style TargetType="TextBox">
-            <Setter Property="Padding" Value="2"/>
+            <Setter Property="Padding" Value="3"/>
             <Setter Property="FontSize" Value="15"/>
             <Setter Property="FontFamily" Value="Segoe UI" />
             <Setter Property="Template">
@@ -90,7 +90,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <!--ScrollBar-->
+<!--ScrollBar-->
         <Style TargetType="ScrollBar">
             <Setter Property="Background" Value="White" />
         </Style>

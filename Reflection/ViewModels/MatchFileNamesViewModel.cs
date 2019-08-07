@@ -19,9 +19,11 @@ namespace Reflection.ViewModels {
         public bool IsReady { get; private set; }
         MatchedFilesWindow MatchedFilesWindow { get; set; }
         public List<MatchedFileNames> MatchedFileNames { get; set; }
+        OpenFileDialog Dialog;
 
         public MatchFileNamesViewModel() {
             MatchedFileNames = new List<MatchedFileNames>();
+            InitializeDialog();
         }
 
         public void SelectFiles() {
@@ -32,13 +34,14 @@ namespace Reflection.ViewModels {
                     if (MasterSelectedFiles.Length > 1 || TestSelectedFiles.Length > 1) {
                         MatchMultipleFileNames();
                     } else {
-                        MatchSingleFileNames();
+                        VerifySingleFileNames();
                     }
                 }
             }
         }
 
-        private void MatchSingleFileNames() {
+        private void VerifySingleFileNames() {
+            MatchedFileNames.Clear();
             MasterCurrentFile = Path.GetFileName(MasterSelectedFiles[0]);
             TestCurrentFile = Path.GetFileName(TestSelectedFiles[0]);
             try {
@@ -72,6 +75,7 @@ namespace Reflection.ViewModels {
         }
 
         private void MatchMultipleFileNames() {
+            MatchedFileNames.Clear();
             var testFiles = TestSelectedFiles.ToList();
             var prevLen = 0;
             string bestMatchedTest = "";
@@ -139,13 +143,16 @@ namespace Reflection.ViewModels {
             return output.Length;
         }
 
-        public string[] AskFilePath(string fileVersion) {
-            OpenFileDialog dialog = new OpenFileDialog();
-            dialog.Multiselect = true;
-            dialog.Title = "Select " + fileVersion + " file";
-            dialog.RestoreDirectory = true;
-            if (dialog.ShowDialog() == true) {
-                return dialog.FileNames;
+        private void InitializeDialog() {
+            Dialog = new OpenFileDialog();
+            Dialog.Multiselect = true;
+            Dialog.RestoreDirectory = true;
+        }
+
+        public string[] AskFilePath(string fileVersion) {                  
+            Dialog.Title = "Select " + fileVersion + " file";            
+            if (Dialog.ShowDialog() == true) {
+                return Dialog.FileNames;
             }
             return new string[0];
         }

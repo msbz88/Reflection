@@ -48,15 +48,19 @@ namespace Reflection {
             PageImport.FilesLoaded += OnFilesLoaded;
             PageImport.GoBack += OnGoBack;
             PageImport.ImportViewModel.PropertyChanged += ComparisonDetailViewModel.ImportConfigurationPropertyChanged;
+            PageImport.Message += OnMessage;
             ChildWindowRaised += OnChildWindowRaised;
             PageMain.ChangeDeviationsView += OnChangeDeviationsView;
         }
 
         private void OnOpenFiles(object sender, EventArgs e) {
-            PageImport.SelectFiles();            
-            if (PageImport.IsSingle) {
-                Main.Content = PageImport;
-            }
+            PageImport.IsSingle += OnIsSingle;
+            PageImport.SelectFiles();
+        }
+
+        private void OnIsSingle(object sender, EventArgs e) {
+            Main.Content = PageImport;           
+            PageImport.IsSingle -= OnIsSingle;
         }
 
         private void OnFilesLoaded(object sender, EventArgs e) {
@@ -73,11 +77,11 @@ namespace Reflection {
         }
 
         private void OnClosing(object sender, CancelEventArgs e) {
-            DeleteInstance(@"O:\DATA\COMMON\core\");
             var isTasksExist = ComparisonDetailViewModel.AllComparisonDetails.Any();
             if (isTasksExist) {
                 var userAnswer = MessageBox.Show("Do you want to exit?\nComparison history will be lost.", "", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
-                if (userAnswer == MessageBoxResult.Yes) {                  
+                if (userAnswer == MessageBoxResult.Yes) {
+                    DeleteInstance(@"O:\DATA\COMMON\core\");
                     e.Cancel = false;
                 } else {
                     e.Cancel = true;
@@ -133,6 +137,11 @@ namespace Reflection {
 
         private void OnChangeDeviationsView(object senderIn, EventArgs eIn) {
             ComparisonDetailViewModel.IsLinearView = (bool)senderIn;
+        }
+
+        private void OnMessage(object sender, EventArgs e) {
+            StatusBarContent.Foreground = new SolidColorBrush(Colors.Black);
+            StatusBarContent.Text = sender.ToString();
         }
 
 

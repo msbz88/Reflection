@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -24,31 +26,29 @@ namespace Reflection.Views {
         public ImportViewModel ImportViewModel { get; set; }
         public MatchFileNamesViewModel MatchFileNamesViewModel { get; set; }
         ColumnNamesViewModel ColumnNamesViewModel = new ColumnNamesViewModel();
-        public bool IsSingle { get; private set; }
         public EventHandler FilesLoaded { get; set; }
         public EventHandler GoBack { get; set; }
+        public EventHandler IsSingle { get; set; }
+        public EventHandler Message { get; set; }
         private string customDelimiter;
 
         public PageImport() {
             InitializeComponent();
             ImportViewModel = new ImportViewModel();
             ComboBoxDataBinding();
+            MatchFileNamesViewModel = new MatchFileNamesViewModel();
             this.DataContext = ImportViewModel;
+            ImportViewModel.PropertyChanged += OnIsHeaderExistsChanged;
         }
 
         public void SelectFiles() {
-            IsSingle = false;
-            MatchFileNamesViewModel = new MatchFileNamesViewModel();
             MatchFileNamesViewModel.SelectFiles();
             if (MatchFileNamesViewModel.IsReady) {
                 if (MatchFileNamesViewModel.MatchedFileNames.Count == 1) {
                     ImportViewModel.PathMasterFile = MatchFileNamesViewModel.MatchedFileNames[0].MasterFilePath;
                     ImportViewModel.PathTestFile = MatchFileNamesViewModel.MatchedFileNames[0].TestFilePath;
-                    ImportViewModel.AnalyseFile(ImportViewModel.PathMasterFile);
-                    RenderFileToView(ImportViewModel.PathMasterFile);
-                    TextBoxDelimiter.Text = PresentDelimiter(ImportViewModel.Delimiter);
-                    DisplayOnLoadEncoding();
-                    IsSingle = true;
+                    IsSingle?.Invoke(null, null);
+                    AsyncRenderFileWithAnalyseToView(ImportViewModel.PathMasterFile);
                 } else {
                     foreach (var item in MatchFileNamesViewModel.MatchedFileNames) {
                         ImportViewModel.PathMasterFile = item.MasterFilePath;
@@ -109,22 +109,45 @@ namespace Reflection.Views {
             }
         }
 
-        private void RenderFileToView(string path) {
-            PrintFileContent(System.IO.Path.GetFileName(path));
-            if (ImportViewModel.RowsToSkip == 0 && !ImportViewModel.IsHeadersExist) {
-                TextBoxHeaderRow.Text = "No header found";
-            } else {
-                TextBoxHeaderRow.Text = ImportViewModel.RowsToSkip.ToString();
-            }
+        private async void AsyncRenderFileWithAnalyseToView(string path) {
+            dgData.Columns.Clear();
+            dgData.ItemsSource = null;
+            await Task.Run(() => {
+                ImportViewModel.AnalyseFile(path);
+                Dispatcher.Invoke(() => {
+                    InitializeDataGrid();
+                    PrintFileInfo(System.IO.Path.GetFileName(path));
+                    if (ListBoxAvailableKeys.Visibility == Visibility.Visible) {
+                        LoadColumnNames();
+                    }
+                });
+            });
+        }
+
+        private async void AsyncRenderFileWithSetPreviewToView(string path) {
+            dgData.Columns.Clear();
+            dgData.ItemsSource = null;
+            await Task.Run(() => {
+                ImportViewModel.ManualUpdate(path);
+                Dispatcher.Invoke(() => {
+                    InitializeDataGrid();
+                    PrintSkippedLines();
+                    ShowHeaderRow();
+                    ShowRowsAndColumnsCount();                   
+                    if (ListBoxAvailableKeys.Visibility == Visibility.Visible) {
+                        LoadColumnNames();
+                    }
+                });
+            });
         }
 
         private void ComboBoxSelectionChanged(object senderIn, RoutedEventArgs eIn) {
             var encodingInfo = (EncodingInfo)comboBoxEncoding.SelectedItem;
             ImportViewModel.Encoding = encodingInfo.GetEncoding();
             if (TextBlockFileName.Text == (System.IO.Path.GetFileName(ImportViewModel.PathMasterFile))) {
-                RenderFileToView(ImportViewModel.PathMasterFile);
+                //RenderFileToView(ImportViewModel.PathMasterFile);
             } else {
-                RenderFileToView(ImportViewModel.PathTestFile);
+                //RenderFileToView(ImportViewModel.PathTestFile);
             }
         }
 
@@ -133,8 +156,7 @@ namespace Reflection.Views {
             comboBoxEncoding.ItemsSource = codePages;
         }
 
-        public void PrintFileContent(string fileName) {
-            dgData.Columns.Clear();
+        public void InitializeDataGrid() {
             int index = 0;
             foreach (var item in ImportViewModel.FileHeaders) {
                 var column = new DataGridTextColumn();
@@ -143,35 +165,36 @@ namespace Reflection.Views {
                 dgData.Columns.Add(column);
                 index++;
             }
-            //dgData.DataContext = ImportViewModel.PreviewContent;
-            dgData.UpdateLayout();
-            PrintSkippedLines();
-            PrintFileDettails(fileName);
+            if (dgData.ItemsSource == null) {
+                dgData.ItemsSource = ImportViewModel.PreviewContent;
+            }
         }
 
-        private void PrintFileDettails(string fileName) {
-            TextBlockFileName.Text = fileName;
+        public void PrintFileInfo(string fileName) {
+            PrintSkippedLines();
+            ImportViewModel.PreviewFileName = fileName;
+            ShowHeaderRow();
+            TextBoxDelimiter.Text = PresentDelimiter(ImportViewModel.Delimiter);
+            DisplayOnLoadEncoding();
+            ShowRowsAndColumnsCount();
+        }
+
+        private void ShowRowsAndColumnsCount() {
+            var prev = ImportViewModel.PreviewCount < 200 ? "" : " preview";
+            Message.Invoke("Rows" + prev + ": " + ImportViewModel.PreviewContent.Count + " Columns: " + ImportViewModel.FileHeaders.Count, null);
+        }
+
+        private void ShowHeaderRow() {
+           TextBoxHeaderRow.Text = ImportViewModel.RowsToSkip.ToString();
         }
 
         private void PrintSkippedLines() {
-            if (ImportViewModel.SkippedLines.Length > 0) {
-                Grid.SetRow(dgData, 2);
-                Grid.SetRow(TextBoxDelimiter, 2);
-                Grid.SetRow(TextBoxHeaderRow, 3);
-                Grid.SetRow(comboBoxEncoding, 4);
-                Grid.SetRow(ButtonExecute, 5);
-                Grid.SetRow(ButtonSuggestKey, 5);
+            if (ImportViewModel.SkippedLines.Count > 0) {
                 TextBlockSkippedRows.Text = string.Join(Environment.NewLine, ImportViewModel.SkippedLines);
                 ExpanderSkippedRows.Visibility = Visibility.Visible;
                 ExpanderSkippedRows.IsExpanded = true;
             } else {
                 ExpanderSkippedRows.Visibility = Visibility.Collapsed;
-                Grid.SetRow(dgData, 1);
-                Grid.SetRow(TextBoxDelimiter, 1);
-                Grid.SetRow(TextBoxHeaderRow, 2);
-                Grid.SetRow(comboBoxEncoding, 3);
-                Grid.SetRow(ButtonExecute, 4);
-                Grid.SetRow(ButtonSuggestKey, 4);
                 PopupSkipedRows.IsOpen = false;
             }
         }
@@ -270,15 +293,15 @@ namespace Reflection.Views {
         }
 
         private void ButtonGoBackClick(object senderIn, RoutedEventArgs eIn) {
-            if (TextBlockFileName.Text == (System.IO.Path.GetFileName(ImportViewModel.PathTestFile))) {
-                ImportViewModel.AnalyseFile(ImportViewModel.PathMasterFile);
-                RenderFileToView(ImportViewModel.PathMasterFile);
-                TextBoxDelimiter.Text = PresentDelimiter(ImportViewModel.Delimiter);
-                DisplayOnLoadEncoding();
+            ImportViewModel.PreviewFileName = "";
+            if (ImportViewModel.Version == "Test") {
+                AsyncRenderFileWithAnalyseToView(ImportViewModel.PathMasterFile);
                 ButtonGoForward.Visibility = Visibility.Visible;
                 ButtonGoBack.ToolTip = "Back to Main Page";
+                ImportViewModel.Version = "Master";
             } else {
                 ResetUserKeys();
+                ImportViewModel.PreviewFileName = "";
                 GoBack?.Invoke(senderIn, eIn);
             }
         }
@@ -292,22 +315,17 @@ namespace Reflection.Views {
         }
 
         private void ButtonGoForwardClick(object senderIn, RoutedEventArgs eIn) {
-            if (TextBlockFileName.Text != (System.IO.Path.GetFileName(ImportViewModel.PathTestFile))) {
-                ImportViewModel.AnalyseFile(ImportViewModel.PathTestFile);
-                RenderFileToView(ImportViewModel.PathTestFile);
-                TextBoxDelimiter.Text = PresentDelimiter(ImportViewModel.Delimiter);
-                DisplayOnLoadEncoding();
+            ImportViewModel.PreviewFileName = "";
+            if (ImportViewModel.Version == "Master") {
+                AsyncRenderFileWithAnalyseToView(ImportViewModel.PathTestFile);
                 ButtonGoForward.Visibility = Visibility.Collapsed;
                 ButtonGoBack.ToolTip = "Back to Master file";
+                ImportViewModel.Version = "Test";
             }
         }
 
         private void OnExpanded(object senderIn, RoutedEventArgs eIn) {
             PopupSkipedRows.IsOpen = true;
-        }
-
-        private void OnCollapsed(object senderIn, RoutedEventArgs eIn) {
-            PopupSkipedRows.IsOpen = false;
         }
 
         public void ResetPopUp() {
@@ -316,21 +334,10 @@ namespace Reflection.Views {
             PopupSkipedRows.HorizontalOffset = offset;
         }
 
-        private void PopupSkipedRows_Closed(object sender, EventArgs e) {
+        private void PopupSkipedRowsClosed(object sender, EventArgs e) {
             ExpanderSkippedRows.IsExpanded = false;
         }
 
-        private void TextBoxHeaderRowGotFocus(object senderIn, RoutedEventArgs eIn) {
-            if (TextBoxHeaderRow.Text == "No header found") {
-                TextBoxHeaderRow.Text = "";
-            }
-        }
-
-        private void TextBoxHeaderRowLostFocus(object senderIn, RoutedEventArgs eIn) {
-            if (TextBoxHeaderRow.Text == "") {
-                TextBoxHeaderRow.Text = "No header found";
-            }
-        }
 
         private void TextBoxHeaderRowTextChanged(object sender, TextChangedEventArgs e) {
             if (TextBoxHeaderRow.Text != "No header found" && !string.IsNullOrEmpty(TextBoxHeaderRow.Text)) {
@@ -338,24 +345,46 @@ namespace Reflection.Views {
                 if (val == 0 && !ImportViewModel.IsHeadersExist) {
                     ImportViewModel.RowsToSkip = val;
                     ImportViewModel.IsHeadersExist = true;
-                    ImportViewModel.SetPreview(ImportViewModel.PathMasterFile);
-                    RenderFileToView(ImportViewModel.PathMasterFile);
-                    LoadColumnNames();
+                    AsyncRenderFileWithSetPreviewToView(ImportViewModel.PathMasterFile);
                 } else if (ImportViewModel.RowsToSkip != val) {
                     ImportViewModel.RowsToSkip = val;
                     ImportViewModel.IsHeadersExist = true;
-                    ImportViewModel.SetPreview(ImportViewModel.PathMasterFile);
-                    RenderFileToView(ImportViewModel.PathMasterFile);
-                    LoadColumnNames();
+                    AsyncRenderFileWithSetPreviewToView(ImportViewModel.PathMasterFile);
                 }
             } else if (TextBoxHeaderRow.Text == "No header found" && ImportViewModel.IsHeadersExist) {
                 ImportViewModel.RowsToSkip = 0;
                 ImportViewModel.IsHeadersExist = false;
-                ImportViewModel.SetPreview(ImportViewModel.PathMasterFile);
-                RenderFileToView(ImportViewModel.PathMasterFile);
-                LoadColumnNames();
+                AsyncRenderFileWithSetPreviewToView(ImportViewModel.PathMasterFile);
             }
         }
+
+        private void TextBoxHeaderRowPreviewTextInput(object sender, TextCompositionEventArgs e) {
+            Regex regex = new Regex("[^0-9]+");
+            e.Handled = regex.IsMatch(e.Text);
+        }
+
+        private void DataGridLoadingRow(object sender, DataGridRowEventArgs e) {
+            e.Row.Header = (e.Row.GetIndex() +1).ToString();
+        }
+
+        private void OnIsHeaderExistsChanged(object sender, PropertyChangedEventArgs e) {
+            if (e.PropertyName == "IsHeadersExist" && !ImportViewModel.IsFirstStart) {
+                var path = "";
+                if (ImportViewModel.Version == "Master") {
+                    path = ImportViewModel.PathMasterFile;
+                } else {
+                    path = ImportViewModel.PathTestFile;
+                }
+                AsyncRenderFileWithSetPreviewToView(path);
+            }
+        }
+
+        private void TextBoxHeaderRowLostFocus(object senderIn, RoutedEventArgs eIn) {
+            if (TextBoxHeaderRow.Text=="") {
+                TextBoxHeaderRow.Text = ImportViewModel.RowsToSkip.ToString();
+            }
+        }
+
     }
 }
 
