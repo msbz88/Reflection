@@ -95,7 +95,8 @@ namespace Reflection.Models {
         public string ErrorMessage { get; set; }
         public string CommonDirectoryPath { get; set; }
         public string CommonName { get; set; }
-        public ImportConfiguration ImportConfiguration { get; set; }
+        public ImportConfiguration MasterConfiguration { get; set; }
+        public ImportConfiguration TestConfiguration { get; set; }
         public string ResultFile { get; private set; }
         public Task<Application> ExcelApplication { get; set; }
         bool isLinearView;
@@ -125,24 +126,40 @@ namespace Reflection.Models {
                 OnPropertyChanged("DeviationsView");
             }
         }
+        string resultFileView;
+        public string ResultFileView {
+            get { return resultFileView; }
+            set {
+                resultFileView = value;
+                OnPropertyChanged("ResultFileView");
+            }
+        }
         public ComparisonKeys ComparisonKeys { get; set; }
+        bool isDeviationsOnly;
+        public bool IsDeviationsOnly {
+            get { return isDeviationsOnly; }
+            set {
+                isDeviationsOnly = value;
+                SetResultFileView();
+            }
+        }
 
-        public ComparisonTask(int comparisonId, ImportConfiguration importConfiguration) {
+        public ComparisonTask(int comparisonId, ImportConfiguration masterConfiguration, ImportConfiguration testConfiguration) {
             ComparisonId = comparisonId;
-            ImportConfiguration = importConfiguration;
-            MasterFileName = Path.GetFileName(importConfiguration.MasterFilePath);
-            TestFileName = Path.GetFileName(importConfiguration.TestFilePath);
+            MasterConfiguration = masterConfiguration;
+            TestConfiguration = testConfiguration;
+            MasterFileName = Path.GetFileName(masterConfiguration.FilePath);
+            TestFileName = Path.GetFileName(testConfiguration.FilePath);
             startTime = DateTime.Now;
-            CommonDirectoryPath = FindCommonDirectory(importConfiguration.MasterFilePath, importConfiguration.TestFilePath);
+            CommonDirectoryPath = FindCommonDirectory(masterConfiguration.FilePath, testConfiguration.FilePath);
             CommonName = GetCommonName();
             Status = Status.Queued;
             CancellationToken = new CancellationTokenSource();
             ErrorMessage = "";
-            IsLinearView = true;
             Timer = new DispatcherTimer();
             Stopwatch = new Stopwatch();
             ComparisonKeys = new ComparisonKeys();
-            ComparisonKeys.UserKeys = importConfiguration.UserKeys;
+            ComparisonKeys.UserKeys = masterConfiguration.UserKeys;
         }
 
         public void UpdateProgress(double val) {
@@ -233,6 +250,14 @@ namespace Reflection.Models {
                 DeviationsView = "Linear Deviations View";
             }else {
                 DeviationsView = "Tabular Deviations View";
+            }
+        }
+
+        private void SetResultFileView() {
+            if (IsDeviationsOnly) {
+                ResultFileView = "Deviations Only";
+            } else {
+                ResultFileView = "Deviations And Passed";
             }
         }
     }

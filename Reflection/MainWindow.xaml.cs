@@ -32,7 +32,6 @@ namespace Reflection {
         public ComparisonTasksViewModel ComparisonDetailViewModel { get; set; }
         PageImport PageImport { get; set; }
         PageMain PageMain { get; set; }
-        PageViewResult PageViewResult { get; set; }
 
         public MainWindow() {
             InitializeComponent();
@@ -43,32 +42,30 @@ namespace Reflection {
             Main.Content = PageMain;
             PageMain.OpenFiles += OnOpenFiles;
             PageMain.Error += OnError;
-            PageMain.ShowViewResult += OnShowViewResult;
             PageImport = new PageImport();
             PageImport.FilesLoaded += OnFilesLoaded;
             PageImport.GoBack += OnGoBack;
-            PageImport.ImportViewModel.PropertyChanged += ComparisonDetailViewModel.ImportConfigurationPropertyChanged;
             PageImport.Message += OnMessage;
             ChildWindowRaised += OnChildWindowRaised;
-            PageMain.ChangeDeviationsView += OnChangeDeviationsView;
+            PageMain.LinearView += OnChangeDeviationsView;
+            PageMain.ResultFileView += OnChangeResultView;
         }
 
         private void OnOpenFiles(object sender, EventArgs e) {
-            PageImport.IsSingle += OnIsSingle;
+            PageImport.SingleFileView += OnIsSingle;
             PageImport.SelectFiles();
         }
 
         private void OnIsSingle(object sender, EventArgs e) {
             Main.Content = PageImport;           
-            PageImport.IsSingle -= OnIsSingle;
+            PageImport.SingleFileView -= OnIsSingle;
         }
 
         private void OnFilesLoaded(object sender, EventArgs e) {
-            Main.Content = PageMain;
-            if (PageViewResult != null) {
-                PageViewResult.GoBack -= OnGoBack;
-                PageViewResult.Error -= OnError;
-            }          
+            StatusBarContent.Text = "";
+            var configs = (List<ImportConfiguration>)sender;
+            ComparisonDetailViewModel.AddComparisonTask(configs[0], configs[1]);           
+            Main.Content = PageMain;         
         }
 
         private void OnGoBack(object sender, EventArgs e) {
@@ -125,16 +122,6 @@ namespace Reflection {
             StatusBarContent.Text = erorrMessage;
         }
 
-        private void OnShowViewResult(object sender, EventArgs e) {
-            PageViewResult = new PageViewResult();
-            PageViewResult.GoBack += OnGoBack;
-            PageViewResult.Error += OnError;
-            Main.Content = PageViewResult;
-            var comparisonTask = (ComparisonTask)sender;
-            if(comparisonTask!=null)
-            PageViewResult.PrintFileContent(comparisonTask.ResultFile + ".txt", comparisonTask.ImportConfiguration.Delimiter, comparisonTask.ImportConfiguration.Encoding);
-        }
-
         private void OnChangeDeviationsView(object senderIn, EventArgs eIn) {
             ComparisonDetailViewModel.IsLinearView = (bool)senderIn;
         }
@@ -144,6 +131,9 @@ namespace Reflection {
             StatusBarContent.Text = sender.ToString();
         }
 
+        private void OnChangeResultView(object senderIn, EventArgs eIn) {
+            ComparisonDetailViewModel.IsDeviationsOnly = (bool)senderIn;
+        }
 
     }
 }

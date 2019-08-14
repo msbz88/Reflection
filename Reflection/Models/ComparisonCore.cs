@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -42,8 +43,10 @@ namespace Reflection.Models {
             } else {
                 ComparisonTask.ComparisonKeys.MainKeys = ComparisonTask.ComparisonKeys.UserKeys;
             }
-            ComparisonTask.ComparisonKeys.TransactionKeys = comparisonKeys.TransactionKeys;
-            ComparisonTask.ComparisonKeys.ExcludeColumns = comparisonKeys.ExcludeColumns;
+            ComparisonTask.ComparisonKeys.BinaryValues = comparisonKeys.BinaryValues;
+            ComparisonTask.ComparisonKeys.ExcludeColumns = comparisonKeys.ExcludeColumns.Concat(ComparisonTask.MasterConfiguration.UserExcludeColumns).Concat(ComparisonTask.TestConfiguration.UserExcludeColumns).Distinct().ToList();
+            ComparisonTask.ComparisonKeys.UserIdColumns = comparisonKeys.UserIdColumns;
+            ComparisonTask.ComparisonKeys.UserExcludeColumnsBinary = comparisonKeys.UserExcludeColumnsBinary;
             ComparisonTask.IfCancelRequested();
             PerfCounter.Stop("AnalyseForPivotKey");
             //File.AppendAllText(@"C:\Users\MSBZ\Desktop\baseStat.txt", "baseKeyIndex: " + string.Join(";", MasterTable.Headers.ColumnIndexIn(PivotKeysIndexes.MainKeys)));
@@ -59,7 +62,7 @@ namespace Reflection.Models {
             ComparisonTask.UpdateProgress(4);
             PerfCounter.Stop("Base Group");           
             PerfCounter.Start();
-            CompareTable = new CompareTable(Delimiter, MasterTable.Headers, TestTable.Headers, MasterTable.ColumnsCount, ComparisonTask.ComparisonKeys, ComparisonTask.IsLinearView);
+            CompareTable = new CompareTable(MasterTable.Headers, TestTable.Headers, ComparisonTask);
             ComparisonTask.IfCancelRequested();
             var uMasterRows = groupsM.Where(r => r.Value.Count() == 1).ToDictionary(item => item.Key, item => item.Value.First());
             ComparisonTask.UpdateProgress(2);
@@ -170,9 +173,17 @@ namespace Reflection.Models {
                 compositeKey.AddRange(AddKeysToAcceptExtra(clearedStats, maxMatchingRate, mainPivotKey));
             }
             var excludeColumns = baseStat.Where(item => item.IsTimestamp).Select(item => item.ColumnId).ToList();
-            compKeys.TransactionKeys = baseStat.Where(item => item.IsTransNo).Select(item => item.ColumnId).ToList();
+            compKeys.BinaryValues = baseStat.Where(item => item.IsTransNo).Select(item => item.ColumnId).ToList();
             compKeys.MainKeys = compositeKey;
             compKeys.ExcludeColumns = excludeColumns;
+            var userIdColumns = ComparisonTask.MasterConfiguration.UserIdColumns.Concat(ComparisonTask.TestConfiguration.UserIdColumns).Distinct();
+            foreach (var item in userIdColumns) {
+                if (baseStat.Where(col => col.ColumnId == item).First().MatchingRate != 100) {
+                    compKeys.UserExcludeColumnsBinary.Add(item);
+                }else {
+                    compKeys.UserIdColumns.Add(item);
+                }
+            }
             return compKeys;
         }
 
@@ -238,5 +249,6 @@ namespace Reflection.Models {
             ComparisonTask.UpdateProgress(2);
             return columnsSummary.ToList();
         }
+
     }
 }

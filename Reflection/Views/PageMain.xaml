@@ -153,13 +153,16 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="40"/>
             <RowDefinition Height="40"/>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="55"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="160"/>
         </Grid.ColumnDefinitions>
-        <ListView BorderBrush="LightGray" Name="lvComparisonDetails" Margin="5,5,0,0"  Grid.Row="0" Grid.RowSpan="4" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ItemsSource="{Binding Path=AllComparisonDetails}" SelectionChanged="ListViewItemSelected">
+        <ListView BorderBrush="LightGray" Name="lvComparisonDetails" Margin="5,5,0,0"  Grid.Row="0" Grid.RowSpan="6" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ItemsSource="{Binding Path=AllComparisonDetails}" SelectionChanged="ListViewItemSelected">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -309,6 +312,7 @@
                                 <Label Grid.Row="4" Grid.Column="0" Content="{Binding StartTime}" HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="12" Foreground="DarkGray"/>
                                 <Label Grid.Row="4" Grid.Column="1" Content="{Binding ElapsedTime}" HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="12" Foreground="DarkGray"/>
                                 <Label Grid.Row="4" Grid.Column="2" Margin="20,0,0,0" Content="{Binding DeviationsView}" HorizontalAlignment="Left" VerticalAlignment="Bottom" FontSize="12" Foreground="DarkGray"/>
+                                <Label Grid.Row="4" Grid.Column="2" Margin="195,0,0,0" Content="{Binding ResultFileView}" HorizontalAlignment="Left" VerticalAlignment="Bottom" FontSize="12" Foreground="DarkGray"/>
                             </Grid>
                         </Grid>
                         <Border.Effect>
@@ -323,10 +327,18 @@
         </ListView>
         <TextBlock Name ="WelcomeTextBlock" Foreground="DarkGray" HorizontalAlignment="Center" FontFamily="Segoe UI" FontSize="30" Grid.Row="1" Grid.RowSpan="2" Grid.Column="0"/>
         <TextBox Grid.Row="0" Grid.Column="2" Name="TextBoxSearchFile" Width="150" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center" TextChanged="TextBoxSearchFileTextChanged"/>
-        <Button Name ="btnOpenFiles" Grid.Row="2" Grid.Column="1" Height="25" Width="80" HorizontalAlignment="Center" VerticalAlignment="Top" Margin ="0,10,0,0" Content="Open Files" Click="ButtonOpenFilesClick"/>
-        <StackPanel Grid.Row="1" Grid.Column="1" Margin="5,0,5,0" Height="30" VerticalAlignment="Bottom">
-            <RadioButton Name="TabularDeviationsView" Content="Tabular Deviations View" FontFamily="Segoe UI" ToolTip="Will be applied to the next comparison" IsChecked="True" Checked="TabularDeviationsView_Checked"/>
-            <RadioButton Name="LinearDeviationsView" Content="Linear Deviations View" FontFamily="Segoe UI" ToolTip="Will be applied to the next comparison" Checked="LinearDeviationsView_Checked"/>
-        </StackPanel>
+        <GroupBox Header="Deviations View" Grid.Row="1" Grid.RowSpan="2" Grid.Column="1" Margin="5,10,5,0" Height="60" VerticalAlignment="Top">
+            <StackPanel>
+                <RadioButton Name="LinearDeviationsView" Content="Linear" FontFamily="Segoe UI" ToolTip="Will be applied to the next comparison" IsChecked="True" Checked="LinearDeviationsView_Checked"/>
+                <RadioButton Name="TabularDeviationsView" Content="Tabular" FontFamily="Segoe UI" ToolTip="Will be applied to the next comparison" Checked="TabularDeviationsView_Checked"/>
+            </StackPanel>
+        </GroupBox>
+        <GroupBox Header="Result View" Grid.Row="2" Grid.RowSpan="3" Grid.Column="1" Margin="5,35,5,0" Height="60" VerticalAlignment="Top">
+            <StackPanel>
+                <RadioButton Name="DeviationsOnly" Content="Deviations Only" FontFamily="Segoe UI" ToolTip="Will be applied to the next comparison" IsChecked="True" Checked="DeviationsOnly_Checked"/>
+                <RadioButton Name="DeviationsAndPassed" Content="Deviations and Passed" FontFamily="Segoe UI" ToolTip="Will be applied to the next comparison" Checked="DeviationsAndPassed_Checked"/>
+            </StackPanel>
+        </GroupBox>
+        <Button Name ="btnOpenFiles" Grid.Row="4" Grid.Column="1" Height="25" Width="80" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin ="0,0,0,0" Content="Open Files" Click="ButtonOpenFilesClick"/>
     </Grid>
 </Page>

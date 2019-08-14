@@ -6,17 +6,17 @@ using System.Threading.Tasks;
 
 namespace Reflection.Models {
     public class Comparator {
-         ComparisonKeys IdColumns { get; set; }
+         ComparisonKeys ComparisonKeys { get; set; }
 
-        public Comparator(ComparisonKeys idColumns) {
-            IdColumns = idColumns;
+        public Comparator(ComparisonKeys comparisonKeys) {
+            ComparisonKeys = comparisonKeys;
         }
 
         public ComparedRow Compare(List<ComparedRow> allCombinations, Row masterRow, Row testRow, ref int minDeviations) {
             ComparedRow comparedRow = new ComparedRow(masterRow.Id, testRow.Id);
             int currentDeviations = 0;
             for (int i = 0; i < masterRow.Data.Length; i++) {
-                if (!IdColumns.TransactionKeys.Contains(i) && !IdColumns.ExcludeColumns.Contains(i)) {
+                if (!ComparisonKeys.BinaryValues.Contains(i) && !ComparisonKeys.ExcludeColumns.Contains(i)) {
                     if (masterRow.Data[i] != testRow.Data[i]) {
                         currentDeviations++;
                         if (currentDeviations <= minDeviations) {
@@ -38,7 +38,8 @@ namespace Reflection.Models {
                         return null;
                     }
                 }
-                comparedRow.AddIdFields(GetIdFields(masterRow, testRow));
+                comparedRow.AddTransNoColumns(GetTransNoColumns(masterRow, testRow));
+                comparedRow.AddMainIdColumns(GetMainIdColumns(masterRow, testRow));
                 minDeviations = currentDeviations;
                 return comparedRow;
             } else {
@@ -50,7 +51,7 @@ namespace Reflection.Models {
         public ComparedRow CompareSingle(Row masterRow, Row testRow) {
             ComparedRow comparedRow = new ComparedRow(masterRow.Id, testRow.Id);
             for (int i = 0; i < masterRow.Data.Length; i++) {
-                if (!IdColumns.TransactionKeys.Contains(i) && !IdColumns.ExcludeColumns.Contains(i)) {
+                if (!ComparisonKeys.BinaryValues.Contains(i) && !ComparisonKeys.ExcludeColumns.Contains(i)) {
                     if (masterRow.Data[i] != testRow.Data[i]) {
                         var deviation = new Deviation(i, masterRow.Data[i], testRow.Data[i]);
                         comparedRow.AddDeviation(deviation);
@@ -58,7 +59,8 @@ namespace Reflection.Models {
                 }
             }
             if (comparedRow.Deviations.Count > 0) {
-                comparedRow.AddIdFields(GetIdFields(masterRow, testRow));
+                comparedRow.AddTransNoColumns(GetTransNoColumns(masterRow, testRow));
+                comparedRow.AddMainIdColumns(GetMainIdColumns(masterRow, testRow));
                 return comparedRow;
             } else {
                 comparedRow.IsPassed = true;
@@ -66,22 +68,38 @@ namespace Reflection.Models {
             }
         }
 
-        private List<IdField> GetIdFields(Row masterRow, Row testRow) {
-            List<IdField> idFields = new List<IdField>();
-            foreach (var item in IdColumns.TransactionKeys) {
-                IdField printFields = new IdField();
-                printFields.TransactionNo = item;
-                printFields.MasterTransactionNoVal = masterRow.Data[item];
-                printFields.TestTransactionNoVal = testRow.Data[item];
-                idFields.Add(printFields);
+        private Dictionary<int, string> GetMainIdColumns(Row masterRow, Row testRow) {
+            Dictionary<int, string> mainColumnsId = new Dictionary<int, string>();
+            foreach (var item in ComparisonKeys.MainKeys) {                
+                mainColumnsId.Add(item, masterRow.Data[item]);
             }
-            foreach (var item in IdColumns.MainKeys) {
-                IdField printFields = new IdField();
-                printFields.MainKey = item;
-                printFields.MainVal = masterRow.Data[item];
-                idFields.Add(printFields);
+            foreach (var item in ComparisonKeys.UserIdColumns) {
+                if (!mainColumnsId.ContainsKey(item)) {
+                    mainColumnsId.Add(item, masterRow.Data[item]);
+                }                   
             }
-            return idFields;
+            return mainColumnsId;
+        }
+
+        private List<BinaryValue> GetTransNoColumns(Row masterRow, Row testRow) {
+            List<BinaryValue> transNoColumns = new List<BinaryValue>();
+            foreach (var item in ComparisonKeys.BinaryValues) {
+                BinaryValue transNo = new BinaryValue();
+                transNo.ColumnId = item;
+                transNo.MasterValue = masterRow.Data[item];
+                transNo.TestValue = testRow.Data[item];
+                transNoColumns.Add(transNo);
+            }
+            foreach (var item in ComparisonKeys.UserExcludeColumnsBinary) {
+                if (transNoColumns.All(col => col.ColumnId != item)) {
+                    BinaryValue userExcludeColumn = new BinaryValue();
+                    userExcludeColumn.ColumnId = item;
+                    userExcludeColumn.MasterValue = masterRow.Data[item];
+                    userExcludeColumn.TestValue = testRow.Data[item];
+                    transNoColumns.Add(userExcludeColumn);
+                }
+            }
+            return transNoColumns;
         }
     }
 }

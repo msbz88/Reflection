@@ -16,7 +16,7 @@ namespace Reflection.ViewModels {
         public string[] TestSelectedFiles { get; set; }
         string MasterCurrentFile { get; set; }
         string TestCurrentFile { get; set; }
-        public bool IsReady { get; private set; }
+        public bool IsReady { get; set; }
         MatchedFilesWindow MatchedFilesWindow { get; set; }
         public List<MatchedFileNames> MatchedFileNames { get; set; }
         OpenFileDialog Dialog;

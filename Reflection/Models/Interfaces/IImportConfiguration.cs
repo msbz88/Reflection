@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 
 namespace Reflection.Models.Interfaces {
     public interface IImportConfiguration {
-        string MasterFilePath { get; set; }
-        string TestFilePath { get; set; }
+        string FilePath { get; set; }
         string Delimiter { get; set; }
         int RowsToSkip { get; set; }
         bool IsHeadersExist { get; set; }

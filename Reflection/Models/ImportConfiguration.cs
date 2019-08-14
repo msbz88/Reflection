@@ -7,22 +7,24 @@ using Reflection.Models.Interfaces;
 
 namespace Reflection.Models {
     public class ImportConfiguration : IImportConfiguration {
-        public string MasterFilePath { get; set; }
-        public string TestFilePath { get; set; }
+        public string FilePath { get; set; }
         public string Delimiter { get; set; }
         public int RowsToSkip { get; set; }
         public bool IsHeadersExist { get; set; }
         public Encoding Encoding { get; set; }
         public List<int> UserKeys { get; set; }
+        public List<int> UserIdColumns { get; set; }
+        public List<int> UserExcludeColumns { get; set; }
 
-        public ImportConfiguration(string pathMasterFile, string pathTestFile, string delimiter, int rowsToSkip, bool isHeadersExist, Encoding encoding, List<int> userKeys) {
-            MasterFilePath = pathMasterFile;
-            TestFilePath = pathTestFile;
+        public ImportConfiguration(string filePath, string delimiter, int rowsToSkip, bool isHeadersExist, Encoding encoding, List<int> userKeys, List<int> userIdColumns, List<int> userExcludeColumns) {
+            FilePath = filePath;
             Delimiter = delimiter;
             RowsToSkip = rowsToSkip;
             IsHeadersExist = isHeadersExist;
             Encoding = encoding;
             UserKeys = userKeys;
+            UserIdColumns = userIdColumns;
+            UserExcludeColumns = userExcludeColumns;
         }
     }
 }

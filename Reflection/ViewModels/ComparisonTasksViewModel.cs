@@ -24,6 +24,7 @@ namespace Reflection.ViewModels {
         ComparisonProcessor ComparisonProcessor;
         bool IsExcelInstaled = Type.GetTypeFromProgID("Excel.Application") == null ? false : true;
         public bool IsLinearView { get; set; }
+        public bool IsDeviationsOnly { get; set; }     
 
         public ComparisonTasksViewModel() {
             AllComparisonDetails = new ObservableCollection<ComparisonTask>();
@@ -31,22 +32,18 @@ namespace Reflection.ViewModels {
             FileReader = new FileReader();
             ComparisonProcessor = new ComparisonProcessor();
             IsExcelInstaled = Type.GetTypeFromProgID("Excel.Application") == null ? false : true;
+            IsLinearView = true;
+            IsDeviationsOnly = true;
         }       
 
-        public void ImportConfigurationPropertyChanged(object sender, PropertyChangedEventArgs e) {
-            if (e.PropertyName == "ImportConfiguration") {
-                var importViewModel = (ImportViewModel)sender;              
-                AddComparisonTask(importViewModel.ImportConfiguration);
-            }
-        }
-
-        public void AddComparisonTask(ImportConfiguration importConfiguration) {
-            var comparisonTask = new ComparisonTask(comparisonCount++, importConfiguration);
+        public void AddComparisonTask(ImportConfiguration masterConfiguration, ImportConfiguration testConfiguration) {
+            var comparisonTask = new ComparisonTask(comparisonCount++, masterConfiguration, testConfiguration);
             if (AllComparisonDetails.Count == 99) {
                 AllComparisonDetails.RemoveAt(0);
                 comparisonCount = 1;
             }
             comparisonTask.IsLinearView = IsLinearView;
+            comparisonTask.IsDeviationsOnly = IsDeviationsOnly;
             AllComparisonDetails.Add(comparisonTask);
             TriggerComparison();          
         }
@@ -86,7 +83,11 @@ namespace Reflection.ViewModels {
 
         public bool TryOpenExcel(ComparisonTask comparisonTask) {
             if (IsExcelInstaled) {
-                Task.Run(() => Process.Start(comparisonTask.ResultFile + ".xlsx"));
+                if (comparisonTask.IsLinearView) {
+                    Task.Run(() => Process.Start(comparisonTask.ResultFile + ".xlsm"));
+                }else {
+                    Task.Run(() => Process.Start(comparisonTask.ResultFile + ".xlsx"));
+                }              
                 return true;
             } else {
                 return false;

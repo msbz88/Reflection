@@ -23,46 +23,72 @@ namespace Reflection.Views {
     /// Interaction logic for PageImport.xaml
     /// </summary>
     public partial class PageImport : Page {
-        public ImportViewModel ImportViewModel { get; set; }
+        public ImportViewModel MasterViewModel { get; set; }
+        public ImportViewModel TestViewModel { get; set; }
         public MatchFileNamesViewModel MatchFileNamesViewModel { get; set; }
-        ColumnNamesViewModel ColumnNamesViewModel = new ColumnNamesViewModel();
+        ColumnNamesViewModel SuggestedKeyColumnNames { get; set; }
+        ColumnNamesViewModel UserIdColumnNames { get; set; }
+        ColumnNamesViewModel ExcludeColumnNames { get; set; }
         public EventHandler FilesLoaded { get; set; }
         public EventHandler GoBack { get; set; }
-        public EventHandler IsSingle { get; set; }
+        public EventHandler SingleFileView { get; set; }
         public EventHandler Message { get; set; }
         private string customDelimiter;
+        private string Version { get; set; }
 
         public PageImport() {
             InitializeComponent();
-            ImportViewModel = new ImportViewModel();
             ComboBoxDataBinding();
-            MatchFileNamesViewModel = new MatchFileNamesViewModel();
-            this.DataContext = ImportViewModel;
-            ImportViewModel.PropertyChanged += OnIsHeaderExistsChanged;
         }
 
         public void SelectFiles() {
+            MatchFileNamesViewModel = new MatchFileNamesViewModel();
+            SuggestedKeyColumnNames = new ColumnNamesViewModel();
+            UserIdColumnNames = new ColumnNamesViewModel();
+            ExcludeColumnNames = new ColumnNamesViewModel();
+            MasterViewModel = new ImportViewModel();
+            TestViewModel = new ImportViewModel();
+            MasterViewModel.PropertyChanged += OnIsHeaderExistsChanged;
+            TestViewModel.PropertyChanged += OnIsHeaderExistsChanged;
             MatchFileNamesViewModel.SelectFiles();
             if (MatchFileNamesViewModel.IsReady) {
                 if (MatchFileNamesViewModel.MatchedFileNames.Count == 1) {
-                    ImportViewModel.PathMasterFile = MatchFileNamesViewModel.MatchedFileNames[0].MasterFilePath;
-                    ImportViewModel.PathTestFile = MatchFileNamesViewModel.MatchedFileNames[0].TestFilePath;
-                    IsSingle?.Invoke(null, null);
-                    AsyncRenderFileWithAnalyseToView(ImportViewModel.PathMasterFile);
+                    MasterViewModel.FilePath = MatchFileNamesViewModel.MatchedFileNames[0].MasterFilePath;
+                    TestViewModel.FilePath = MatchFileNamesViewModel.MatchedFileNames[0].TestFilePath;
+                    SingleFileView?.Invoke(null, null);
+                    AsyncRenderFileWithAnalyseToView(MasterViewModel);
+                    Version = "Master";
+                    this.DataContext = MasterViewModel;
                 } else {
-                    foreach (var item in MatchFileNamesViewModel.MatchedFileNames) {
-                        ImportViewModel.PathMasterFile = item.MasterFilePath;
-                        ImportViewModel.PathTestFile = item.TestFilePath;
-                        ImportViewModel.AnalyseFile(ImportViewModel.PathMasterFile);
-                        ImportViewModel.SetImportConfiguration();
-                    }
+                    AsyncRunMultyFiles();
                 }
+            }else {
+                MasterViewModel.PropertyChanged -= OnIsHeaderExistsChanged;
+                TestViewModel.PropertyChanged -= OnIsHeaderExistsChanged;
             }
         }
 
-        private void DisplayOnLoadEncoding() {
+        private async void AsyncRunMultyFiles() {
+            await Task.Run(() => {
+                    var configs = new List<ImportConfiguration>();
+                    MasterViewModel.IsMultiple = true;
+                    TestViewModel.IsMultiple = true;
+                    foreach (var item in MatchFileNamesViewModel.MatchedFileNames) {
+                        MasterViewModel.FilePath = item.MasterFilePath;
+                        TestViewModel.FilePath = item.TestFilePath;
+                        MasterViewModel.AnalyseFile();
+                        TestViewModel.AnalyseFile();
+                        configs.Clear();
+                        configs.Add(MasterViewModel.SetImportConfiguration());
+                        configs.Add(TestViewModel.SetImportConfiguration());
+                    Dispatcher.Invoke(() => FilesLoaded?.Invoke(configs, null) );
+                    }
+            });
+        }
+
+        private void DisplayOnLoadEncoding(Encoding encoding) {
             var t = comboBoxEncoding.Items.OfType<ComboBoxItem>().Select(item => item.Content.ToString());
-            var comboBoxItem = comboBoxEncoding.Items.SourceCollection.Cast<EncodingInfo>().FirstOrDefault(x => x.CodePage == ImportViewModel.Encoding.CodePage);
+            var comboBoxItem = comboBoxEncoding.Items.SourceCollection.Cast<EncodingInfo>().FirstOrDefault(x => x.CodePage == encoding.CodePage);
             comboBoxEncoding.SelectedIndex = comboBoxEncoding.SelectedIndex = comboBoxEncoding.Items.IndexOf(comboBoxItem);
         }
 
@@ -89,8 +115,8 @@ namespace Reflection.Views {
         }
 
         private void TextBoxDelimiterGotFocus(object senderIn, RoutedEventArgs eIn) {
-            if (PresentDelimiter(ImportViewModel.Delimiter) == TextBoxDelimiter.Text) {
-                var delimiter = ImportViewModel.Delimiter;
+            if (PresentDelimiter(MasterViewModel.Delimiter) == TextBoxDelimiter.Text) {
+                var delimiter = MasterViewModel.Delimiter;
                 if (delimiter == "\t") {
                     delimiter = "\\t";
                 }
@@ -101,41 +127,46 @@ namespace Reflection.Views {
         }
 
         private void TextBoxDelimiterLostFocus(object senderIn, RoutedEventArgs eIn) {
-            if (TextBoxDelimiter.Text != ImportViewModel.Delimiter && TextBoxDelimiter.Text != "\\t") {
+            if (TextBoxDelimiter.Text != MasterViewModel.Delimiter && TextBoxDelimiter.Text != "\\t") {
                 customDelimiter = TextBoxDelimiter.Text;
                 TextBoxDelimiter.Text = PresentDelimiter(TextBoxDelimiter.Text);
             } else {
-                TextBoxDelimiter.Text = PresentDelimiter(ImportViewModel.Delimiter);
+                TextBoxDelimiter.Text = PresentDelimiter(MasterViewModel.Delimiter);
             }
         }
 
-        private async void AsyncRenderFileWithAnalyseToView(string path) {
+        private async void AsyncRenderFileWithAnalyseToView(ImportViewModel importViewModel) {
             dgData.Columns.Clear();
             dgData.ItemsSource = null;
             await Task.Run(() => {
-                ImportViewModel.AnalyseFile(path);
+                importViewModel.AnalyseFile();
+                //InitializeDataGrid();
                 Dispatcher.Invoke(() => {
-                    InitializeDataGrid();
-                    PrintFileInfo(System.IO.Path.GetFileName(path));
+                    InitializeDataGrid(importViewModel);
+                    PrintFileInfo(importViewModel);
                     if (ListBoxAvailableKeys.Visibility == Visibility.Visible) {
-                        LoadColumnNames();
+                        LoadSuggestedKeyColumnNames();
+                        LoadIdColumnNames();
+                        LoadExcludeColumnNames();
                     }
                 });
             });
         }
 
-        private async void AsyncRenderFileWithSetPreviewToView(string path) {
-            dgData.Columns.Clear();
+        private async void AsyncRenderFileWithSetPreviewToView(ImportViewModel importViewModel) {
             dgData.ItemsSource = null;
             await Task.Run(() => {
-                ImportViewModel.ManualUpdate(path);
+                importViewModel.ManualUpdate();
+                //InitializeDataGrid();
                 Dispatcher.Invoke(() => {
-                    InitializeDataGrid();
-                    PrintSkippedLines();
-                    ShowHeaderRow();
-                    ShowRowsAndColumnsCount();                   
+                    UpdateDataGrid(importViewModel);
+                    PrintSkippedLines(importViewModel.SkippedLines);
+                    ShowHeaderRow(importViewModel.RowsToSkip);
+                    ShowRowsAndColumnsCount(importViewModel);                   
                     if (ListBoxAvailableKeys.Visibility == Visibility.Visible) {
-                        LoadColumnNames();
+                        LoadSuggestedKeyColumnNames();
+                        LoadIdColumnNames();
+                        LoadExcludeColumnNames();
                     }
                 });
             });
@@ -143,8 +174,8 @@ namespace Reflection.Views {
 
         private void ComboBoxSelectionChanged(object senderIn, RoutedEventArgs eIn) {
             var encodingInfo = (EncodingInfo)comboBoxEncoding.SelectedItem;
-            ImportViewModel.Encoding = encodingInfo.GetEncoding();
-            if (TextBlockFileName.Text == (System.IO.Path.GetFileName(ImportViewModel.PathMasterFile))) {
+            MasterViewModel.Encoding = encodingInfo.GetEncoding();
+            if (TextBlockFileName.Text == (System.IO.Path.GetFileName(MasterViewModel.FilePath))) {
                 //RenderFileToView(ImportViewModel.PathMasterFile);
             } else {
                 //RenderFileToView(ImportViewModel.PathTestFile);
@@ -156,9 +187,9 @@ namespace Reflection.Views {
             comboBoxEncoding.ItemsSource = codePages;
         }
 
-        public void InitializeDataGrid() {
+        public void InitializeDataGrid(ImportViewModel importViewModel) {
             int index = 0;
-            foreach (var item in ImportViewModel.FileHeaders) {
+            foreach (var item in importViewModel.FileHeaders) {
                 var column = new DataGridTextColumn();
                 column.Header = item.Replace("_", "__");
                 column.Binding = new Binding(string.Format("[{0}]", index));
@@ -166,31 +197,43 @@ namespace Reflection.Views {
                 index++;
             }
             if (dgData.ItemsSource == null) {
-                dgData.ItemsSource = ImportViewModel.PreviewContent;
+                dgData.ItemsSource = importViewModel.PreviewContent;
             }
         }
 
-        public void PrintFileInfo(string fileName) {
-            PrintSkippedLines();
-            ImportViewModel.PreviewFileName = fileName;
-            ShowHeaderRow();
-            TextBoxDelimiter.Text = PresentDelimiter(ImportViewModel.Delimiter);
-            DisplayOnLoadEncoding();
-            ShowRowsAndColumnsCount();
+        public void UpdateDataGrid(ImportViewModel importViewModel) {
+            for (int i = 0; i < dgData.Columns.Count; i++) {
+                if(i + 1 > importViewModel.FileHeaders.Count) {
+                    dgData.Columns[i].Header = "";
+                } else {
+                    dgData.Columns[i].Header = importViewModel.FileHeaders[i].Replace("_", "__");
+                }               
+            }
+            if (dgData.ItemsSource == null) {
+                dgData.ItemsSource = importViewModel.PreviewContent;
+            }
         }
 
-        private void ShowRowsAndColumnsCount() {
-            var prev = ImportViewModel.PreviewCount < 200 ? "" : " preview";
-            Message.Invoke("Rows" + prev + ": " + ImportViewModel.PreviewContent.Count + " Columns: " + ImportViewModel.FileHeaders.Count, null);
+        public void PrintFileInfo(ImportViewModel importViewModel) {
+            PrintSkippedLines(importViewModel.SkippedLines);
+            ShowHeaderRow(importViewModel.RowsToSkip);
+            TextBoxDelimiter.Text = PresentDelimiter(importViewModel.Delimiter);
+            DisplayOnLoadEncoding(importViewModel.Encoding);
+            ShowRowsAndColumnsCount(importViewModel);
         }
 
-        private void ShowHeaderRow() {
-           TextBoxHeaderRow.Text = ImportViewModel.RowsToSkip.ToString();
+        private void ShowRowsAndColumnsCount(ImportViewModel importViewModel) {
+            var prev = importViewModel.PreviewCount < 200 ? "" : " preview";
+            Message.Invoke("Rows" + prev + ": " + importViewModel.PreviewContent.Count + " Columns: " + importViewModel.FileHeaders.Count, null);
         }
 
-        private void PrintSkippedLines() {
-            if (ImportViewModel.SkippedLines.Count > 0) {
-                TextBlockSkippedRows.Text = string.Join(Environment.NewLine, ImportViewModel.SkippedLines);
+        private void ShowHeaderRow(int rowsToSkip) {
+           TextBoxHeaderRow.Text = rowsToSkip.ToString();
+        }
+
+        private void PrintSkippedLines(List<string> skippedLines) {
+            if (skippedLines.Count > 0) {
+                TextBlockSkippedRows.Text = string.Join(Environment.NewLine, skippedLines);
                 ExpanderSkippedRows.Visibility = Visibility.Visible;
                 ExpanderSkippedRows.IsExpanded = true;
             } else {
@@ -200,39 +243,82 @@ namespace Reflection.Views {
         }
 
         private void ButtonExecuteClick(object senderIn, RoutedEventArgs eIn) {
-            ImportViewModel.SetImportConfiguration();
-            FilesLoaded?.Invoke(senderIn, eIn);
+            MasterViewModel.IsUserInput = false;
+            var configs = new List<ImportConfiguration>();
+            if (TestViewModel.IsFirstStart) {
+                TestViewModel.AnalyseFile();
+            }
+            configs.Add(MasterViewModel.SetImportConfiguration());
+            configs.Add(TestViewModel.SetImportConfiguration());           
+            FilesLoaded?.Invoke(configs, eIn);
             ResetUserKeys();
+            MasterViewModel.PropertyChanged -= OnIsHeaderExistsChanged;
+            TestViewModel.PropertyChanged -= OnIsHeaderExistsChanged;
         }
 
         private void ButtonSuggestKeyClick(object senderIn, RoutedEventArgs eIn) {
-            if (ColumnNamesViewModel.SelectedKeys.Count > 0) {
+            if (SuggestedKeyColumnNames.SelectedKeys.Count > 0) {
                 ShowAvailableKeys();
                 ShowSelectedKeys();
             } else {
                 ShowAvailableKeys();
             }
-            LoadColumnNames();
+            LoadSuggestedKeyColumnNames();
         }
 
-        private void LoadColumnNames() {
-            ColumnNamesViewModel.AvailableKeys.Clear();
+        private void LoadSuggestedKeyColumnNames() {
+            var currViewModel = Version == "Master" ? MasterViewModel : TestViewModel;
+            SuggestedKeyColumnNames.AvailableKeys.Clear();
             int index = 0;
-            foreach (var item in ImportViewModel.FileHeaders) {
+            foreach (var item in currViewModel.FileHeaders) {
                 var key = new ColumnName(index, item.Replace("_", "__"));
-                ColumnNamesViewModel.AvailableKeys.Add(key);
-                if (ColumnNamesViewModel.SelectedKeys.Any(k => k.Id == index)) {
+                SuggestedKeyColumnNames.AvailableKeys.Add(key);
+                if (SuggestedKeyColumnNames.SelectedKeys.Any(k => k.Id == index)) {
                     key.IsChecked = true;
                 }
                 index++;
             }
-            ListBoxAvailableKeys.ItemsSource = ColumnNamesViewModel.AvailableKeys;
-            ListBoxSelectedKeys.ItemsSource = ColumnNamesViewModel.SelectedKeys;
+            ListBoxAvailableKeys.ItemsSource = SuggestedKeyColumnNames.AvailableKeys;
+            ListBoxSelectedKeys.ItemsSource = SuggestedKeyColumnNames.SelectedKeys;
+        }
+
+        private void LoadIdColumnNames() {
+            var currViewModel = Version == "Master" ? MasterViewModel : TestViewModel;
+            UserIdColumnNames.AvailableKeys.Clear();
+            int index = 0;
+            foreach (var item in currViewModel.FileHeaders) {
+                var key = new ColumnName(index, item.Replace("_", "__"));
+                UserIdColumnNames.AvailableKeys.Add(key);
+                if (UserIdColumnNames.SelectedKeys.Any(k => k.Id == index)) {
+                    key.IsChecked = true;
+                }
+                index++;
+            }
+            ListBoxAvailableKeys.ItemsSource = UserIdColumnNames.AvailableKeys;
+            ListBoxSelectedKeys.ItemsSource = UserIdColumnNames.SelectedKeys;
+        }
+
+        private void LoadExcludeColumnNames() {
+            var currViewModel = Version == "Master" ? MasterViewModel : TestViewModel;
+            ExcludeColumnNames.AvailableKeys.Clear();
+            int index = 0;
+            foreach (var item in currViewModel.FileHeaders) {
+                var key = new ColumnName(index, item.Replace("_", "__"));
+                ExcludeColumnNames.AvailableKeys.Add(key);
+                if (ExcludeColumnNames.SelectedKeys.Any(k => k.Id == index)) {
+                    key.IsChecked = true;
+                }
+                index++;
+            }
+            ListBoxAvailableKeys.ItemsSource = ExcludeColumnNames.AvailableKeys;
+            ListBoxSelectedKeys.ItemsSource = ExcludeColumnNames.SelectedKeys;
         }
 
         private void ShowAvailableKeys() {
-            ButtonExecute.Visibility = Visibility.Collapsed;
             ButtonSuggestKey.Visibility = Visibility.Collapsed;
+            ButtonAddIdColumns.Visibility = Visibility.Collapsed;
+            ButtonExcludeColumns.Visibility = Visibility.Collapsed;
+            ButtonExecute.Visibility = Visibility.Collapsed;
             Grid.SetColumnSpan(dgData, 1);
             Grid.SetRowSpan(ListBoxAvailableKeys, 2);
             BorderUserKeys.Visibility = Visibility.Visible;
@@ -251,9 +337,11 @@ namespace Reflection.Views {
         }
 
         private void HideAvailableKeys() {
-            Grid.SetColumnSpan(dgData, 2);
-            ButtonExecute.Visibility = Visibility.Visible;
+            Grid.SetColumnSpan(dgData, 2);           
             ButtonSuggestKey.Visibility = Visibility.Visible;
+            ButtonAddIdColumns.Visibility = Visibility.Visible;
+            ButtonExcludeColumns.Visibility = Visibility.Visible;
+            ButtonExecute.Visibility = Visibility.Visible;
             BorderUserKeys.Visibility = Visibility.Collapsed;
             LabelAvailableKeys.Visibility = Visibility.Collapsed;
             ListBoxAvailableKeys.Visibility = Visibility.Collapsed;
@@ -272,11 +360,26 @@ namespace Reflection.Views {
         private void ButtonApplyUserKeyClick(object senderIn, RoutedEventArgs eIn) {
             HideSelectedKeys();
             HideAvailableKeys();
-            if (ColumnNamesViewModel.SelectedKeys.Count > 0) {
-                ButtonSuggestKey.Content = "Show Key";
-                ImportViewModel.UserKeys = ColumnNamesViewModel.SelectedKeys.Select(item => item.Id).ToList();
+            var currViewModel = Version == "Master" ? MasterViewModel : TestViewModel;
+            if (SuggestedKeyColumnNames.SelectedKeys.Count > 0) {
+                //ButtonSuggestKey.Content = "Show Key";
+                currViewModel.UserKeys = SuggestedKeyColumnNames.SelectedKeys.Select(item => item.Id).ToList();
+                ButtonSuggestKey.Background = new SolidColorBrush(Colors.DarkSlateBlue);
             } else {
-                ButtonSuggestKey.Content = "Suggest Key";
+                //ButtonSuggestKey.Content = "Suggest Key";
+                ButtonSuggestKey.Background = new SolidColorBrush(Colors.Black);
+            }
+            if (UserIdColumnNames.SelectedKeys.Count > 0) {
+                currViewModel.UserIdColumns = UserIdColumnNames.SelectedKeys.Select(item => item.Id).ToList();
+                ButtonAddIdColumns.Background = new SolidColorBrush(Colors.DarkSlateBlue);
+            } else {
+                ButtonAddIdColumns.Background = new SolidColorBrush(Colors.Black);
+            }
+            if (ExcludeColumnNames.SelectedKeys.Count > 0) {
+                currViewModel.UserExcludeColumns = ExcludeColumnNames.SelectedKeys.Select(item => item.Id).ToList();
+                ButtonExcludeColumns.Background = new SolidColorBrush(Colors.DarkSlateBlue);
+            } else {
+                ButtonExcludeColumns.Background = new SolidColorBrush(Colors.Black);
             }
         }
 
@@ -287,41 +390,65 @@ namespace Reflection.Views {
         }
 
         private void OnKeyUnChecked(object senderIn, RoutedEventArgs eIn) {
-            if (ColumnNamesViewModel.SelectedKeys.Count == 0) {
+            //error
+            if (SuggestedKeyColumnNames.SelectedKeys.Count == 0) {
+                HideSelectedKeys();
+            }
+            if (UserIdColumnNames.SelectedKeys.Count == 0) {
+                HideSelectedKeys();
+            }
+            if (ExcludeColumnNames.SelectedKeys.Count == 0) {
                 HideSelectedKeys();
             }
         }
 
+        private void SwitchModelView(string name) {
+            if (name == "Master") {
+                this.DataContext = MasterViewModel;                
+            }else if (name == "Test") {
+                this.DataContext = TestViewModel;
+            }
+            Version = name;
+        }
+
         private void ButtonGoBackClick(object senderIn, RoutedEventArgs eIn) {
-            ImportViewModel.PreviewFileName = "";
-            if (ImportViewModel.Version == "Test") {
-                AsyncRenderFileWithAnalyseToView(ImportViewModel.PathMasterFile);
+            MasterViewModel.PreviewFileName = "";
+            if (Version == "Test") {
+                AsyncRenderFileWithSetPreviewToView(MasterViewModel);
                 ButtonGoForward.Visibility = Visibility.Visible;
                 ButtonGoBack.ToolTip = "Back to Main Page";
-                ImportViewModel.Version = "Master";
+                SwitchModelView("Master");
             } else {
                 ResetUserKeys();
-                ImportViewModel.PreviewFileName = "";
                 GoBack?.Invoke(senderIn, eIn);
             }
         }
 
         private void ResetUserKeys() {
-            ColumnNamesViewModel.AvailableKeys.Clear();
-            ColumnNamesViewModel.SelectedKeys.Clear();
+            SuggestedKeyColumnNames.AvailableKeys.Clear();
+            SuggestedKeyColumnNames.SelectedKeys.Clear();
+            UserIdColumnNames.AvailableKeys.Clear();
+            UserIdColumnNames.SelectedKeys.Clear();
+            ExcludeColumnNames.AvailableKeys.Clear();
+            ExcludeColumnNames.SelectedKeys.Clear();
+            ButtonSuggestKey.Background = new SolidColorBrush(Colors.Black);
+            ButtonAddIdColumns.Background = new SolidColorBrush(Colors.Black);
+            ButtonExcludeColumns.Background = new SolidColorBrush(Colors.Black);
             HideAvailableKeys();
             HideSelectedKeys();
-            ButtonSuggestKey.Content = "Suggest Key";
+            //ButtonSuggestKey.Content = "Suggest Key";
         }
 
         private void ButtonGoForwardClick(object senderIn, RoutedEventArgs eIn) {
-            ImportViewModel.PreviewFileName = "";
-            if (ImportViewModel.Version == "Master") {
-                AsyncRenderFileWithAnalyseToView(ImportViewModel.PathTestFile);
+            MasterViewModel.PreviewFileName = "";
+            SwitchModelView("Test");
+            if (TestViewModel.IsFirstStart) {
+                    AsyncRenderFileWithAnalyseToView(TestViewModel);
+                } else {
+                    AsyncRenderFileWithSetPreviewToView(TestViewModel);
+                }             
                 ButtonGoForward.Visibility = Visibility.Collapsed;
-                ButtonGoBack.ToolTip = "Back to Master file";
-                ImportViewModel.Version = "Test";
-            }
+                ButtonGoBack.ToolTip = "Back to Master file";               
         }
 
         private void OnExpanded(object senderIn, RoutedEventArgs eIn) {
@@ -338,23 +465,14 @@ namespace Reflection.Views {
             ExpanderSkippedRows.IsExpanded = false;
         }
 
-
         private void TextBoxHeaderRowTextChanged(object sender, TextChangedEventArgs e) {
-            if (TextBoxHeaderRow.Text != "No header found" && !string.IsNullOrEmpty(TextBoxHeaderRow.Text)) {
+            if (!string.IsNullOrEmpty(TextBoxHeaderRow.Text)) {
                 var val = int.Parse(TextBoxHeaderRow.Text);
-                if (val == 0 && !ImportViewModel.IsHeadersExist) {
-                    ImportViewModel.RowsToSkip = val;
-                    ImportViewModel.IsHeadersExist = true;
-                    AsyncRenderFileWithSetPreviewToView(ImportViewModel.PathMasterFile);
-                } else if (ImportViewModel.RowsToSkip != val) {
-                    ImportViewModel.RowsToSkip = val;
-                    ImportViewModel.IsHeadersExist = true;
-                    AsyncRenderFileWithSetPreviewToView(ImportViewModel.PathMasterFile);
-                }
-            } else if (TextBoxHeaderRow.Text == "No header found" && ImportViewModel.IsHeadersExist) {
-                ImportViewModel.RowsToSkip = 0;
-                ImportViewModel.IsHeadersExist = false;
-                AsyncRenderFileWithSetPreviewToView(ImportViewModel.PathMasterFile);
+                var currViewModel = Version == "Master" ? MasterViewModel : TestViewModel;
+                if (currViewModel.RowsToSkip != val) {
+                    currViewModel.RowsToSkip = val;
+                    AsyncRenderFileWithSetPreviewToView(currViewModel);
+                } 
             }
         }
 
@@ -368,21 +486,39 @@ namespace Reflection.Views {
         }
 
         private void OnIsHeaderExistsChanged(object sender, PropertyChangedEventArgs e) {
-            if (e.PropertyName == "IsHeadersExist" && !ImportViewModel.IsFirstStart) {
-                var path = "";
-                if (ImportViewModel.Version == "Master") {
-                    path = ImportViewModel.PathMasterFile;
-                } else {
-                    path = ImportViewModel.PathTestFile;
+            if (e.PropertyName == "IsHeadersExist") {
+                if (Version == "Master" && MasterViewModel.IsUserInput && !MasterViewModel.IsFirstStart) {
+                    AsyncRenderFileWithSetPreviewToView(MasterViewModel);
+                } else if(Version == "Test" && TestViewModel.IsUserInput && !MasterViewModel.IsFirstStart) {
+                    AsyncRenderFileWithSetPreviewToView(TestViewModel);
                 }
-                AsyncRenderFileWithSetPreviewToView(path);
             }
         }
 
         private void TextBoxHeaderRowLostFocus(object senderIn, RoutedEventArgs eIn) {
             if (TextBoxHeaderRow.Text=="") {
-                TextBoxHeaderRow.Text = ImportViewModel.RowsToSkip.ToString();
+                TextBoxHeaderRow.Text = MasterViewModel.RowsToSkip.ToString();
             }
+        }
+
+        private void ButtonAddIdColumnsClick(object senderIn, RoutedEventArgs eIn) {
+            if (UserIdColumnNames.SelectedKeys.Count > 0) {
+                ShowAvailableKeys();
+                ShowSelectedKeys();
+            } else {
+                ShowAvailableKeys();
+            }
+            LoadIdColumnNames();
+        }
+
+        private void ButtonExcludeColumnsClick(object senderIn, RoutedEventArgs eIn) {
+            if (ExcludeColumnNames.SelectedKeys.Count > 0) {
+                ShowAvailableKeys();
+                ShowSelectedKeys();
+            } else {
+                ShowAvailableKeys();
+            }
+            LoadExcludeColumnNames();
         }
 
     }

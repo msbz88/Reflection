@@ -35,9 +35,13 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>IconV2.ico</ApplicationIcon>
+    <ApplicationIcon>IconV4-03.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Oracle.ManagedDataAccess, Version=4.122.19.1, Culture=neutral, PublicKeyToken=89b483f429c47342, processorArchitecture=MSIL">
+      <HintPath>..\packages\Oracle.ManagedDataAccess.19.3.1\lib\net40\Oracle.ManagedDataAccess.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.DirectoryServices.AccountManagement" />
@@ -68,21 +72,23 @@
     <Compile Include="Models\ComparisonCore.cs" />
     <Compile Include="Models\ComparisonKeys.cs" />
     <Compile Include="Models\ComparisonProcessor.cs" />
+    <Compile Include="Models\DefectsSearch.cs" />
     <Compile Include="Models\Interfaces\IFileReader.cs" />
     <Compile Include="Models\Interfaces\IImportConfiguration.cs" />
     <Compile Include="Models\Interfaces\IWorkTable.cs" />
+    <Compile Include="Models\KnownDefect.cs" />
     <Compile Include="Models\LevenshteinDistance.cs" />
     <Compile Include="Models\MatchedFileNames.cs" />
+    <Compile Include="Models\OraSession.cs" />
     <Compile Include="Models\PerformanceCounter.cs" />
     <Compile Include="Models\Deviation.cs" />
-    <Compile Include="Models\IdField.cs" />
+    <Compile Include="Models\BinaryValue.cs" />
     <Compile Include="Models\RowToSave.cs" />
     <Compile Include="Models\Status.cs" />
     <Compile Include="Models\RowsMatch.cs" />
     <Compile Include="Models\Version.cs" />
     <Compile Include="Models\WorkTable.cs" />
     <Compile Include="ViewModels\ColumnNamesViewModel.cs" />
-    <Compile Include="ViewModels\ComparisonResultViewModel.cs" />
     <Compile Include="ViewModels\MatchFileNamesViewModel.cs" />
     <Compile Include="Views\CircularProgress.cs" />
     <Compile Include="Models\ComparisonTask.cs" />
@@ -99,9 +105,6 @@
     </Compile>
     <Compile Include="Views\PageMain.xaml.cs">
       <DependentUpon>PageMain.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Views\PageViewResult.xaml.cs">
-      <DependentUpon>PageViewResult.xaml</DependentUpon>
     </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -127,10 +130,6 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Views\PageViewResult.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Models\Row.cs" />
@@ -151,6 +150,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -191,6 +191,12 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="IconV2.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="IconV5-02.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="IconV4-03.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

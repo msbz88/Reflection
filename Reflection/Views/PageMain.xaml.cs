@@ -26,8 +26,8 @@ namespace Reflection.Views {
     public partial class PageMain : Page {
         public EventHandler Error { get; set; }
         public EventHandler OpenFiles { get; set; }
-        public EventHandler ShowViewResult { get; set; }
-        public EventHandler ChangeDeviationsView { get; set; }
+        public EventHandler LinearView { get; set; }
+        public EventHandler ResultFileView { get; set; }
         public ComparisonTasksViewModel ComparisonTasksViewModel { get; set; }
         ComparisonTask currectComparisonTask;
         Button stopRestartButton;
@@ -53,12 +53,10 @@ namespace Reflection.Views {
             var listViewItem = GetAncestorOfType<ListViewItem>(senderIn as Button);
             if (listViewItem != null) {
                 var selectedItem = (ComparisonTask)listViewItem.DataContext;
-                //string argument = "/select, \"" + selectedItem.ResultFile + ".xlsx";
                 try {
-                    //Process.Start("explorer.exe", argument);
                     Process.Start(selectedItem.CommonDirectoryPath);
-                } catch (Exception) {
-                    //Process.Start(selectedItem.CommonDirectoryPath);
+                } catch (Exception ex) {
+                    Error?.Invoke(ex.Message, null);
                 }
             }
         }
@@ -69,7 +67,7 @@ namespace Reflection.Views {
                 var selectedItem = (ComparisonTask)listViewItem.DataContext;
                 var isExcelOpened = Task.Run(() => ComparisonTasksViewModel.TryOpenExcel(selectedItem));
                 if (!isExcelOpened.Result) {
-                    ShowViewResult?.Invoke(selectedItem, null);
+                    OpenTextFile(selectedItem.ResultFile + ".txt");
                 }
             }
         }
@@ -103,11 +101,11 @@ namespace Reflection.Views {
         }
 
         private void TabularDeviationsView_Checked(object sender, RoutedEventArgs e) {
-            ChangeDeviationsView?.Invoke(false, null);
+            LinearView?.Invoke(false, null);
         }
 
         private void LinearDeviationsView_Checked(object sender, RoutedEventArgs e) {
-            ChangeDeviationsView?.Invoke(true, null);
+            LinearView?.Invoke(true, null);
         }
 
         private void ProgressBarMouseEnter(object sender, MouseEventArgs e) {
@@ -155,11 +153,11 @@ namespace Reflection.Views {
                 currectComparisonTask.Status = Status.Canceling;
                 currectComparisonTask.CancellationToken.Cancel();
             } else if (stopRestartButton.Content.ToString() == "Restart") {
-                ComparisonTasksViewModel.AddComparisonTask(currectComparisonTask.ImportConfiguration);
+                ComparisonTasksViewModel.AddComparisonTask(currectComparisonTask.MasterConfiguration, currectComparisonTask.TestConfiguration);
             }
         }
 
-        private void OpenOrigFile(string path) {
+        private void OpenTextFile(string path) {
             try {
                 Process.Start("notepad++.exe", path);
             } catch (Exception ex) {
@@ -170,14 +168,14 @@ namespace Reflection.Views {
         private void MenuItemOpenMasterClick(object sender, RoutedEventArgs e) {
             var comparisonTask = lvComparisonDetails.SelectedItem as ComparisonTask;
             if (comparisonTask != null) {
-                OpenOrigFile(comparisonTask.ImportConfiguration.MasterFilePath);
+                OpenTextFile(comparisonTask.MasterConfiguration.FilePath);
             }
         }
 
         private void MenuItemOpenTestClick(object sender, RoutedEventArgs e) {
             var comparisonTask = lvComparisonDetails.SelectedItem as ComparisonTask;
             if (comparisonTask != null) {
-                OpenOrigFile(comparisonTask.ImportConfiguration.TestFilePath);
+                OpenTextFile(comparisonTask.TestConfiguration.FilePath);
             }
         }
 
@@ -185,8 +183,12 @@ namespace Reflection.Views {
             var listViewItem = GetAncestorOfType<ListViewItem>(sender as Button);
             if (listViewItem != null) {
                 var selectedTask = (ComparisonTask)listViewItem.DataContext;
-                ComparisonTasksViewModel.DeleteTask(selectedTask);
-                Error?.Invoke("", null);
+                if(selectedTask.Status != Status.Canceling) {
+                    ComparisonTasksViewModel.DeleteTask(selectedTask);
+                    Error?.Invoke("", null);
+                }else {
+                    Error?.Invoke("Unable to delete task with \"Canceling\" status", null);
+                }
             }
         }
 
@@ -228,6 +230,14 @@ namespace Reflection.Views {
                 }
             }
             return null;
+        }
+
+        private void DeviationsOnly_Checked(object sender, RoutedEventArgs e) {
+            ResultFileView?.Invoke(true, null);
+        }
+
+        private void DeviationsAndPassed_Checked(object sender, RoutedEventArgs e) {
+            ResultFileView?.Invoke(false, null);
         }
     }
 }

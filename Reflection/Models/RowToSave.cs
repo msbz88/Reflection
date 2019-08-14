@@ -1,157 +1,150 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Reflection.Models {
     public class RowToSave {
-        public string DefectNo { get; set; }
-        public string Version { get; set; }
-        public int Diff { get; set; }
-        public List<string> IdFields { get; set; }
-        public Dictionary<int, string> Deviations { get; set; }
-        public string[] Data { get; set; }
-        string Delimiter;
-        StringBuilder Cell;
+        private string DefectNo { get; set; }
+        private string Diff { get; set; }
+        ComparedRow ComparedRow { get; set; }
+        string[] ParsedExtraRow { get; set; }
 
-        public RowToSave(List<IdField> idFields, string delimiter, List<int> deviationFields) {
-            IdFields = GetIdFields(idFields);
-            Deviations = PrepareValues(deviationFields);
-            Delimiter = delimiter;
-            Cell = new StringBuilder();
-            Data = new string[3 + IdFields.Count + deviationFields.Count];
+        public RowToSave(ComparedRow comparedRow) {
+            ComparedRow = comparedRow;
+            Diff = ComparedRow.Deviations.Count.ToString();
         }
 
-        public RowToSave(List<IdField> idFields) {
-            IdFields = GetIdFields(idFields);
+        public RowToSave(string[] parsedExtraRow) {
+            ParsedExtraRow = parsedExtraRow;
+            Diff = ParsedExtraRow.Length.ToString();
         }
 
-        public RowToSave(List<string> idFields) {
-            IdFields = idFields;
-        }
-
-        private List<string> GetIdFields(List<IdField> idFields) {
-            List<string> result = new List<string>();
-            var transNo = idFields.Where(item => item.MasterTransactionNoVal != null);
-            foreach (var item in transNo) {
-                result.Add(item.MasterTransactionNoVal);
-                result.Add(item.TestTransactionNoVal);
+        private void FindDefect(Dictionary<int, string> columnNames, DefectsSearch defectsSearch, Deviation deviation) {
+            foreach (var transNo in ComparedRow.TransNoColumns) {
+                var defect = defectsSearch.SearchDefectByTransNo(transNo.MasterValue, transNo.TestValue, columnNames[deviation.ColumnId]);
+                defect = defect == "" ? "" : "TransMatch: " + defect;
+                AddDefect(defect);
             }
-            var mainKeys = idFields.Where(item => item.MainVal != null);
-            foreach (var item in mainKeys) {
-                result.Add(item.MainVal);
+            if (string.IsNullOrEmpty(DefectNo)) {
+                var secCols = SearchForSecId(columnNames);
+                var exSecCols = secCols.Intersect(ComparedRow.IdColumns.Select(item => item.Key));
+                foreach (var col in exSecCols) {
+                    var defect = defectsSearch.SearchDefectBySecId(ComparedRow.IdColumns[col], columnNames[deviation.ColumnId]);
+                    defect = defect == "" ? "" : "SecMatch: " + defect + "?";
+                    AddDefect(defect);
+                }
+            }
+            if (string.IsNullOrEmpty(DefectNo)) {
+                var defect = defectsSearch.SearchDefectByValue(deviation.MasterValue, deviation.TestValue, columnNames[deviation.ColumnId]);
+                defect = defect == "" ? "" : "ValMatch: " + defect + "?";
+                AddDefect(defect);
+            }
+            if (string.IsNullOrEmpty(DefectNo)) {
+                var defect = defectsSearch.SearchDefectByValueForSameUpgrades(deviation.MasterValue, deviation.TestValue, columnNames[deviation.ColumnId]);
+                defect = defect == "" ? "" : "UpgradeMatch: " + defect + "?";
+                AddDefect(defect);
+            }
+            if (string.IsNullOrEmpty(DefectNo)) {
+                var defect = defectsSearch.SearchDefectByValueInAllProjects(deviation.MasterValue, deviation.TestValue, columnNames[deviation.ColumnId]);
+                defect = defect == "" ? "" : "DeepMatch: " + defect + "?";
+                AddDefect(defect);
+            }
+        }
+
+        public List<List<string>> PrepareRowLinear(Dictionary<int, string> columnNames, DefectsSearch defectsSearch) {
+            var result = new List<List<string>>();
+            foreach (var deviation in ComparedRow.Deviations) {
+                var innerResult = new List<string>();
+                FindDefect(columnNames, defectsSearch, deviation);
+                innerResult.Add(DefectNo);
+                innerResult.Add("Deviations");
+                innerResult.Add(Diff);
+                foreach (var transNo in ComparedRow.TransNoColumns) {
+                    innerResult.Add(transNo.MasterValue);
+                    innerResult.Add(transNo.TestValue);
+                }
+                foreach (var idCol in ComparedRow.IdColumns) {
+                    innerResult.Add(idCol.Value);
+                }
+                innerResult.Add(columnNames[deviation.ColumnId]);
+                innerResult.Add(deviation.MasterValue);
+                innerResult.Add(deviation.TestValue);
+                result.Add(innerResult);
             }
             return result;
         }
 
-        private Dictionary<int, string> PrepareValues(List<int> deviationFields) {
-            Dictionary<int, string> values = new Dictionary<int, string>(deviationFields.Count);
-            foreach (var colId in deviationFields) {
-                values.Add(colId, "0");
+        public List<string> PrepareRowTabular(Dictionary<int, string> columnNames, DefectsSearch defectsSearch, List<int> deviationsPattern) {
+            var result = new List<string>();
+            result.Add("");
+            result.Add("Deviations");
+            result.Add(Diff);
+            foreach (var transNo in ComparedRow.TransNoColumns) {
+                result.Add(transNo.MasterValue);
+                result.Add(transNo.TestValue);
             }
-            return values;
-        }
-
-        public void FillValues(List<Deviation> deviations) {
-            Diff = deviations.Count;
-            Version = "Deviations";
-            foreach (var deviation in deviations) {
-                Cell.Clear();
-                Cell.Append(deviation.MasterValue);
-                Cell.Append(" | ");
-                Cell.Append(deviation.TestValue);
-                Deviations[deviation.ColumnId] = Cell.ToString();
+            foreach (var idCol in ComparedRow.IdColumns) {
+                result.Add(idCol.Value);
             }
-        }
-
-        public void SetData() {
-            Data[0] = DefectNo;
-            Data[1] = Version;
-            Data[2] = Diff.ToString();
-            int index = 3;
-            foreach (var item in IdFields) {
-                Data[index++] = item;
-            }
-            foreach (var item in Deviations) {
-                Data[index++] = item.Value;
-            }
-        }
-
-        public override string ToString() {
-            StringBuilder line = new StringBuilder();
-            line.Append(DefectNo);
-            line.Append(Version);
-            line.Append(Delimiter);
-            line.Append(Diff);
-            foreach (var item in IdFields) {
-                line.Append(Delimiter);
-                line.Append(item);              
-            }
-            foreach (var item in Deviations) {
-                line.Append(Delimiter);
-                line.Append(item.Value);
-            }
-            line.Append(Environment.NewLine);
-            return line.ToString();
-        }
-
-        public string[,] TransposeRow(List<Deviation> deviations, string[] headers) {
-            Diff = deviations.Count;
-            Version = "Deviations";
-            int columnsCount = 3 + IdFields.Count + 3;
-            string[,] res = new string[deviations.Count, columnsCount];
-            for (int row = 0; row < deviations.Count; row++) {
-                int col = 0;
-                res[row, col++] = DefectNo;
-                res[row, col++] = Version;
-                res[row, col++] = Diff.ToString();
-                for (int colId = 0; colId < IdFields.Count; colId++) {
-                    res[row, col++] = IdFields[colId];
+            foreach (var columnId in deviationsPattern) {
+                var deviation = ComparedRow.Deviations.Where(item => item.ColumnId == columnId).FirstOrDefault();
+                if (deviation != null) {
+                    result.Add(deviation.MasterValue + " | " + deviation.TestValue);
+                } else {
+                    result.Add("0");
                 }
-                res[row, col++] = headers[deviations[row].ColumnId];
-                res[row, col++] = deviations[row].MasterValue;
-                res[row, col++] = deviations[row].TestValue;
             }
-            return res;
+            return result;
         }
 
-        private string[,] SetIdFields(string version) {
-            int columnsCount = 3 + IdFields.Count;
-            string[,] res = new string[1, columnsCount];
-            int col = 0;
-            res[0, col++] = DefectNo;
-            res[0, col++] = "Extra from " + version;
-            res[0, col++] = Diff.ToString();
-            for (int colId = 0; colId < IdFields.Count; colId++) {
-                res[0, col++] = IdFields[colId];
-            }
-            return res;
+        private List<int> SearchForSecId(Dictionary<int, string> columnNames) {
+            return columnNames.Where(item =>
+            item.Value.ToLower().Contains("secshort")
+            || item.Value.ToLower().Contains("secid")
+            || item.Value.ToLower().Contains("sec_id")
+            ).Select(item => item.Key).ToList();
         }
 
-        public string[,] TransposeExtraRow(List<string> deviations, string[] headers, string version) {
-            Diff = deviations.Count;
-            int columnsCount = 3 + IdFields.Count + 3;
-            if (deviations.Count == 0) {
-                return SetIdFields(version);
-            }
-            string[,] res = new string[deviations.Count, columnsCount];
-            for (int row = 0; row < deviations.Count; row++) {
-                int col = 0;
-                res[row, col++] = DefectNo;
-                res[row, col++] = "Extra from " + version;
-                res[row, col++] = Diff.ToString();
-                for (int colId = 0; colId < IdFields.Count; colId++) {
-                    res[row, col++] = IdFields[colId];
+        private void AddDefect(string defect) {
+            if (!string.IsNullOrEmpty(defect)) {
+                if (!string.IsNullOrEmpty(DefectNo)) {
+                    DefectNo = DefectNo + ", " + defect;
+                } else {
+                    DefectNo = defect;
                 }
-                res[row, col++] = headers[row];
-                if(version == "Master") {
-                    res[row, col++] = deviations[row];
-                }else {
-                    res[row, col++ + 1] = deviations[row];
-                }                
             }
-            return res;
+        }
+
+        public List<string> PrepareExtraRow(string version, List<int> transNoColumns, List<int> mainIdColumns) {
+            var result = new List<string>();
+            result.Add("");
+            result.Add("Extra from " + version);
+            result.Add(Diff);
+            List<string> transNoValues = new List<string>();
+            foreach (var colId in transNoColumns) {
+                if (version == "Master") {
+                    transNoValues.Add(ParsedExtraRow[colId]);
+                    transNoValues.Add("");
+                } else {
+                    transNoValues.Add("");
+                    transNoValues.Add(ParsedExtraRow[colId]);
+                }
+            }
+            var idColumnsValues = GetValuesByPositions(mainIdColumns);
+            result.AddRange(transNoValues);
+            result.AddRange(idColumnsValues);
+            return result;
+        }
+
+        private List<string> GetValuesByPositions(IEnumerable<int> positions) {
+            var query = new List<string>();
+            foreach (var item in positions) {
+                query.Add(ParsedExtraRow[item]);
+            }
+            return query;
         }
 
     }

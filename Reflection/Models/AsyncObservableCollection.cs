@@ -30,8 +30,10 @@ namespace Reflection.Models {
         }
 
         private void RaiseCollectionChanged(object param) {
-            // We are in the creator thread, call the base implementation directly
-            base.OnCollectionChanged((NotifyCollectionChangedEventArgs)param);
+            try {
+                // We are in the creator thread, call the base implementation directly
+                base.OnCollectionChanged((NotifyCollectionChangedEventArgs)param);
+            } catch (Exception) { }
         }
 
         protected override void OnPropertyChanged(PropertyChangedEventArgs e) {
