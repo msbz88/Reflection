@@ -7,16 +7,22 @@ using System.Threading.Tasks;
 namespace Reflection.Models {
     public class Comparator {
          ComparisonKeys ComparisonKeys { get; set; }
+        List<int> ExcludedColumns { get; set; }
 
         public Comparator(ComparisonKeys comparisonKeys) {
             ComparisonKeys = comparisonKeys;
+            ExcludedColumns = new List<int>();
+            ExcludedColumns.AddRange(comparisonKeys.BinaryValues);
+            ExcludedColumns.AddRange(comparisonKeys.ExcludeColumns);
+            ExcludedColumns.AddRange(comparisonKeys.UserExcludeColumns);
+            ExcludedColumns = ExcludedColumns.Distinct().ToList();
         }
 
         public ComparedRow Compare(List<ComparedRow> allCombinations, Row masterRow, Row testRow, ref int minDeviations) {
             ComparedRow comparedRow = new ComparedRow(masterRow.Id, testRow.Id);
             int currentDeviations = 0;
             for (int i = 0; i < masterRow.Data.Length; i++) {
-                if (!ComparisonKeys.BinaryValues.Contains(i) && !ComparisonKeys.ExcludeColumns.Contains(i)) {
+                if (!ExcludedColumns.Contains(i)) {
                     if (masterRow.Data[i] != testRow.Data[i]) {
                         currentDeviations++;
                         if (currentDeviations <= minDeviations) {
@@ -51,7 +57,7 @@ namespace Reflection.Models {
         public ComparedRow CompareSingle(Row masterRow, Row testRow) {
             ComparedRow comparedRow = new ComparedRow(masterRow.Id, testRow.Id);
             for (int i = 0; i < masterRow.Data.Length; i++) {
-                if (!ComparisonKeys.BinaryValues.Contains(i) && !ComparisonKeys.ExcludeColumns.Contains(i)) {
+                if (!ExcludedColumns.Contains(i)) {
                     if (masterRow.Data[i] != testRow.Data[i]) {
                         var deviation = new Deviation(i, masterRow.Data[i], testRow.Data[i]);
                         comparedRow.AddDeviation(deviation);
@@ -90,7 +96,7 @@ namespace Reflection.Models {
                 transNo.TestValue = testRow.Data[item];
                 transNoColumns.Add(transNo);
             }
-            foreach (var item in ComparisonKeys.UserExcludeColumnsBinary) {
+            foreach (var item in ComparisonKeys.UserIdColumnsBinary) {
                 if (transNoColumns.All(col => col.ColumnId != item)) {
                     BinaryValue userExcludeColumn = new BinaryValue();
                     userExcludeColumn.ColumnId = item;

@@ -190,12 +190,6 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="IconV2.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="IconV5-02.ico" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="IconV4-03.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

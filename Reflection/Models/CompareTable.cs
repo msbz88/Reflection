@@ -139,7 +139,7 @@ namespace Reflection.Models {
         }
 
         private string[,] PrepareDataTabular() {
-            var binaryValues = ComparisonKeys.BinaryValues.Concat(ComparisonKeys.UserExcludeColumnsBinary).Distinct().ToList();
+            var binaryValues = ComparisonKeys.BinaryValues.Concat(ComparisonKeys.UserIdColumnsBinary).Distinct().ToList();
             var mainIdColumns = ComparisonKeys.MainKeys.Concat(ComparisonKeys.UserIdColumns).Distinct().ToList();
             DeviationColumns = Data.SelectMany(row => row.Deviations.Select(col => col.ColumnId)).Distinct().OrderBy(colId => colId).ToList();
             var allColumns = mainIdColumns.Concat(DeviationColumns).ToList();
@@ -168,7 +168,7 @@ namespace Reflection.Models {
         }
 
         private string[,] PrepareDataLinar() {
-            var binaryValues = ComparisonKeys.BinaryValues.Concat(ComparisonKeys.UserExcludeColumnsBinary).Distinct().ToList();
+            var binaryValues = ComparisonKeys.BinaryValues.Concat(ComparisonKeys.UserIdColumnsBinary).Distinct().ToList();
             var mainIdColumns = ComparisonKeys.MainKeys.Concat(ComparisonKeys.UserIdColumns).Distinct().ToList();
             Headers = GenerateHeadersForFile(binaryValues, mainIdColumns);           
             Headers.Add("Column Name");

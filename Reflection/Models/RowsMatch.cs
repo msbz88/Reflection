@@ -34,7 +34,15 @@ namespace Reflection.Models {
                     ComparisonTask.IfCancelRequested();
                     var comparedRow = Comparator.Compare(AllCombinations, mRow, tRow, ref minDeviations);
                     if (comparedRow != null) {
-                        AllCombinations.Add(comparedRow);
+                        if (comparedRow.IsPassed) {
+                            ComparedRows.Add(comparedRow);
+                            var delRow = testRows.Where(item => item.Id == comparedRow.TestRowId).FirstOrDefault();
+                            testRows.Remove(delRow);
+                            RemoveWrongCombination(comparedRow);
+                            break;
+                        } else {
+                            AllCombinations.Add(comparedRow);
+                        }                       
                     }
                 }
             }
@@ -44,7 +52,7 @@ namespace Reflection.Models {
         public List<ComparedRow> ProcessGroup(List<Row> masterRows, List<Row> testRows, int allGroups) {
             ComparedRows.Clear();
             CreateAllCombinations(masterRows, testRows);
-            FindPassedRows();
+            //FindPassedRows();
             while (AllCombinations.Count > 0) {
                 ComparisonTask.IfCancelRequested();
                 int minDeviation = AllCombinations.Min(row => row.Deviations.Count);
@@ -80,11 +88,9 @@ namespace Reflection.Models {
         }
 
         private void FindPassedRows() {
-            var passedRows = AllCombinations.Where(item => item.IsPassed).ToList();
+            var passedRows = AllCombinations.Where(item => item.IsPassed);
             ComparedRows.AddRange(passedRows);
-            foreach (var item in passedRows) {
-                RemoveWrongCombination(item);
-            }
+            RemoveAllPassedCombinations();
         }
 
         private void AddComparedRow(ComparedRow comparedRow) {
@@ -151,11 +157,12 @@ namespace Reflection.Models {
 
         private void RemoveWrongCombination(ComparedRow comparedRow) {
             if (comparedRow != null) {
-                var wrongCombinations = AllCombinations.Where(row => row.MasterRowId == comparedRow.MasterRowId || row.TestRowId == comparedRow.TestRowId).ToList();
-                foreach (var item in wrongCombinations) {
-                    AllCombinations.Remove(item);
-                }
+                AllCombinations.RemoveAll(row => row.MasterRowId == comparedRow.MasterRowId || row.TestRowId == comparedRow.TestRowId);
             }
+        }
+
+        private void RemoveAllPassedCombinations() {
+            AllCombinations.RemoveAll(row => row.IsPassed);
         }
 
     }

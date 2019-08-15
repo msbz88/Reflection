@@ -162,7 +162,7 @@ namespace Reflection.Models {
             if(ComparisonTask.ComparisonKeys.MainKeys.Count == 0) {
                 var comparisonKeys = AnalyseFiles(masterFileContent, testFileContent);
                 ComparisonTask.ComparisonKeys.MainKeys = comparisonKeys.MainKeys;
-                ComparisonTask.ComparisonKeys.BinaryValues = comparisonKeys.BinaryValues.Concat(comparisonKeys.UserExcludeColumnsBinary).Distinct().ToList();
+                ComparisonTask.ComparisonKeys.BinaryValues = comparisonKeys.BinaryValues.Concat(comparisonKeys.UserIdColumnsBinary).Distinct().ToList();
                 ComparisonTask.ComparisonKeys.UserIdColumns = comparisonKeys.UserIdColumns;
             }           
             mainColumnsToGet = ComparisonTask.ComparisonKeys.MainKeys.Concat(ComparisonTask.ComparisonKeys.UserIdColumns).Distinct().ToList();

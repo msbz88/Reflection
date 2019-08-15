@@ -37,16 +37,17 @@ namespace Reflection.Models {
             //analyse
             //File.WriteAllLines(@"C:\Users\MSBZ\Desktop\baseStat.txt", BaseStat.Select(r => r.ToString()));
             PerfCounter.Start();
-            var comparisonKeys = AnalyseForPivotKey(MasterTable.Rows, BaseStat);
+            var comparisonKeys = AnalyseForPivotKey(MasterTable.Rows, BaseStat);           
             if (ComparisonTask.ComparisonKeys.UserKeys.Count == 0) {               
                 ComparisonTask.ComparisonKeys.MainKeys = comparisonKeys.MainKeys;
             } else {
                 ComparisonTask.ComparisonKeys.MainKeys = ComparisonTask.ComparisonKeys.UserKeys;
-            }
+            }          
             ComparisonTask.ComparisonKeys.BinaryValues = comparisonKeys.BinaryValues;
-            ComparisonTask.ComparisonKeys.ExcludeColumns = comparisonKeys.ExcludeColumns.Concat(ComparisonTask.MasterConfiguration.UserExcludeColumns).Concat(ComparisonTask.TestConfiguration.UserExcludeColumns).Distinct().ToList();
+            ComparisonTask.ComparisonKeys.ExcludeColumns = comparisonKeys.ExcludeColumns;
             ComparisonTask.ComparisonKeys.UserIdColumns = comparisonKeys.UserIdColumns;
-            ComparisonTask.ComparisonKeys.UserExcludeColumnsBinary = comparisonKeys.UserExcludeColumnsBinary;
+            ComparisonTask.ComparisonKeys.UserIdColumnsBinary = comparisonKeys.UserIdColumnsBinary;
+            ComparisonTask.ComparisonKeys.UserExcludeColumns = comparisonKeys.UserExcludeColumns;
             ComparisonTask.IfCancelRequested();
             PerfCounter.Stop("AnalyseForPivotKey");
             //File.AppendAllText(@"C:\Users\MSBZ\Desktop\baseStat.txt", "baseKeyIndex: " + string.Join(";", MasterTable.Headers.ColumnIndexIn(PivotKeysIndexes.MainKeys)));
@@ -154,7 +155,11 @@ namespace Reflection.Models {
 
         public ComparisonKeys AnalyseForPivotKey(IEnumerable<Row> sampleRows, List<ColumnSummary> baseStat) {
             ComparisonKeys compKeys = new ComparisonKeys();
-            var clearedStats = baseStat.Where(col => !col.IsDouble && !col.HasNulls && !col.IsTransNo && !col.IsTimestamp).ToList();
+            var userExcludeColumns = ComparisonTask.MasterConfiguration.UserExcludeColumns.Concat(ComparisonTask.TestConfiguration.UserExcludeColumns).OrderBy(item => item).Distinct().ToList();
+            var clearedStats = baseStat.Where(col => !col.IsDouble && !col.HasNulls && !col.IsTransNo && !col.IsTimestamp && !userExcludeColumns.Contains(col.ColumnId)).ToList();
+            if (!clearedStats.Any()) {
+                clearedStats = baseStat.Where(col=> !userExcludeColumns.Contains(col.ColumnId)).ToList();
+            }
             var maxMatchingRate = clearedStats.Max(col => col.MatchingRate);
             var maxUniqMatchRate = clearedStats.Where(col => col.MatchingRate == maxMatchingRate).Max(col => col.UniqMatchRate);
             var mainPivotKey = clearedStats.Where(col => col.MatchingRate == maxMatchingRate && col.UniqMatchRate == maxUniqMatchRate).First().ColumnId;
@@ -173,13 +178,14 @@ namespace Reflection.Models {
                 compositeKey.AddRange(AddKeysToAcceptExtra(clearedStats, maxMatchingRate, mainPivotKey));
             }
             var excludeColumns = baseStat.Where(item => item.IsTimestamp).Select(item => item.ColumnId).ToList();
-            compKeys.BinaryValues = baseStat.Where(item => item.IsTransNo).Select(item => item.ColumnId).ToList();
+            compKeys.BinaryValues = baseStat.Where(item => item.IsTransNo).Select(item => item.ColumnId).Except(userExcludeColumns).ToList();
             compKeys.MainKeys = compositeKey;
             compKeys.ExcludeColumns = excludeColumns;
-            var userIdColumns = ComparisonTask.MasterConfiguration.UserIdColumns.Concat(ComparisonTask.TestConfiguration.UserIdColumns).Distinct();
+            compKeys.UserExcludeColumns = userExcludeColumns;
+            var userIdColumns = ComparisonTask.MasterConfiguration.UserIdColumns.Concat(ComparisonTask.TestConfiguration.UserIdColumns).Distinct().Except(compKeys.MainKeys).Except(compKeys.BinaryValues);
             foreach (var item in userIdColumns) {
                 if (baseStat.Where(col => col.ColumnId == item).First().MatchingRate != 100) {
-                    compKeys.UserExcludeColumnsBinary.Add(item);
+                    compKeys.UserIdColumnsBinary.Add(item);
                 }else {
                     compKeys.UserIdColumns.Add(item);
                 }

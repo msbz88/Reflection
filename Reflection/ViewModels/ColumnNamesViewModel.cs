@@ -10,12 +10,16 @@ using Reflection.Models;
 
 namespace Reflection.ViewModels {
     public class ColumnNamesViewModel {
+        public string Name { get; set; }
         public ObservableCollection<ColumnName> AvailableKeys { get; set; }
         public ObservableCollection<ColumnName> SelectedKeys { get; set; }
+        public List<int> UnAvailableKeys { get; set; }
 
-        public ColumnNamesViewModel() {
+        public ColumnNamesViewModel(string name) {
+            Name = name;
             AvailableKeys = new ObservableCollection<ColumnName>();
             SelectedKeys = new ObservableCollection<ColumnName>();
+            UnAvailableKeys = new List<int>();
             AvailableKeys.CollectionChanged += OnAvailableKeysCollectionChanged;
         }
 

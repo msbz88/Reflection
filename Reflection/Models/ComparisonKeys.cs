@@ -11,8 +11,8 @@ namespace Reflection.Models {
         public List<int> ExcludeColumns { get; set; }
         public List<int> UserKeys { get; set; }
         public List<int> UserIdColumns { get; set; }
+        public List<int> UserIdColumnsBinary { get; set; }
         public List<int> UserExcludeColumns { get; set; }
-        public List<int> UserExcludeColumnsBinary { get; set; }
 
         public ComparisonKeys() {
             MainKeys = new List<int>();
@@ -21,7 +21,7 @@ namespace Reflection.Models {
             UserKeys = new List<int>();
             UserIdColumns = new List<int>();
             UserExcludeColumns = new List<int>();
-            UserExcludeColumnsBinary = new List<int>();
+            UserIdColumnsBinary = new List<int>();
         }
     }
 }

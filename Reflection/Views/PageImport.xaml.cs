@@ -35,6 +35,7 @@ namespace Reflection.Views {
         public EventHandler Message { get; set; }
         private string customDelimiter;
         private string Version { get; set; }
+        ColumnNamesViewModel CurrentColumnNamesVM { get; set; }
 
         public PageImport() {
             InitializeComponent();
@@ -43,9 +44,9 @@ namespace Reflection.Views {
 
         public void SelectFiles() {
             MatchFileNamesViewModel = new MatchFileNamesViewModel();
-            SuggestedKeyColumnNames = new ColumnNamesViewModel();
-            UserIdColumnNames = new ColumnNamesViewModel();
-            ExcludeColumnNames = new ColumnNamesViewModel();
+            SuggestedKeyColumnNames = new ColumnNamesViewModel("SuggestedKey");
+            UserIdColumnNames = new ColumnNamesViewModel("UserId");
+            ExcludeColumnNames = new ColumnNamesViewModel("ExcludeColumn");
             MasterViewModel = new ImportViewModel();
             TestViewModel = new ImportViewModel();
             MasterViewModel.PropertyChanged += OnIsHeaderExistsChanged;
@@ -62,7 +63,7 @@ namespace Reflection.Views {
                 } else {
                     AsyncRunMultyFiles();
                 }
-            }else {
+            } else {
                 MasterViewModel.PropertyChanged -= OnIsHeaderExistsChanged;
                 TestViewModel.PropertyChanged -= OnIsHeaderExistsChanged;
             }
@@ -70,19 +71,19 @@ namespace Reflection.Views {
 
         private async void AsyncRunMultyFiles() {
             await Task.Run(() => {
-                    var configs = new List<ImportConfiguration>();
-                    MasterViewModel.IsMultiple = true;
-                    TestViewModel.IsMultiple = true;
-                    foreach (var item in MatchFileNamesViewModel.MatchedFileNames) {
-                        MasterViewModel.FilePath = item.MasterFilePath;
-                        TestViewModel.FilePath = item.TestFilePath;
-                        MasterViewModel.AnalyseFile();
-                        TestViewModel.AnalyseFile();
-                        configs.Clear();
-                        configs.Add(MasterViewModel.SetImportConfiguration());
-                        configs.Add(TestViewModel.SetImportConfiguration());
-                    Dispatcher.Invoke(() => FilesLoaded?.Invoke(configs, null) );
-                    }
+                var configs = new List<ImportConfiguration>();
+                MasterViewModel.IsMultiple = true;
+                TestViewModel.IsMultiple = true;
+                foreach (var item in MatchFileNamesViewModel.MatchedFileNames) {
+                    MasterViewModel.FilePath = item.MasterFilePath;
+                    TestViewModel.FilePath = item.TestFilePath;
+                    MasterViewModel.AnalyseFile();
+                    TestViewModel.AnalyseFile();
+                    configs.Clear();
+                    configs.Add(MasterViewModel.SetImportConfiguration());
+                    configs.Add(TestViewModel.SetImportConfiguration());
+                    Dispatcher.Invoke(() => FilesLoaded?.Invoke(configs, null));
+                }
             });
         }
 
@@ -140,14 +141,11 @@ namespace Reflection.Views {
             dgData.ItemsSource = null;
             await Task.Run(() => {
                 importViewModel.AnalyseFile();
-                //InitializeDataGrid();
                 Dispatcher.Invoke(() => {
                     InitializeDataGrid(importViewModel);
                     PrintFileInfo(importViewModel);
                     if (ListBoxAvailableKeys.Visibility == Visibility.Visible) {
-                        LoadSuggestedKeyColumnNames();
-                        LoadIdColumnNames();
-                        LoadExcludeColumnNames();
+                        LoadColumnNames();
                     }
                 });
             });
@@ -157,16 +155,13 @@ namespace Reflection.Views {
             dgData.ItemsSource = null;
             await Task.Run(() => {
                 importViewModel.ManualUpdate();
-                //InitializeDataGrid();
                 Dispatcher.Invoke(() => {
                     UpdateDataGrid(importViewModel);
                     PrintSkippedLines(importViewModel.SkippedLines);
                     ShowHeaderRow(importViewModel.RowsToSkip);
-                    ShowRowsAndColumnsCount(importViewModel);                   
+                    ShowRowsAndColumnsCount(importViewModel);
                     if (ListBoxAvailableKeys.Visibility == Visibility.Visible) {
-                        LoadSuggestedKeyColumnNames();
-                        LoadIdColumnNames();
-                        LoadExcludeColumnNames();
+                        LoadColumnNames();
                     }
                 });
             });
@@ -203,11 +198,11 @@ namespace Reflection.Views {
 
         public void UpdateDataGrid(ImportViewModel importViewModel) {
             for (int i = 0; i < dgData.Columns.Count; i++) {
-                if(i + 1 > importViewModel.FileHeaders.Count) {
+                if (i + 1 > importViewModel.FileHeaders.Count) {
                     dgData.Columns[i].Header = "";
                 } else {
                     dgData.Columns[i].Header = importViewModel.FileHeaders[i].Replace("_", "__");
-                }               
+                }
             }
             if (dgData.ItemsSource == null) {
                 dgData.ItemsSource = importViewModel.PreviewContent;
@@ -228,7 +223,7 @@ namespace Reflection.Views {
         }
 
         private void ShowHeaderRow(int rowsToSkip) {
-           TextBoxHeaderRow.Text = rowsToSkip.ToString();
+            TextBoxHeaderRow.Text = rowsToSkip.ToString();
         }
 
         private void PrintSkippedLines(List<string> skippedLines) {
@@ -249,69 +244,29 @@ namespace Reflection.Views {
                 TestViewModel.AnalyseFile();
             }
             configs.Add(MasterViewModel.SetImportConfiguration());
-            configs.Add(TestViewModel.SetImportConfiguration());           
+            configs.Add(TestViewModel.SetImportConfiguration());
             FilesLoaded?.Invoke(configs, eIn);
             ResetUserKeys();
             MasterViewModel.PropertyChanged -= OnIsHeaderExistsChanged;
             TestViewModel.PropertyChanged -= OnIsHeaderExistsChanged;
         }
 
-        private void ButtonSuggestKeyClick(object senderIn, RoutedEventArgs eIn) {
-            if (SuggestedKeyColumnNames.SelectedKeys.Count > 0) {
-                ShowAvailableKeys();
-                ShowSelectedKeys();
-            } else {
-                ShowAvailableKeys();
-            }
-            LoadSuggestedKeyColumnNames();
-        }
-
-        private void LoadSuggestedKeyColumnNames() {
+        private void LoadColumnNames() {
             var currViewModel = Version == "Master" ? MasterViewModel : TestViewModel;
-            SuggestedKeyColumnNames.AvailableKeys.Clear();
+            CurrentColumnNamesVM.AvailableKeys.Clear();
             int index = 0;
             foreach (var item in currViewModel.FileHeaders) {
-                var key = new ColumnName(index, item.Replace("_", "__"));
-                SuggestedKeyColumnNames.AvailableKeys.Add(key);
-                if (SuggestedKeyColumnNames.SelectedKeys.Any(k => k.Id == index)) {
-                    key.IsChecked = true;
+                if (!CurrentColumnNamesVM.UnAvailableKeys.Contains(index)) {
+                    var key = new ColumnName(index, item.Replace("_", "__"));
+                    CurrentColumnNamesVM.AvailableKeys.Add(key);
+                    if (CurrentColumnNamesVM.SelectedKeys.Any(k => k.Id == index)) {
+                        key.IsChecked = true;
+                    }
                 }
                 index++;
             }
-            ListBoxAvailableKeys.ItemsSource = SuggestedKeyColumnNames.AvailableKeys;
-            ListBoxSelectedKeys.ItemsSource = SuggestedKeyColumnNames.SelectedKeys;
-        }
-
-        private void LoadIdColumnNames() {
-            var currViewModel = Version == "Master" ? MasterViewModel : TestViewModel;
-            UserIdColumnNames.AvailableKeys.Clear();
-            int index = 0;
-            foreach (var item in currViewModel.FileHeaders) {
-                var key = new ColumnName(index, item.Replace("_", "__"));
-                UserIdColumnNames.AvailableKeys.Add(key);
-                if (UserIdColumnNames.SelectedKeys.Any(k => k.Id == index)) {
-                    key.IsChecked = true;
-                }
-                index++;
-            }
-            ListBoxAvailableKeys.ItemsSource = UserIdColumnNames.AvailableKeys;
-            ListBoxSelectedKeys.ItemsSource = UserIdColumnNames.SelectedKeys;
-        }
-
-        private void LoadExcludeColumnNames() {
-            var currViewModel = Version == "Master" ? MasterViewModel : TestViewModel;
-            ExcludeColumnNames.AvailableKeys.Clear();
-            int index = 0;
-            foreach (var item in currViewModel.FileHeaders) {
-                var key = new ColumnName(index, item.Replace("_", "__"));
-                ExcludeColumnNames.AvailableKeys.Add(key);
-                if (ExcludeColumnNames.SelectedKeys.Any(k => k.Id == index)) {
-                    key.IsChecked = true;
-                }
-                index++;
-            }
-            ListBoxAvailableKeys.ItemsSource = ExcludeColumnNames.AvailableKeys;
-            ListBoxSelectedKeys.ItemsSource = ExcludeColumnNames.SelectedKeys;
+            ListBoxAvailableKeys.ItemsSource = CurrentColumnNamesVM.AvailableKeys;
+            ListBoxSelectedKeys.ItemsSource = CurrentColumnNamesVM.SelectedKeys;
         }
 
         private void ShowAvailableKeys() {
@@ -337,7 +292,7 @@ namespace Reflection.Views {
         }
 
         private void HideAvailableKeys() {
-            Grid.SetColumnSpan(dgData, 2);           
+            Grid.SetColumnSpan(dgData, 2);
             ButtonSuggestKey.Visibility = Visibility.Visible;
             ButtonAddIdColumns.Visibility = Visibility.Visible;
             ButtonExcludeColumns.Visibility = Visibility.Visible;
@@ -357,29 +312,36 @@ namespace Reflection.Views {
             Grid.SetRowSpan(ListBoxAvailableKeys, 2);
         }
 
+        private void ChangeButtonColor(Button button, SolidColorBrush color) {
+            Style editingStyle = new Style(typeof(Button));
+            editingStyle.BasedOn = (Style)FindResource(typeof(Button));
+            editingStyle.Setters.Add(new Setter(BackgroundProperty, color));
+            button.Style = editingStyle;
+        }
+
         private void ButtonApplyUserKeyClick(object senderIn, RoutedEventArgs eIn) {
             HideSelectedKeys();
             HideAvailableKeys();
             var currViewModel = Version == "Master" ? MasterViewModel : TestViewModel;
-            if (SuggestedKeyColumnNames.SelectedKeys.Count > 0) {
-                //ButtonSuggestKey.Content = "Show Key";
-                currViewModel.UserKeys = SuggestedKeyColumnNames.SelectedKeys.Select(item => item.Id).ToList();
-                ButtonSuggestKey.Background = new SolidColorBrush(Colors.DarkSlateBlue);
+            if (CurrentColumnNamesVM.SelectedKeys.Count > 0) {
+                if (CurrentColumnNamesVM.Name == "SuggestedKey") {
+                    currViewModel.UserKeys = CurrentColumnNamesVM.SelectedKeys.Select(item => item.Id).ToList();
+                    ChangeButtonColor(ButtonSuggestKey, new SolidColorBrush(Colors.DarkSlateBlue));
+                } else if (CurrentColumnNamesVM.Name == "UserId") {
+                    currViewModel.UserIdColumns = CurrentColumnNamesVM.SelectedKeys.Select(item => item.Id).ToList();
+                    ChangeButtonColor(ButtonAddIdColumns, new SolidColorBrush(Colors.DarkSlateBlue));
+                } else if (CurrentColumnNamesVM.Name == "ExcludeColumn") {
+                    currViewModel.UserExcludeColumns = CurrentColumnNamesVM.SelectedKeys.Select(item => item.Id).ToList();
+                    ChangeButtonColor(ButtonExcludeColumns, new SolidColorBrush(Colors.DarkSlateBlue));
+                }
             } else {
-                //ButtonSuggestKey.Content = "Suggest Key";
-                ButtonSuggestKey.Background = new SolidColorBrush(Colors.Black);
-            }
-            if (UserIdColumnNames.SelectedKeys.Count > 0) {
-                currViewModel.UserIdColumns = UserIdColumnNames.SelectedKeys.Select(item => item.Id).ToList();
-                ButtonAddIdColumns.Background = new SolidColorBrush(Colors.DarkSlateBlue);
-            } else {
-                ButtonAddIdColumns.Background = new SolidColorBrush(Colors.Black);
-            }
-            if (ExcludeColumnNames.SelectedKeys.Count > 0) {
-                currViewModel.UserExcludeColumns = ExcludeColumnNames.SelectedKeys.Select(item => item.Id).ToList();
-                ButtonExcludeColumns.Background = new SolidColorBrush(Colors.DarkSlateBlue);
-            } else {
-                ButtonExcludeColumns.Background = new SolidColorBrush(Colors.Black);
+                if (CurrentColumnNamesVM.Name == "SuggestedKey") {
+                    ChangeButtonColor(ButtonSuggestKey, (SolidColorBrush)(new BrushConverter().ConvertFrom("#373737")));
+                } else if (CurrentColumnNamesVM.Name == "UserId") {
+                    ChangeButtonColor(ButtonAddIdColumns, (SolidColorBrush)(new BrushConverter().ConvertFrom("#373737")));
+                } else if (CurrentColumnNamesVM.Name == "ExcludeColumn") {
+                    ChangeButtonColor(ButtonExcludeColumns, (SolidColorBrush)(new BrushConverter().ConvertFrom("#373737")));
+                }
             }
         }
 
@@ -387,18 +349,35 @@ namespace Reflection.Views {
             if (ListBoxSelectedKeys.Visibility == Visibility.Collapsed) {
                 ShowSelectedKeys();
             }
+            var checkBox = (CheckBox)senderIn;
+            var columnName = (ColumnName)checkBox.DataContext;
+            if (CurrentColumnNamesVM.Name == "SuggestedKey") {
+                ExcludeColumnNames.UnAvailableKeys.Add(columnName.Id);
+                UserIdColumnNames.UnAvailableKeys.Add(columnName.Id);
+            } else if (CurrentColumnNamesVM.Name == "UserId") {
+                SuggestedKeyColumnNames.UnAvailableKeys.Add(columnName.Id);
+                ExcludeColumnNames.UnAvailableKeys.Add(columnName.Id);
+            } else if (CurrentColumnNamesVM.Name == "ExcludeColumn") {
+                SuggestedKeyColumnNames.UnAvailableKeys.Add(columnName.Id);
+                UserIdColumnNames.UnAvailableKeys.Add(columnName.Id);
+            }
         }
 
         private void OnKeyUnChecked(object senderIn, RoutedEventArgs eIn) {
-            //error
-            if (SuggestedKeyColumnNames.SelectedKeys.Count == 0) {
+            if (CurrentColumnNamesVM.SelectedKeys.Count == 0) {
                 HideSelectedKeys();
             }
-            if (UserIdColumnNames.SelectedKeys.Count == 0) {
-                HideSelectedKeys();
-            }
-            if (ExcludeColumnNames.SelectedKeys.Count == 0) {
-                HideSelectedKeys();
+            var checkBox = (CheckBox)senderIn;
+            var columnName = (ColumnName)checkBox.DataContext;
+            if (CurrentColumnNamesVM.Name == "SuggestedKey") {
+                ExcludeColumnNames.UnAvailableKeys.Remove(columnName.Id);
+                UserIdColumnNames.UnAvailableKeys.Remove(columnName.Id);
+            } else if (CurrentColumnNamesVM.Name == "UserId") {
+                SuggestedKeyColumnNames.UnAvailableKeys.Remove(columnName.Id);
+                ExcludeColumnNames.UnAvailableKeys.Remove(columnName.Id);
+            } else if (CurrentColumnNamesVM.Name == "ExcludeColumn") {
+                SuggestedKeyColumnNames.UnAvailableKeys.Remove(columnName.Id);
+                UserIdColumnNames.UnAvailableKeys.Remove(columnName.Id);
             }
         }
 
@@ -431,12 +410,11 @@ namespace Reflection.Views {
             UserIdColumnNames.SelectedKeys.Clear();
             ExcludeColumnNames.AvailableKeys.Clear();
             ExcludeColumnNames.SelectedKeys.Clear();
-            ButtonSuggestKey.Background = new SolidColorBrush(Colors.Black);
-            ButtonAddIdColumns.Background = new SolidColorBrush(Colors.Black);
-            ButtonExcludeColumns.Background = new SolidColorBrush(Colors.Black);
+            ChangeButtonColor(ButtonSuggestKey, (SolidColorBrush)(new BrushConverter().ConvertFrom("#373737")));
+            ChangeButtonColor(ButtonAddIdColumns, (SolidColorBrush)(new BrushConverter().ConvertFrom("#373737")));
+            ChangeButtonColor(ButtonExcludeColumns, (SolidColorBrush)(new BrushConverter().ConvertFrom("#373737")));
             HideAvailableKeys();
             HideSelectedKeys();
-            //ButtonSuggestKey.Content = "Suggest Key";
         }
 
         private void ButtonGoForwardClick(object senderIn, RoutedEventArgs eIn) {
@@ -501,24 +479,37 @@ namespace Reflection.Views {
             }
         }
 
+        private void ButtonSuggestKeyClick(object senderIn, RoutedEventArgs eIn) {
+            CurrentColumnNamesVM = SuggestedKeyColumnNames;
+            if (SuggestedKeyColumnNames.SelectedKeys.Count > 0) {
+                ShowAvailableKeys();
+                ShowSelectedKeys();
+            } else {
+                ShowAvailableKeys();
+            }
+            LoadColumnNames();
+        }
+
         private void ButtonAddIdColumnsClick(object senderIn, RoutedEventArgs eIn) {
+            CurrentColumnNamesVM = UserIdColumnNames;
             if (UserIdColumnNames.SelectedKeys.Count > 0) {
                 ShowAvailableKeys();
                 ShowSelectedKeys();
             } else {
                 ShowAvailableKeys();
             }
-            LoadIdColumnNames();
+            LoadColumnNames();
         }
 
         private void ButtonExcludeColumnsClick(object senderIn, RoutedEventArgs eIn) {
-            if (ExcludeColumnNames.SelectedKeys.Count > 0) {
+            CurrentColumnNamesVM = ExcludeColumnNames;
+            if (ExcludeColumnNames.SelectedKeys.Count > 0) {              
                 ShowAvailableKeys();
                 ShowSelectedKeys();
             } else {
                 ShowAvailableKeys();
             }
-            LoadExcludeColumnNames();
+            LoadColumnNames();
         }
 
     }
