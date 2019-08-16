@@ -21,8 +21,9 @@ namespace Reflection.Models {
         }
 
         public void LoadData(IEnumerable<string> data, string delimiter, bool isHeadersExist, ComparisonTask comparisonTask) {
+            var userExcludeColumns = comparisonTask.MasterConfiguration.UserExcludeColumns.Concat(comparisonTask.TestConfiguration.UserExcludeColumns).OrderBy(item => item).Distinct().ToList();
             Delimiter = delimiter;
-            var firstLine = Parse(data.First());           
+            var firstLine = Parse(data.First(), userExcludeColumns);           
             ColumnsCount = firstLine.Length;
             if (isHeadersExist) {
                 Headers = new Row(0, firstLine);
@@ -34,7 +35,7 @@ namespace Reflection.Models {
             var totalLines = comparisonTask.MasterRowsCount > comparisonTask.TestRowsCount ? comparisonTask.MasterRowsCount : comparisonTask.TestRowsCount;
             foreach (var line in data) {
                 comparisonTask.IfCancelRequested();
-                var row = new Row(++RowsCount, Parse(line));
+                var row = new Row(++RowsCount, Parse(line, userExcludeColumns));
                 if (row.Data.Length == ColumnsCount) {
                     Rows.Add(row);
                     comparisonTask.UpdateProgress(10.0 / (totalLines / 0.5));
@@ -55,8 +56,13 @@ namespace Reflection.Models {
             //}
         }
 
-        private string[] Parse(string lineToSplit) {
-            return lineToSplit.Split(new[] { Delimiter }, StringSplitOptions.None);
+        private string[] Parse(string lineToSplit, List<int> userExcludeColumns) {
+            if (userExcludeColumns.Any()) {
+                var row = lineToSplit.Split(new[] { Delimiter }, StringSplitOptions.None);
+                return row.Where((val, idx) => !userExcludeColumns.Contains(idx)).ToArray();
+            } else {
+                return lineToSplit.Split(new[] { Delimiter }, StringSplitOptions.None);
+            }            
         }
 
         private Row GenerateDefaultHeaders() {

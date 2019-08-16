@@ -69,6 +69,7 @@ namespace Reflection.ViewModels {
                             comparisonTask.Status = Status.Error;
                             comparisonTask.ErrorMessage = e.Message;
                             ComparisonProcessor.IsBusy = false;
+                            WriteLog(comparisonTask);
                         }
                     }
                 } else {
@@ -99,6 +100,27 @@ namespace Reflection.ViewModels {
             comparisonTask.CancellationToken.Cancel();
         }
 
+        private void WriteLog(ComparisonTask comparisonTask) {
+            try {
+                string userName = System.Security.Principal.WindowsIdentity.GetCurrent().Name.Replace("SCDOM\\", "");
+                string logFile = @"O:\DATA\COMMON\core\log\" + userName + "_result.log";
+                List<string> content = new List<string>();
+                content.Add("StartTime: " + comparisonTask.StartTime);
+                content.Add("MasterFilePath: " + comparisonTask.MasterConfiguration.FilePath);
+                content.Add("TestFilePath: " + comparisonTask.TestConfiguration.FilePath);
+                content.Add("IsLinearView: " + comparisonTask.IsLinearView.ToString());
+                content.Add("MasterRowsCount: " + comparisonTask.MasterRowsCount.ToString());
+                content.Add("TestRowsCount: " + comparisonTask.TestRowsCount.ToString());
+                content.Add("ActualRowsDiff: " + comparisonTask.ActualRowsDiff.ToString());
+                content.Add("RowsWithDeviations: " + comparisonTask.RowsWithDeviations.ToString());
+                content.Add("ExtraMasterCount: " + comparisonTask.ExtraMasterCount.ToString());
+                content.Add("ExtraTestCount: " + comparisonTask.ExtraTestCount.ToString());
+                content.Add("Status: " + comparisonTask.Status);
+                content.Add("ErrorMessage: " + comparisonTask.ErrorMessage);
+                content.Add("--------------------------------------------------------------------------");
+                File.AppendAllLines(logFile, content);
+            } catch (Exception) { }
+        }
 
     }
 }

@@ -69,6 +69,7 @@
             <RowDefinition Height="40"/>
             <RowDefinition Height="40"/>
             <RowDefinition Height="40"/>
+            <RowDefinition Height="40"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -113,7 +114,7 @@
             <Button Grid.Column="0" Name="ButtonGoBack" Style="{StaticResource NavButtton}" Content="&#xE830;" ToolTip ="Back to Main Page" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="5,0,0,0" Click="ButtonGoBackClick"/>
             <Button Grid.Column="0" Grid.Row="0" Margin="35,0,0,0" Name="ButtonGoForward" Style="{StaticResource NavButtton}" Content="&#xEA47;" ToolTip ="Go to Test file" VerticalAlignment="Center" HorizontalAlignment="Left" Click="ButtonGoForwardClick"/>
         </Grid>
-        <DataGrid Margin="5,5,0,0" Grid.Row="1" Grid.RowSpan="8" Grid.Column="0" Grid.ColumnSpan="2" RowHeight="20" ColumnWidth="100" BorderBrush="LightGray" HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray" Name="dgData" AutoGenerateColumns ="False" IsReadOnly="True" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" EnableRowVirtualization="True" EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True" LoadingRow="DataGridLoadingRow"/>
+        <DataGrid Margin="5,5,0,0" Grid.Row="1" Grid.RowSpan="9" Grid.Column="0" Grid.ColumnSpan="2" RowHeight="20" ColumnWidth="100" BorderBrush="LightGray" HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray" Name="dgData" AutoGenerateColumns ="False" IsReadOnly="True" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" EnableRowVirtualization="True" EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True" LoadingRow="DataGridLoadingRow"/>
         <TextBox Name="TextBoxDelimiter" Grid.Row="1" Grid.Column="2" Width="150" Height="30" HorizontalAlignment="Stretch" VerticalAlignment="Center" ToolTip="Delimiter" GotFocus="TextBoxDelimiterGotFocus" LostFocus="TextBoxDelimiterLostFocus"/>
         <TextBox Name="TextBoxHeaderRow" Grid.Row="2" Grid.Column="2" Width="150" Height="30" Style="{DynamicResource TextBoxH}" HorizontalAlignment="Stretch" VerticalAlignment="Center" ToolTip ="Rows to skip" TextChanged="TextBoxHeaderRowTextChanged" LostFocus="TextBoxHeaderRowLostFocus" PreviewTextInput="TextBoxHeaderRowPreviewTextInput"/>
         <ComboBox Name="comboBoxEncoding" Grid.Row="3" Grid.Column="2" Width="150" Height="30" HorizontalAlignment="Stretch" Padding="5" FontSize="15" VerticalAlignment="Center" ToolTip ="File encoding" SelectionChanged="ComboBoxSelectionChanged" >
@@ -126,7 +127,7 @@
                 </DataTemplate>
             </ComboBox.ItemTemplate>
         </ComboBox>
-        
+        <TextBlock Name="TextBlockCurrentUserSelection" Grid.Row="4" Grid.Column="2" FontSize="15" FontWeight="DemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         <Button Name ="ButtonSuggestKey" Margin="5" Grid.Row="5" Grid.Column="2" Height="25" Width="120" HorizontalAlignment="Center" VerticalAlignment="Center" Content="Suggest Key" Click="ButtonSuggestKeyClick"/>
         <Button Name ="ButtonAddIdColumns" Margin="5" Grid.Row="6" Grid.Column="2" Height="25" Width="120" HorizontalAlignment="Center" VerticalAlignment="Center" Content="Add Id Columns" Click="ButtonAddIdColumnsClick"/>
         <Button Name ="ButtonExcludeColumns" Margin="5" Grid.Row="7" Grid.Column="2" Height="25" Width="120" HorizontalAlignment="Center" VerticalAlignment="Center" Content="Exclude Columns" Click="ButtonExcludeColumnsClick"/>
@@ -137,8 +138,8 @@
                 </Style>
         </Button.Style>
         </Button>
-        <GridSplitter Name="SpliterUserKeys" Margin="0,5,0,0" Grid.Column="1" Grid.Row="1" Grid.RowSpan="8" Width="3" HorizontalAlignment="Left" Background="Transparent"/>
-        <Border Name="BorderUserKeys" Margin="5,5,0,0" BorderBrush="LightGray" Visibility="Collapsed" BorderThickness="1" Grid.Column="1" Grid.Row="1" Grid.RowSpan="8">
+        <GridSplitter Name="SpliterUserKeys" Margin="0,5,0,0" Grid.Column="1" Grid.Row="1" Grid.RowSpan="9" Width="3" HorizontalAlignment="Left" Background="Transparent"/>
+        <Border Name="BorderUserKeys" Margin="5,5,0,0" BorderBrush="LightGray" Visibility="Collapsed" BorderThickness="1" Grid.Column="1" Grid.Row="1" Grid.RowSpan="9">
             <Grid >
                 <Grid.RowDefinitions>
                     <RowDefinition Height="35"/>

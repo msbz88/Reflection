@@ -17,15 +17,15 @@ namespace Reflection.Models {
         public string TestValue { get; set; }
 
         public KnownDefect(string project, string upgrade, string defectNo, string masterTransNo, string testTransNo, string secId, string deviationColumnName, string masterValue, string testValue) {
-            Project = project;
-            Upgrade = upgrade;
-            DefectNo = defectNo;
-            MasterTransNo = masterTransNo;
-            TestTransNo = testTransNo;
-            SecId = secId;
-            DeviationColumnName = deviationColumnName;
-            MasterValue = masterValue;
-            TestValue = testValue;
+            Project = project.Trim();
+            Upgrade = upgrade.Trim();
+            DefectNo = defectNo.Trim();
+            MasterTransNo = masterTransNo.Trim();
+            TestTransNo = testTransNo.Trim();
+            SecId = secId.Trim();
+            DeviationColumnName = deviationColumnName.Trim();
+            MasterValue = masterValue.Trim();
+            TestValue = testValue.Trim();
         }
     }
 }

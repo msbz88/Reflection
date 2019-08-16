@@ -14,7 +14,6 @@ namespace Reflection.Models {
             ExcludedColumns = new List<int>();
             ExcludedColumns.AddRange(comparisonKeys.BinaryValues);
             ExcludedColumns.AddRange(comparisonKeys.ExcludeColumns);
-            ExcludedColumns.AddRange(comparisonKeys.UserExcludeColumns);
             ExcludedColumns = ExcludedColumns.Distinct().ToList();
         }
 

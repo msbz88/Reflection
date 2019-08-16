@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -135,6 +136,19 @@ namespace Reflection {
             ComparisonDetailViewModel.IsDeviationsOnly = (bool)senderIn;
         }
 
+        private void ButtonHelpClick(object sender, RoutedEventArgs e) {
+            try {
+                dynamic ie = Activator.CreateInstance(Type.GetTypeFromProgID("InternetExplorer.Application"));
+                ie.AddressBar = false;
+                ie.MenuBar = false;
+                ie.ToolBar = false;
+                ie.Visible = true;
+                ie.Navigate(@"O:\DATA\COMMON\core\doc.html");
+            } catch (Exception) {
+                StatusBarContent.Foreground = new SolidColorBrush(Colors.Red);
+                StatusBarContent.Text = "Sorry, documentation is currently unavailable";
+            }
+        }
     }
 }
 

@@ -320,6 +320,7 @@ namespace Reflection.Views {
         }
 
         private void ButtonApplyUserKeyClick(object senderIn, RoutedEventArgs eIn) {
+            TextBlockCurrentUserSelection.Text = "";
             HideSelectedKeys();
             HideAvailableKeys();
             var currViewModel = Version == "Master" ? MasterViewModel : TestViewModel;
@@ -415,6 +416,7 @@ namespace Reflection.Views {
             ChangeButtonColor(ButtonExcludeColumns, (SolidColorBrush)(new BrushConverter().ConvertFrom("#373737")));
             HideAvailableKeys();
             HideSelectedKeys();
+            TextBlockCurrentUserSelection.Text = "";
         }
 
         private void ButtonGoForwardClick(object senderIn, RoutedEventArgs eIn) {
@@ -480,6 +482,8 @@ namespace Reflection.Views {
         }
 
         private void ButtonSuggestKeyClick(object senderIn, RoutedEventArgs eIn) {
+            TextBlockCurrentUserSelection.Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#0e0fed"));
+            TextBlockCurrentUserSelection.Text = "Suggest Key";          
             CurrentColumnNamesVM = SuggestedKeyColumnNames;
             if (SuggestedKeyColumnNames.SelectedKeys.Count > 0) {
                 ShowAvailableKeys();
@@ -491,6 +495,8 @@ namespace Reflection.Views {
         }
 
         private void ButtonAddIdColumnsClick(object senderIn, RoutedEventArgs eIn) {
+            TextBlockCurrentUserSelection.Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#FFFFA500"));
+            TextBlockCurrentUserSelection.Text = "Add Id Columns";
             CurrentColumnNamesVM = UserIdColumnNames;
             if (UserIdColumnNames.SelectedKeys.Count > 0) {
                 ShowAvailableKeys();
@@ -502,6 +508,8 @@ namespace Reflection.Views {
         }
 
         private void ButtonExcludeColumnsClick(object senderIn, RoutedEventArgs eIn) {
+            TextBlockCurrentUserSelection.Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#FC4A1A"));
+            TextBlockCurrentUserSelection.Text = "Exclude Columns";
             CurrentColumnNamesVM = ExcludeColumnNames;
             if (ExcludeColumnNames.SelectedKeys.Count > 0) {              
                 ShowAvailableKeys();

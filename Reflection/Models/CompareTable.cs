@@ -43,6 +43,7 @@ namespace Reflection.Models {
         Dictionary<int, string> NumberedColumnNames { get; set; }
         DefectsSearch DefectsSearch { get; set; }
         OraSession OraSession { get; set; }
+        ComparisonTask ComparisonTask;
 
         public CompareTable() {
             Data = new List<ComparedRow>();
@@ -65,7 +66,8 @@ namespace Reflection.Models {
             IsExcelInstaled = Type.GetTypeFromProgID("Excel.Application") == null ? false : true;
             IsLinearView = comparisonTask.IsLinearView;
             IsDeviationsOnly = comparisonTask.IsDeviationsOnly;
-            NumberedColumnNames = NumberAllColumnNames(masterHeaders.Data);           
+            NumberedColumnNames = NumberAllColumnNames(masterHeaders.Data);
+            ComparisonTask = comparisonTask;
         }
 
         public void AddComparedRows(IEnumerable<ComparedRow> comparedRows) {
@@ -154,6 +156,8 @@ namespace Reflection.Models {
             foreach (var comparedRow in rowsWithDeviations) {
                 RowToSave rowToSave = new RowToSave(comparedRow);
                 var result = rowToSave.PrepareRowTabular(NumberedColumnNames, DefectsSearch, DeviationColumns);
+                ComparisonTask.IfCancelRequested();
+                ComparisonTask.UpdateProgress(10 / (double)rowCount);
                 RowCount++;
                 for (int col = 0; col < result.Count; col++) {
                     dataToSave[RowCount, col] = result[col];
@@ -184,6 +188,8 @@ namespace Reflection.Models {
             foreach (var comparedRow in rowsWithDeviations) {
                 RowToSave rowToSave = new RowToSave(comparedRow);
                 var result = rowToSave.PrepareRowLinear(NumberedColumnNames, DefectsSearch);
+                ComparisonTask.IfCancelRequested();
+                ComparisonTask.UpdateProgress(10 / (double)rowCount);
                 RowCount++;
                 foreach (var row in result) {
                     int index = 0;
@@ -207,6 +213,8 @@ namespace Reflection.Models {
             int numCols = values.GetUpperBound(1) + 1;
             StringBuilder sb = new StringBuilder();
             for (int row = 0; row < numRows; row++) {
+                ComparisonTask.IfCancelRequested();
+                ComparisonTask.UpdateProgress(10 / (double)numRows);
                 sb.Append(values[row, 0]);
                 for (int col = 1; col < numCols; col++)
                     sb.Append(Delimiter + values[row, col]);
@@ -220,6 +228,7 @@ namespace Reflection.Models {
                 var parsedRow = extraRow.Split(new string[] { Delimiter }, StringSplitOptions.None);
                 RowToSave rowToSave = new RowToSave(parsedRow);
                 var result = rowToSave.PrepareExtraRow(version, binaryValues, mainIdColumns);
+                ComparisonTask.IfCancelRequested();
                 RowCount++;
                 for (int col = 0; col < result.Count; col++) {
                     dataToSave[RowCount, col] = result[col];
@@ -262,12 +271,12 @@ namespace Reflection.Models {
 
         private string GetProjectName(string filePath) {
             var r = filePath.Split('\\');
-            return r[2];
+            return r[2].Trim();
         }
 
         private string GetUpgradeName(string filePath) {
             var r = filePath.Split('\\');
-            return r[3];
+            return r[3].Replace("'", "").Trim();
         }
 
         private void SaveToExcel(string filePath, string[,] outputArray, bool isPassed) {
@@ -278,9 +287,10 @@ namespace Reflection.Models {
             var columnsCount = outputArray.GetLength(1);
             try {
                 excelApplication = new Application();
+                ComparisonTask.UpdateProgress(3);
                 excelApplication.DisplayAlerts = false;
                 excelApplication.Visible = false;
-                if (IsLinearView) {
+                if (IsLinearView && !isPassed) {
                     workbook = excelApplication.Workbooks.Open(@"O:\DATA\COMMON\core\data\template.xlsm");
                 }else {
                     workbook = excelApplication.Workbooks.Add("");
@@ -293,6 +303,7 @@ namespace Reflection.Models {
                 int rowsCount = outputArray.GetLength(0);
                 range = range.Resize[rowsCount, columnsCount];
                 range.set_Value(XlRangeValueDataType.xlRangeValueDefault, outputArray);
+                ComparisonTask.UpdateProgress(2);
                 FormatExcelSheet(sheet, range, columnsCount, rowsCount, isPassed);
                 //AddMacro(workbook);
                 //pass=#Reflection888

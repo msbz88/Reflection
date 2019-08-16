@@ -63,6 +63,38 @@
                 </Setter.Value>
             </Setter>
         </Style>
+ <!--Button Help-->
+        <Style TargetType="{x:Type Button}" x:Key="HelpButtton" >
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="Black" />
+            <Setter Property="FontWeight" Value="DemiBold" />
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <!--<Border BorderBrush="SkyBlue" BorderThickness="2">-->
+                                <Ellipse Name ="OuterRing" Width ="15" Height ="15" Fill="White" />
+                            <!--</Border>-->
+                            <Ellipse Name ="InnerRing" Width ="12" Height ="12" Fill="Transparent"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName ="OuterRing" Property ="Fill" Value ="SkyBlue"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <!--<Trigger Property ="IsPressed" Value ="True">
+                                <Setter TargetName ="OuterRing" Property ="Height" Value ="20"/>
+                                <Setter TargetName ="OuterRing" Property ="Width" Value ="20"/>
+                                --><!--<Setter TargetName ="InnerRing" Property ="Fill" Value ="DarkGray"/>--><!--
+                                <Setter Property="FontSize" Value="15" />
+                            </Trigger>-->
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
  <!--TextBox-->
         <Style TargetType="TextBox">
             <Setter Property="Padding" Value="3"/>

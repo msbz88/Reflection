@@ -83,7 +83,7 @@ namespace Reflection.Models {
                 comparedRow = HandleDeviationsInDiffColumns(deviationsColumns);
                 AddComparedRow(comparedRow);
             }
-            ComparisonTask.UpdateProgress(20 / (double)allGroups);
+            ComparisonTask.UpdateProgress(17 / (double)allGroups);
             return ComparedRows;
         }
 
