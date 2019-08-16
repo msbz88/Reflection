@@ -143,7 +143,7 @@ namespace Reflection {
                 ie.MenuBar = false;
                 ie.ToolBar = false;
                 ie.Visible = true;
-                ie.Navigate(@"O:\DATA\COMMON\core\doc.html");
+                ie.Navigate(@"");
             } catch (Exception) {
                 StatusBarContent.Foreground = new SolidColorBrush(Colors.Red);
                 StatusBarContent.Text = "Sorry, documentation is currently unavailable";
