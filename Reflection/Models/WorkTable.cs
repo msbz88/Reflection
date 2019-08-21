@@ -24,7 +24,7 @@ namespace Reflection.Models {
             var userExcludeColumns = comparisonTask.MasterConfiguration.UserExcludeColumns.Concat(comparisonTask.TestConfiguration.UserExcludeColumns).OrderBy(item => item).Distinct().ToList();
             Delimiter = delimiter;
             var firstLine = data.FirstOrDefault();
-            ColumnsCount = comparisonTask.MasterConfiguration.ColumnsCount;
+            ColumnsCount = comparisonTask.MasterConfiguration.ColumnsCount - userExcludeColumns.Count;
             if (firstLine == null || !isHeadersExist) {
                 Headers = GenerateDefaultHeaders();
             }else {

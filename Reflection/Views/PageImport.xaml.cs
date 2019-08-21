@@ -70,8 +70,6 @@ namespace Reflection.Views {
         }
 
         public async void ReturnToView(ComparisonTask comparisonTask) {
-            Version = "Master";
-            this.DataContext = MasterViewModel;
             SuggestedKeyColumnNames = new ColumnNamesViewModel("SuggestedKey");
             UserIdColumnNames = new ColumnNamesViewModel("UserId");
             ExcludeColumnNames = new ColumnNamesViewModel("ExcludeColumn");
@@ -79,6 +77,8 @@ namespace Reflection.Views {
             TestViewModel = new ImportViewModel();
             MasterViewModel.PropertyChanged += OnIsHeaderExistsChanged;
             TestViewModel.PropertyChanged += OnIsHeaderExistsChanged;
+            Version = "Master";
+            this.DataContext = MasterViewModel;
             MasterViewModel.FilePath = comparisonTask.MasterConfiguration.FilePath;
             TestViewModel.FilePath = comparisonTask.TestConfiguration.FilePath;
             SingleFileView?.Invoke(null, null);
@@ -98,8 +98,10 @@ namespace Reflection.Views {
             LoadColumnNames();
             foreach (var item in selectedColumns) {
                 var columnName = columnNamesViewModel.AvailableKeys.Where(key => key.Id == item).FirstOrDefault();
-                columnName.IsChecked = true;
-                HandleChecked(columnName);
+                if (columnName != null) {
+                    columnName.IsChecked = true;
+                    HandleChecked(columnName);
+                }
             }
         }
 
@@ -452,15 +454,7 @@ namespace Reflection.Views {
         }
 
         private void ResetUserKeys() {
-            SuggestedKeyColumnNames.AvailableKeys.Clear();
-            SuggestedKeyColumnNames.SelectedKeys.Clear();
-            UserIdColumnNames.AvailableKeys.Clear();
-            UserIdColumnNames.SelectedKeys.Clear();
-            ExcludeColumnNames.AvailableKeys.Clear();
-            ExcludeColumnNames.SelectedKeys.Clear();
-            ChangeButtonColor(ButtonSuggestKey, (SolidColorBrush)(new BrushConverter().ConvertFrom("#373737")));
-            ChangeButtonColor(ButtonAddIdColumns, (SolidColorBrush)(new BrushConverter().ConvertFrom("#373737")));
-            ChangeButtonColor(ButtonExcludeColumns, (SolidColorBrush)(new BrushConverter().ConvertFrom("#373737")));
+            ClearSelectedKeys();
             HideAvailableKeys();
             HideSelectedKeys();
             TextBlockCurrentUserSelection.Text = "";
@@ -492,10 +486,29 @@ namespace Reflection.Views {
             ExpanderSkippedRows.IsExpanded = false;
         }
 
+        private void ClearSelectedKeys() {
+            SuggestedKeyColumnNames.AvailableKeys.Clear();
+            UserIdColumnNames.AvailableKeys.Clear();
+            ExcludeColumnNames.AvailableKeys.Clear();
+            SuggestedKeyColumnNames.SelectedKeys.Clear();
+            UserIdColumnNames.SelectedKeys.Clear();
+            ExcludeColumnNames.SelectedKeys.Clear();
+            HideSelectedKeys();
+            ChangeButtonColor(ButtonSuggestKey, (SolidColorBrush)(new BrushConverter().ConvertFrom("#373737")));
+            ChangeButtonColor(ButtonAddIdColumns, (SolidColorBrush)(new BrushConverter().ConvertFrom("#373737")));
+            ChangeButtonColor(ButtonExcludeColumns, (SolidColorBrush)(new BrushConverter().ConvertFrom("#373737")));
+            if (ListBoxAvailableKeys.Visibility == Visibility.Visible && CurrentColumnNamesVM.Name== "SuggestedKey") {
+                TextBlockCurrentUserSelection.Text = "Suggest Key";
+            }          
+        }
+
         private void TextBoxHeaderRowTextChanged(object sender, TextChangedEventArgs e) {
-            if (!string.IsNullOrEmpty(TextBoxHeaderRow.Text)) {
+            if (!string.IsNullOrEmpty(TextBoxHeaderRow.Text)) {               
                 var val = int.Parse(TextBoxHeaderRow.Text);
                 var currViewModel = Version == "Master" ? MasterViewModel : TestViewModel;
+                if (currViewModel.IsUserInput) {
+                    ClearSelectedKeys();
+                }
                 if (currViewModel.RowsToSkip != val) {
                     currViewModel.RowsToSkip = val;
                     AsyncRenderFileWithSetPreviewToView(currViewModel);
@@ -513,11 +526,10 @@ namespace Reflection.Views {
         }
 
         private void OnIsHeaderExistsChanged(object sender, PropertyChangedEventArgs e) {
+            var importViewmodel = (ImportViewModel)sender;
             if (e.PropertyName == "IsHeadersExist") {
-                if (Version == "Master" && MasterViewModel.IsUserInput && !MasterViewModel.IsFirstStart) {
-                    AsyncRenderFileWithSetPreviewToView(MasterViewModel);
-                } else if (Version == "Test" && TestViewModel.IsUserInput && !MasterViewModel.IsFirstStart) {
-                    AsyncRenderFileWithSetPreviewToView(TestViewModel);
+                if (importViewmodel.IsUserInput && !importViewmodel.IsFirstStart) {
+                    AsyncRenderFileWithSetPreviewToView(importViewmodel);
                 }
             }
         }
