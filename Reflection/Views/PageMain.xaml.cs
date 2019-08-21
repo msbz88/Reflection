@@ -28,6 +28,7 @@ namespace Reflection.Views {
         public EventHandler OpenFiles { get; set; }
         public EventHandler LinearView { get; set; }
         public EventHandler ResultFileView { get; set; }
+        public EventHandler BackToImport { get; set; }
         public ComparisonTasksViewModel ComparisonTasksViewModel { get; set; }
         ComparisonTask currectComparisonTask;
         Button stopRestartButton;
@@ -65,10 +66,19 @@ namespace Reflection.Views {
             var listViewItem = GetAncestorOfType<ListViewItem>(senderIn as Button);
             if (listViewItem != null) {
                 var selectedItem = (ComparisonTask)listViewItem.DataContext;
-                var isExcelOpened = Task.Run(() => ComparisonTasksViewModel.TryOpenExcel(selectedItem));
-                if (!isExcelOpened.Result) {
+                if (selectedItem.IsToExcelSaved) {
+                    TryOpenExcel(selectedItem);
+                } else {
                     OpenTextFile(selectedItem.ResultFile + ".txt");
                 }
+            }
+        }
+
+        public void TryOpenExcel(ComparisonTask comparisonTask) {
+            if (comparisonTask.IsLinearView && comparisonTask.Status != Status.Passed) {
+                Task.Run(() => Process.Start(comparisonTask.ResultFile + ".xlsm"));
+            } else {
+                Task.Run(() => Process.Start(comparisonTask.ResultFile + ".xlsx"));
             }
         }
 
@@ -183,10 +193,10 @@ namespace Reflection.Views {
             var listViewItem = GetAncestorOfType<ListViewItem>(sender as Button);
             if (listViewItem != null) {
                 var selectedTask = (ComparisonTask)listViewItem.DataContext;
-                if(selectedTask.Status != Status.Canceling) {
+                if (selectedTask.Status != Status.Canceling) {
                     ComparisonTasksViewModel.DeleteTask(selectedTask);
                     Error?.Invoke("", null);
-                }else {
+                } else {
                     Error?.Invoke("Unable to delete task with \"Canceling\" status", null);
                 }
             }
@@ -238,6 +248,14 @@ namespace Reflection.Views {
 
         private void DeviationsAndPassed_Checked(object sender, RoutedEventArgs e) {
             ResultFileView?.Invoke(false, null);
+        }
+
+        private void ButtonBackToImportClick(object sender, RoutedEventArgs e) {
+            var listViewItem = GetAncestorOfType<ListViewItem>(sender as Button);
+            if (listViewItem != null) {
+                var selectedTask = (ComparisonTask)listViewItem.DataContext;
+                BackToImport?.Invoke(selectedTask, null);
+            }
         }
     }
 }

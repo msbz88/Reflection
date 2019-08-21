@@ -31,26 +31,24 @@ namespace Reflection.Models {
         List<string> ExtraTest { get; set; }
         public int TestExtraCount { get { return ExtraTest.Count; } }
         string Delimiter { get; set; }
-        List<int> MasterPassedRows;
-        List<int> TestPassedRows;
+        List<ComparedRow> PassedRows;
         ComparisonKeys ComparisonKeys { get; set; }
         bool IsExcelInstaled { get; set; }
         List<string> Headers;
         List<int> DeviationColumns;
         private int RowCount { get; set; }
-        bool IsLinearView { get; set; }
-        public bool IsDeviationsOnly { get; set; }
         Dictionary<int, string> NumberedColumnNames { get; set; }
         DefectsSearch DefectsSearch { get; set; }
         OraSession OraSession { get; set; }
         ComparisonTask ComparisonTask;
 
-        public CompareTable() {
+        public CompareTable(ComparisonTask comparisonTask) {
             Data = new List<ComparedRow>();
             ExtraMaster = new List<string>();
             ExtraTest = new List<string>();
             IsExcelInstaled = Type.GetTypeFromProgID("Excel.Application") == null ? false : true;
             RowCount = 0;
+            ComparisonTask = comparisonTask;
         }
 
         public CompareTable(Row masterHeaders, Row testHeaders, ComparisonTask comparisonTask) {
@@ -61,11 +59,8 @@ namespace Reflection.Models {
             MasterHeaders = masterHeaders;
             TestHeaders = testHeaders;
             ComparisonKeys = comparisonTask.ComparisonKeys;
-            MasterPassedRows = new List<int>();
-            TestPassedRows = new List<int>();
+            PassedRows = new List<ComparedRow>();
             IsExcelInstaled = Type.GetTypeFromProgID("Excel.Application") == null ? false : true;
-            IsLinearView = comparisonTask.IsLinearView;
-            IsDeviationsOnly = comparisonTask.IsDeviationsOnly;
             NumberedColumnNames = NumberAllColumnNames(masterHeaders.Data);
             ComparisonTask = comparisonTask;
         }
@@ -73,8 +68,7 @@ namespace Reflection.Models {
         public void AddComparedRows(IEnumerable<ComparedRow> comparedRows) {
             foreach (var item in comparedRows) {
                 if (item.IsPassed) {
-                    MasterPassedRows.Add(item.MasterRowId);
-                    TestPassedRows.Add(item.TestRowId);
+                    PassedRows.Add(item);
                 } else {
                     Data.Add(item);
                 }
@@ -83,8 +77,7 @@ namespace Reflection.Models {
 
         public void AddComparedRow(ComparedRow comparedRow) {
             if (comparedRow.IsPassed) {
-                MasterPassedRows.Add(comparedRow.MasterRowId);
-                TestPassedRows.Add(comparedRow.TestRowId);
+                PassedRows.Add(comparedRow);
             } else {
                 Data.Add(comparedRow);
             }
@@ -97,11 +90,11 @@ namespace Reflection.Models {
         }
 
         public IEnumerable<int> GetMasterComparedRowsId() {
-            return Data.Select(row => row.MasterRowId).Concat(MasterPassedRows);
+            return Data.Select(row => row.MasterRowId).Concat(PassedRows.Select(row=>row.MasterRowId));
         }
 
         public IEnumerable<int> GetTestComparedRowsId() {
-            return Data.Select(row => row.TestRowId).Concat(TestPassedRows);
+            return Data.Select(row => row.TestRowId).Concat(PassedRows.Select(row=>row.TestRowId));
         }
 
         public void AddTestExtraRows(IEnumerable<Row> extraRows) {
@@ -113,42 +106,95 @@ namespace Reflection.Models {
         public void SaveComparedRows(string filePath) {
             string[,] dataToSave = null;
             string fileExt = "";
-            if (IsLinearView) {
+            int rowsCount = 1;
+            if (!ComparisonTask.IsDeviationsOnly) {
+                rowsCount += ComparisonTask.ExceptedRecords + PassedRows.Count;
+            }
+            if (ComparisonTask.IsLinearView) {
+                rowsCount += Data.Sum(row => row.Deviations.Count) + ExtraMaster.Count + ExtraTest.Count;
                 var projectName = GetProjectName(filePath);
                 var upgradeName = GetUpgradeName(filePath);
                 OraSession = StartSession();
                 DefectsSearch = new DefectsSearch(projectName, upgradeName, OraSession);
-                dataToSave = PrepareDataLinar();
+                dataToSave = PrepareDataLinar(rowsCount);
                 fileExt = ".xlsm";
             } else {
-                dataToSave = PrepareDataTabular();
+                rowsCount += ComparedRowsCount + ExtraMaster.Count + ExtraTest.Count;
+                dataToSave = PrepareDataTabular(rowsCount);
                 fileExt = ".xlsx";
+            }
+            if (!ComparisonTask.IsDeviationsOnly) {
+                AddExceptedRecords(dataToSave);
+                AddPassedRows(dataToSave);
             }
             if (!IsExcelInstaled || dataToSave.GetLength(0) > 1000000) {
                 SaveToFlatFile(filePath + ".txt", dataToSave);
+                ComparisonTask.IsToExcelSaved = false;
             } else {
                 SaveToExcel(filePath + fileExt, dataToSave, false);
+                ComparisonTask.IsToExcelSaved = true;
             }
+        }
+
+        private void AddPassedRows(string[,] dataToSave) {
+            foreach (var row in PassedRows) {
+                var rowToSave = new RowToSave(row);
+                var result = rowToSave.PreparePassedRow();
+                ComparisonTask.IfCancelRequested();
+                RowCount++;
+                for (int col = 0; col < result.Count; col++) {
+                    dataToSave[RowCount, col] = result[col];
+                }
+            }
+        }
+
+        private void AddExceptedRecords(string[,] dataToSave) {
+            var binaryValues = ComparisonKeys.BinaryValues.Concat(ComparisonKeys.UserIdColumnsBinary).Distinct().ToList();
+            var mainIdColumns = ComparisonKeys.MainKeys.Concat(ComparisonKeys.UserIdColumns).Distinct().ToList();
+            var masterExceptedRecords = File.ReadLines(ComparisonTask.CommonDirectoryPath + "\\MasterPassed.temp");          
+            int rowsIndex = 0;
+            foreach (var masterLine in masterExceptedRecords) {
+                RowToSave rowToSave = null;
+                var masterParsedRow = masterLine.Split(new string[] { Delimiter }, StringSplitOptions.None);
+                if (binaryValues.Any()) {
+                    var testExceptedRecords = File.ReadLines(ComparisonTask.CommonDirectoryPath + "\\TestPassed.temp");
+                    var testLine = testExceptedRecords.Skip(rowsIndex).FirstOrDefault();
+                    var testParsedRow = testLine.Split(new string[] { Delimiter }, StringSplitOptions.None);
+                    rowToSave = new RowToSave(masterParsedRow, testParsedRow);
+                }else {
+                    rowToSave = new RowToSave(masterParsedRow);
+                }              
+                var result = rowToSave.PrepareExceptedRow(binaryValues, mainIdColumns);
+                ComparisonTask.IfCancelRequested();
+                RowCount++;
+                for (int col = 0; col < result.Count; col++) {
+                    dataToSave[RowCount, col] = result[col];
+                }
+                rowsIndex++;
+            }
+            File.Delete(ComparisonTask.CommonDirectoryPath + "\\MasterPassed.temp");
+            File.Delete(ComparisonTask.CommonDirectoryPath + "\\TestPassed.temp");
         }
 
         public void SavePassed(string filePath, string delimiter, string[,] array) {
             if (!IsExcelInstaled || array.GetLength(0) > 1000000) {
                 Delimiter = delimiter;
                 SaveToFlatFile(filePath + ".txt", array);
+                ComparisonTask.IsToExcelSaved = false;
             } else {
                 SaveToExcel(filePath + ".xlsx", array, true);
+                ComparisonTask.IsToExcelSaved = true;
             }
         }
 
-        private string[,] PrepareDataTabular() {
+        private string[,] PrepareDataTabular(int rowsCount) {
             var binaryValues = ComparisonKeys.BinaryValues.Concat(ComparisonKeys.UserIdColumnsBinary).Distinct().ToList();
             var mainIdColumns = ComparisonKeys.MainKeys.Concat(ComparisonKeys.UserIdColumns).Distinct().ToList();
             DeviationColumns = Data.SelectMany(row => row.Deviations.Select(col => col.ColumnId)).Distinct().OrderBy(colId => colId).ToList();
             var allColumns = mainIdColumns.Concat(DeviationColumns).ToList();
             Headers = GenerateHeadersForFile(binaryValues, allColumns);
-            int rowCount = 1 + ComparedRowsCount + ExtraMaster.Count + ExtraTest.Count;
             int columnCount = Headers.Count;
-            string[,] dataToSave = new string[rowCount, columnCount];
+            string[,] dataToSave = new string[rowsCount, columnCount];
             for (int col = 0; col < Headers.Count; col++) {
                 dataToSave[RowCount, col] = Headers[col];
             }
@@ -157,7 +203,7 @@ namespace Reflection.Models {
                 RowToSave rowToSave = new RowToSave(comparedRow);
                 var result = rowToSave.PrepareRowTabular(NumberedColumnNames, DefectsSearch, DeviationColumns);
                 ComparisonTask.IfCancelRequested();
-                ComparisonTask.UpdateProgress(10 / (double)rowCount);
+                ComparisonTask.UpdateProgress(10 / (double)rowsCount);
                 RowCount++;
                 for (int col = 0; col < result.Count; col++) {
                     dataToSave[RowCount, col] = result[col];
@@ -165,13 +211,10 @@ namespace Reflection.Models {
             }
             AddExtraRows(dataToSave, "Master", ExtraMaster, binaryValues, mainIdColumns);
             AddExtraRows(dataToSave, "Test", ExtraTest, binaryValues, mainIdColumns);
-            if (!IsDeviationsOnly) {
-                AddPassedRows();
-            }
             return dataToSave;
         }
 
-        private string[,] PrepareDataLinar() {
+        private string[,] PrepareDataLinar(int rowsCount) {
             var binaryValues = ComparisonKeys.BinaryValues.Concat(ComparisonKeys.UserIdColumnsBinary).Distinct().ToList();
             var mainIdColumns = ComparisonKeys.MainKeys.Concat(ComparisonKeys.UserIdColumns).Distinct().ToList();
             Headers = GenerateHeadersForFile(binaryValues, mainIdColumns);           
@@ -179,9 +222,8 @@ namespace Reflection.Models {
             Headers.Add("Master Value");
             Headers.Add("Test Value");
             var rowsWithDeviations = Data.Where(row => !row.IsPassed);
-            int rowCount = 1 + ComparedRowsCount + ExtraMaster.Count + ExtraTest.Count;
             int columnCount = Headers.Count;
-            string[,]  dataToSave = new string[rowCount, columnCount];
+            string[,]  dataToSave = new string[rowsCount, columnCount];
             for (int col = 0; col < Headers.Count; col++) {
                 dataToSave[RowCount, col] = Headers[col];
             }
@@ -189,9 +231,9 @@ namespace Reflection.Models {
                 RowToSave rowToSave = new RowToSave(comparedRow);
                 var result = rowToSave.PrepareRowLinear(NumberedColumnNames, DefectsSearch);
                 ComparisonTask.IfCancelRequested();
-                ComparisonTask.UpdateProgress(10 / (double)rowCount);
-                RowCount++;
+                ComparisonTask.UpdateProgress(10 / (double)rowsCount);               
                 foreach (var row in result) {
+                    RowCount++;
                     int index = 0;
                     foreach (var col in row) {
                         dataToSave[RowCount, index++] = col;
@@ -199,12 +241,9 @@ namespace Reflection.Models {
                 }
             }
             OraSession.CloseConnection();
-            var deviations = Data.Where(row => !row.IsPassed).SelectMany(item => item.Deviations.Select(col => col.ColumnId)).Distinct().ToList();
+            //var deviations = Data.Where(row => !row.IsPassed).SelectMany(item => item.Deviations.Select(col => col.ColumnId)).Distinct().ToList();
             AddExtraRows(dataToSave, "Master", ExtraMaster, binaryValues, mainIdColumns);
             AddExtraRows(dataToSave, "Test", ExtraTest, binaryValues, mainIdColumns);
-            if (!IsDeviationsOnly) {
-                AddPassedRows();
-            }
             return dataToSave;
         }
 
@@ -234,10 +273,6 @@ namespace Reflection.Models {
                     dataToSave[RowCount, col] = result[col];
                 }
             }           
-        }
-
-        private void AddPassedRows() {
-
         }
 
         private List<string> GenerateHeadersForFile(List<int> binaryValues, List<int> allColumns) {
@@ -271,12 +306,20 @@ namespace Reflection.Models {
 
         private string GetProjectName(string filePath) {
             var r = filePath.Split('\\');
-            return r[2].Trim();
+            if (r.Length > 3) {
+                return r[2].Trim();
+            }else {
+                return "";
+            }
         }
 
         private string GetUpgradeName(string filePath) {
             var r = filePath.Split('\\');
-            return r[3].Replace("'", "").Trim();
+            if (r.Length > 3) {              
+                return r[3].Replace("'", "").Trim();
+            }else {
+                return "";
+            }            
         }
 
         private void SaveToExcel(string filePath, string[,] outputArray, bool isPassed) {
@@ -290,7 +333,8 @@ namespace Reflection.Models {
                 ComparisonTask.UpdateProgress(3);
                 excelApplication.DisplayAlerts = false;
                 excelApplication.Visible = false;
-                if (IsLinearView && !isPassed) {
+                if (ComparisonTask.IsLinearView && !isPassed) {
+                    //pass=#Reflection888
                     workbook = excelApplication.Workbooks.Open(@"O:\DATA\COMMON\core\data\template.xlsm");
                 }else {
                     workbook = excelApplication.Workbooks.Add("");
@@ -304,13 +348,11 @@ namespace Reflection.Models {
                 range = range.Resize[rowsCount, columnsCount];
                 range.set_Value(XlRangeValueDataType.xlRangeValueDefault, outputArray);
                 ComparisonTask.UpdateProgress(2);
-                FormatExcelSheet(sheet, range, columnsCount, rowsCount, isPassed);
-                //AddMacro(workbook);
-                //pass=#Reflection888
+                FormatExcelSheet(sheet, range, columnsCount, rowsCount, isPassed);               
                 workbook.SaveAs(filePath, Type.Missing, Type.Missing, Type.Missing, false, false, XlSaveAsAccessMode.xlNoChange, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing);
                 workbook.Close();
                 excelApplication.Quit();
-            } finally {
+            }catch(Exception ex) {
                 if (range != null)
                     Marshal.ReleaseComObject(range);
                 if (sheet != null)
@@ -319,9 +361,23 @@ namespace Reflection.Models {
                     Marshal.ReleaseComObject(workbook);
                 if (excelApplication != null)
                     Marshal.ReleaseComObject(excelApplication);
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                throw new Exception(ex.Message);
+            } 
+            finally {
+                if (range != null)
+                    Marshal.ReleaseComObject(range);
+                if (sheet != null)
+                    Marshal.ReleaseComObject(sheet);
+                if (workbook != null)
+                    Marshal.ReleaseComObject(workbook);
+                if (excelApplication != null)
+                    Marshal.ReleaseComObject(excelApplication);
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
             }
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
+
         }
 
         private void FormatExcelSheet(Worksheet sheet, Range range, int columnsCount, int rowsCount, bool isPassed) {
@@ -334,11 +390,11 @@ namespace Reflection.Models {
             }
             string condNotExplained = "";
             string condExplained = "";
-            if (IsLinearView) {
-                condNotExplained = "=$A2=\"\"";
-                condExplained = "=$A2<>\"\"";
+            if (ComparisonTask.IsLinearView) {
+                condNotExplained = "=AND($A2=\"\";$B2<>\"Passed\")";
+                condExplained = "=OR($A2<>\"\";$B2=\"Passed\")";
             } else {
-                condNotExplained = "=AND($A2=\"\";" + GetExcelColumnName(deviationColumns) + "2 <>\"0\")";
+                condNotExplained = "=AND($A2=\"\";AND(" + GetExcelColumnName(deviationColumns) + "2 <>\"0\";$B2<>\"Passed\"))";
                 condExplained = "=\"0\"";
             }
             FormatConditions sheetFormatConditions = null;
@@ -374,7 +430,7 @@ namespace Reflection.Models {
                 range.Interior.Color = XlRgbColor.rgbBlack;
                 range.Font.Color = XlRgbColor.rgbWhite;
                 //autofit id columns
-                if (IsLinearView) {
+                if (ComparisonTask.IsLinearView) {
                     range.Columns.AutoFit();
                 } else {
                     range = sheet.get_Range("A1", GetExcelColumnName(deviationColumns) + 1);
@@ -388,6 +444,18 @@ namespace Reflection.Models {
                     range = sheet.get_Range("B1", "C1");
                     range.Interior.Color = XlRgbColor.rgbOrange;
                 }
+            } catch (Exception ex) {
+                if (sheetFormatConditions != null)
+                    Marshal.ReleaseComObject(sheetFormatConditions);
+                if (formatCondNotExplained != null)
+                    Marshal.ReleaseComObject(formatCondNotExplained);
+                if (formatCondExplained != null)
+                    Marshal.ReleaseComObject(formatCondExplained);
+                if (interior != null)
+                    Marshal.ReleaseComObject(interior);
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                throw new Exception(ex.Message);
             } finally {
                 if (sheetFormatConditions != null)
                     Marshal.ReleaseComObject(sheetFormatConditions);
@@ -397,6 +465,8 @@ namespace Reflection.Models {
                     Marshal.ReleaseComObject(formatCondExplained);
                 if (interior != null)
                     Marshal.ReleaseComObject(interior);
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
             }
         }
 
@@ -411,40 +481,7 @@ namespace Reflection.Models {
             }
             return columnName;
         }
-
-        private void AddMacro(Workbook workbook) {
-            try{
-                var newStandardModule = workbook.VBProject.VBComponents.Add(Microsoft.Vbe.Interop.vbext_ComponentType.vbext_ct_StdModule);
-                var codeModule = newStandardModule.CodeModule;
-                var lineNum = codeModule.CountOfLines + 1;
-                List<string> codeText = new List<string>();
-                codeText.Add("Public openedDate As Date");
-                codeText.Add("Sub Auto_Close()");
-                codeText.Add("Dim queueFile As String");
-                codeText.Add("Dim thisPath As String");
-                codeText.Add("Dim lastUpdated As Date");
-                codeText.Add("Dim answer As Integer");
-                codeText.Add("On Error Resume Next");
-                codeText.Add("lastUpdated = ActiveWorkbook.BuiltinDocumentProperties(\"Last Save Time\")");
-                codeText.Add("If lastUpdated > openedDate Then");
-                codeText.Add("answer = MsgBox(\"Would you like to update the database of known defects according to your changes?\", vbYesNo + vbQuestion, \"Comparison application\")");
-                codeText.Add("If answer = vbYes Then");
-                codeText.Add("queueFile = \"O:\\DATA\\COMMON\\core\\defects\\UpdateRequest.txt\"");
-                codeText.Add("thisPath = Application.ThisWorkbook.FullName");
-                codeText.Add("Open queueFile For Output As #1");
-                codeText.Add("Print #1, thisPath");
-                codeText.Add("Close #1");
-                codeText.Add("Call Shell(\"O:\\DATA\\COMMON\\core\\defects\\DefectUpdater.exe\")");
-                codeText.Add("End If");
-                codeText.Add("End If");
-                codeText.Add("End Sub");
-                codeText.Add("Sub Auto_Open()");
-                codeText.Add("openedDate = Now");
-                codeText.Add("End Sub");
-                codeModule.InsertLines(lineNum, string.Join(Environment.NewLine, codeText));
-            }catch (Exception) { }
-        }
-
+      
 
     }
 }

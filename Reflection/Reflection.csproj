@@ -73,6 +73,7 @@
     <Compile Include="Models\ComparisonKeys.cs" />
     <Compile Include="Models\ComparisonProcessor.cs" />
     <Compile Include="Models\DefectsSearch.cs" />
+    <Compile Include="Models\FileName.cs" />
     <Compile Include="Models\Interfaces\IFileReader.cs" />
     <Compile Include="Models\Interfaces\IImportConfiguration.cs" />
     <Compile Include="Models\Interfaces\IWorkTable.cs" />

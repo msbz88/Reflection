@@ -22,7 +22,6 @@ namespace Reflection.ViewModels {
         }
         IFileReader FileReader { get; set; }
         ComparisonProcessor ComparisonProcessor;
-        bool IsExcelInstaled = Type.GetTypeFromProgID("Excel.Application") == null ? false : true;
         public bool IsLinearView { get; set; }
         public bool IsDeviationsOnly { get; set; }     
 
@@ -31,7 +30,6 @@ namespace Reflection.ViewModels {
             comparisonCount = 1;
             FileReader = new FileReader();
             ComparisonProcessor = new ComparisonProcessor();
-            IsExcelInstaled = Type.GetTypeFromProgID("Excel.Application") == null ? false : true;
             IsLinearView = true;
             IsDeviationsOnly = true;
         }       
@@ -80,19 +78,6 @@ namespace Reflection.ViewModels {
 
         private async Task<bool> RunComparison(ComparisonTask comparisonTask) {
             return await Task.Run(() => ComparisonProcessor.StartComparison(FileReader, comparisonTask));
-        }
-
-        public bool TryOpenExcel(ComparisonTask comparisonTask) {
-            if (IsExcelInstaled) {
-                if (comparisonTask.IsLinearView) {
-                    Task.Run(() => Process.Start(comparisonTask.ResultFile + ".xlsm"));
-                }else {
-                    Task.Run(() => Process.Start(comparisonTask.ResultFile + ".xlsx"));
-                }              
-                return true;
-            } else {
-                return false;
-            }
         }
 
         public void DeleteTask(ComparisonTask comparisonTask) {

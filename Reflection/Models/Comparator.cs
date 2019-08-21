@@ -6,10 +6,12 @@ using System.Threading.Tasks;
 
 namespace Reflection.Models {
     public class Comparator {
-         ComparisonKeys ComparisonKeys { get; set; }
+        ComparisonKeys ComparisonKeys { get; set; }
         List<int> ExcludedColumns { get; set; }
+        bool IsDeviationsOnly { get; set; }
 
-        public Comparator(ComparisonKeys comparisonKeys) {
+        public Comparator(ComparisonKeys comparisonKeys, bool isDeviationsOnly) {
+            IsDeviationsOnly = isDeviationsOnly;
             ComparisonKeys = comparisonKeys;
             ExcludedColumns = new List<int>();
             ExcludedColumns.AddRange(comparisonKeys.BinaryValues);
@@ -48,6 +50,10 @@ namespace Reflection.Models {
                 minDeviations = currentDeviations;
                 return comparedRow;
             } else {
+                if (!IsDeviationsOnly) {
+                    comparedRow.AddTransNoColumns(GetTransNoColumns(masterRow, testRow));
+                    comparedRow.AddMainIdColumns(GetMainIdColumns(masterRow, testRow));
+                }
                 comparedRow.IsPassed = true;
                 return comparedRow;
             }
@@ -68,6 +74,10 @@ namespace Reflection.Models {
                 comparedRow.AddMainIdColumns(GetMainIdColumns(masterRow, testRow));
                 return comparedRow;
             } else {
+                if (!IsDeviationsOnly) {
+                    comparedRow.AddTransNoColumns(GetTransNoColumns(masterRow, testRow));
+                    comparedRow.AddMainIdColumns(GetMainIdColumns(masterRow, testRow));
+                }
                 comparedRow.IsPassed = true;
                 return comparedRow;
             }

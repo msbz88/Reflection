@@ -87,6 +87,7 @@ namespace Reflection.Models {
                     status = value;
                     if (value == Status.Passed) {
                         DeviationsView = "";
+                        ResultFileView = "";
                     }
                     OnPropertyChanged("Status");
                 }
@@ -98,7 +99,6 @@ namespace Reflection.Models {
         public ImportConfiguration MasterConfiguration { get; set; }
         public ImportConfiguration TestConfiguration { get; set; }
         public string ResultFile { get; private set; }
-        public Task<Application> ExcelApplication { get; set; }
         bool isLinearView;
         public bool IsLinearView {
             get { return isLinearView; }
@@ -120,7 +120,7 @@ namespace Reflection.Models {
         Stopwatch Stopwatch { get; set; }
         string deviationsView;
         public string DeviationsView {
-            get {return deviationsView; }
+            get { return deviationsView; }
             set {
                 deviationsView = value;
                 OnPropertyChanged("DeviationsView");
@@ -141,6 +141,16 @@ namespace Reflection.Models {
             set {
                 isDeviationsOnly = value;
                 SetResultFileView();
+            }
+        }
+        public int ExceptedRecords { get; set; }
+        public bool IsToExcelSaved {get; set;}
+        bool isKeyReady;
+        public bool IsKeyReady {
+            get { return isKeyReady; }
+            set {
+                isKeyReady = value;
+                OnPropertyChanged("IsKeyReady");
             }
         }
 

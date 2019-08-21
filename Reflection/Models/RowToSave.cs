@@ -10,7 +10,8 @@ namespace Reflection.Models {
         private string DefectNo { get; set; }
         private string Diff { get; set; }
         ComparedRow ComparedRow { get; set; }
-        string[] ParsedExtraRow { get; set; }
+        string[] MasterParsedExtraRow { get; set; }
+        string[] TestParsedExtraRow { get; set; }
 
         public RowToSave(ComparedRow comparedRow) {
             ComparedRow = comparedRow;
@@ -18,8 +19,14 @@ namespace Reflection.Models {
         }
 
         public RowToSave(string[] parsedExtraRow) {
-            ParsedExtraRow = parsedExtraRow;
-            Diff = ParsedExtraRow.Length.ToString();
+            MasterParsedExtraRow = parsedExtraRow;
+            Diff = MasterParsedExtraRow.Length.ToString();
+        }
+
+        public RowToSave(string[] masterParsedExtraRow, string[] testParsedExtraRow) {
+            MasterParsedExtraRow = masterParsedExtraRow;
+            TestParsedExtraRow = testParsedExtraRow;
+            Diff = "0";
         }
 
         private void FindDefect(Dictionary<int, string> columnNames, DefectsSearch defectsSearch, Deviation deviation) {
@@ -126,11 +133,11 @@ namespace Reflection.Models {
             List<string> transNoValues = new List<string>();
             foreach (var colId in transNoColumns) {
                 if (version == "Master") {
-                    transNoValues.Add(ParsedExtraRow[colId]);
+                    transNoValues.Add(MasterParsedExtraRow[colId]);
                     transNoValues.Add("");
                 } else {
                     transNoValues.Add("");
-                    transNoValues.Add(ParsedExtraRow[colId]);
+                    transNoValues.Add(MasterParsedExtraRow[colId]);
                 }
             }
             var idColumnsValues = GetValuesByPositions(mainIdColumns);
@@ -139,10 +146,41 @@ namespace Reflection.Models {
             return result;
         }
 
+        public List<string> PrepareExceptedRow(List<int> transNoColumns, List<int> mainIdColumns) {
+            var result = new List<string>();
+            result.Add("");
+            result.Add("Passed");
+            result.Add(Diff);
+            List<string> transNoValues = new List<string>();
+            foreach (var colId in transNoColumns) {
+                transNoValues.Add(MasterParsedExtraRow[colId]);
+                transNoValues.Add(TestParsedExtraRow[colId]);
+            }
+            var idColumnsValues = GetValuesByPositions(mainIdColumns);
+            result.AddRange(transNoValues);
+            result.AddRange(idColumnsValues);
+            return result;
+        }
+
+        public List<string> PreparePassedRow() {
+            var result = new List<string>();
+            result.Add("");
+            result.Add("Passed");
+            result.Add("0");
+            foreach (var transNo in ComparedRow.TransNoColumns) {
+                result.Add(transNo.MasterValue);
+                result.Add(transNo.TestValue);
+            }
+            foreach (var idCol in ComparedRow.IdColumns) {
+                result.Add(idCol.Value);
+            }
+            return result;
+        }
+
         private List<string> GetValuesByPositions(IEnumerable<int> positions) {
             var query = new List<string>();
             foreach (var item in positions) {
-                query.Add(ParsedExtraRow[item]);
+                query.Add(MasterParsedExtraRow[item]);
             }
             return query;
         }

@@ -95,17 +95,17 @@ namespace Reflection.ViewModels {
                     } else {
                         UpdateHeaders(headers);
                         IsHeadersExist = true;
-                    }
-                    SetPreview(FilePath);
+                    }                   
                 } else {
                     var headers = FileContent.First().Split(new[] { Delimiter }, StringSplitOptions.None);
                     IsHeadersExist = IsHeadersRow(headers);
                     if (IsHeadersExist) {
                         UpdateHeaders(headers);
                     } else {
-                        UpdateHeaders(GenerateDefaultHeaders(FirstRow.Length));
+                        UpdateHeaders(GenerateDefaultHeaders(headers.Length));
                     }
                 }
+                SetPreview(FilePath);
             }
             IsFirstStart = false;
             IsUserInput = true;
@@ -258,7 +258,8 @@ namespace Reflection.ViewModels {
                 encoding: Encoding,
                 userKeys: UserKeys,
                 userIdColumns: UserIdColumns,
-                userExcludeColumns: UserExcludeColumns
+                userExcludeColumns: UserExcludeColumns,
+                columnsCount: FileHeaders.Count
                 );
         }
 

@@ -20,8 +20,8 @@
             <StatusBar Name="MainStatusBar" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Height="20" Background="White">
             <TextBlock Name="StatusBarContent" Padding="5,0,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         </StatusBar>
-        <Button Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="5,0,5,5" Name="ButtonHelp" Style="{StaticResource HelpButtton}" Content="&#xE897;" ToolTip ="Help me" Click="ButtonHelpClick"/>
-        <Rectangle Name="GrayWindow" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Fill="Black" Opacity="0.7" Visibility="Collapsed"/>
+            <Button Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="5,0,5,5" Name="ButtonHelp" Style="{StaticResource HelpButtton}" Content="&#xE897;" ToolTip ="Help me" Click="ButtonHelpClick"/>
         </Grid>
+        <Rectangle Name="GrayWindow" Grid.Row="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Fill="Black" Opacity="0.7" Visibility="Collapsed"/>
     </Grid>
 </Window>

@@ -47,12 +47,12 @@ namespace Reflection.Models {
         private bool CheckIfDouble(HashSet<string> columnData) {
             double d;
             var clearSeq = columnData.Where(item => item != "" && item.ToUpper() != "NULL");
-            return clearSeq.Any() ? clearSeq.All(item => double.TryParse(CleanUpDouble(item), out d)) : false;
+            return clearSeq.Any() ? clearSeq.All(item => double.TryParse(CleanUpNumber(item.Replace(" ", "")), out d)) : false;
         }
 
-        private string CleanUpDouble(string str) {
-            string result = str;
-           if(str.Contains(',') && str.Contains('.')) {
+        private string CleanUpNumber(string str) {
+            string result = str.Replace(" ", "");
+            if(str.Contains(',') && str.Contains('.')) {
                 if(str.IndexOf(',') > str.IndexOf('.')) {
                     result = str.Replace(".", "");
                 }else {
@@ -69,7 +69,7 @@ namespace Reflection.Models {
         private bool CheckIfNumeric(HashSet<string> columnData) {
             int n = 0;
             long l = 0;
-            var clearSeq = columnData.Where(item => item != "" && item.ToUpper() != "NULL");
+            var clearSeq = columnData.Where(item => item != "" && item.ToUpper() != "NULL").Select(item => CleanUpNumber(item));
             return clearSeq.Any() ? clearSeq.All(item => int.TryParse(item, out n) || long.TryParse(item, out l)) : false;
         }
 

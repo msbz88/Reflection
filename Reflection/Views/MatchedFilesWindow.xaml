@@ -5,28 +5,63 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Reflection.Views"
         mc:Ignorable="d"
-        Title="Matched Files" MinHeight="300" MinWidth="300" MaxHeight="800" MaxWidth="800" SizeToContent="WidthAndHeight" Loaded="MatchedFilesWindowLoaded">
+        Title="Matched Files" MinHeight="300" MinWidth="300" MaxHeight="800" MaxWidth="800" SizeToContent="WidthAndHeight" WindowStartupLocation="CenterOwner">
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="20"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="25"/>
             <RowDefinition Height="20"/>
         </Grid.RowDefinitions>
-        <ListView 
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <TextBlock Margin="5,0,0,0" Grid.Row="0" Grid.Column="0" Text="Master Files" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="DarkGray" FontSize="16"/>
+        <TextBlock Margin="5,0,0,0" Grid.Row="0" Grid.Column="1" Text="Test Files" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="DarkGray" FontSize="16"/>
+        <ListView
+            Grid.Column="0"
             Margin="5"
             BorderBrush="Black"
-            Name="MatchedFiles" 
-            Grid.Row="0"
-            ItemsSource="{Binding}"
+            Name="ListViewMasterFiles" 
+            Grid.Row="1"
+            ItemsSource="{Binding MasterSelectedFiles}"
             FontSize="12">
-            <ListView.View>
-                <GridView>
-                    <GridViewColumn Header="Master Files" Width="Auto" DisplayMemberBinding="{Binding MasterFileName}" />
-                    <GridViewColumn Header="Test Files" Width="Auto" DisplayMemberBinding="{Binding TestFileName}" />
-                </GridView>
-            </ListView.View>
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="35" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                        <Button Name="DeleteMasterFile" Grid.Column="1" Margin="5,2,5,2" Style="{StaticResource NavButtton}" Content="&#xE711;" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
         </ListView>
-        <Button Grid.Row="1" Width="80" Height="25" Content="OK" VerticalAlignment="Bottom" Click="OnOKButtonClick"/>
-        <TextBlock Grid.Row="2" Text="Note: Only matched file names will be compared" Foreground="#E59400" HorizontalAlignment="Center" FontSize="12"/>
+        <ListView 
+            Grid.Column="1"
+            Margin="5"
+            BorderBrush="Black"
+            Name="ListViewTestFiles" 
+            Grid.Row="1"
+            ItemsSource="{Binding TestSelectedFiles}"
+            FontSize="12">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="35" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                        <Button Name="DeleteTestFile" Grid.Column="1"  Margin="5,2,5,2" Style="{StaticResource NavButtton}" Content="&#xE711;" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListView>
+        <Button Grid.Row="2" Grid.ColumnSpan="2" Width="80" Height="25" Content="OK" VerticalAlignment="Bottom" Click="OnOKButtonClick"/>
+        <TextBlock Grid.Row="3" Grid.ColumnSpan="2"  Text="Note: Only files that have a pair will be compared" Foreground="#E59400" HorizontalAlignment="Center" FontSize="12"/>
     </Grid>
 </Window>

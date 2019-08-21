@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -12,26 +13,29 @@ using Reflection.Views;
 
 namespace Reflection.ViewModels {
     public class MatchFileNamesViewModel {
-        public string[] MasterSelectedFiles { get; set; }
-        public string[] TestSelectedFiles { get; set; }
+        public ObservableCollection<FileName> MasterSelectedFiles { get; set; }
+        public ObservableCollection<FileName> TestSelectedFiles { get; set; }
         string MasterCurrentFile { get; set; }
         string TestCurrentFile { get; set; }
         public bool IsReady { get; set; }
         MatchedFilesWindow MatchedFilesWindow { get; set; }
         public List<MatchedFileNames> MatchedFileNames { get; set; }
         OpenFileDialog Dialog;
+        MainWindow MainWindow { get; set; }
 
         public MatchFileNamesViewModel() {
             MatchedFileNames = new List<MatchedFileNames>();
+            Application curApp = Application.Current;
+            MainWindow = (MainWindow)curApp.MainWindow;
             InitializeDialog();
         }
 
         public void SelectFiles() {
-            MasterSelectedFiles = AskFilePath("Master");
-            if (MasterSelectedFiles.Length > 0) {
-                TestSelectedFiles = AskFilePath("Test");
-                if (TestSelectedFiles.Length > 0) {
-                    if (MasterSelectedFiles.Length > 1 || TestSelectedFiles.Length > 1) {
+            MasterSelectedFiles = new ObservableCollection<FileName>(AskFilePath("Master").Select(item=>new FileName(item)));
+            if (MasterSelectedFiles.Count > 0) {
+                TestSelectedFiles = new ObservableCollection<FileName>(AskFilePath("Test").Select(item => new FileName(item)));
+                if (TestSelectedFiles.Count > 0) {
+                    if (MasterSelectedFiles.Count > 1 || TestSelectedFiles.Count > 1) {
                         MatchMultipleFileNames();
                     } else {
                         VerifySingleFileNames();
@@ -42,16 +46,16 @@ namespace Reflection.ViewModels {
 
         private void VerifySingleFileNames() {
             MatchedFileNames.Clear();
-            MasterCurrentFile = Path.GetFileName(MasterSelectedFiles[0]);
-            TestCurrentFile = Path.GetFileName(TestSelectedFiles[0]);
+            MasterCurrentFile = MasterSelectedFiles.First().Name;
+            TestCurrentFile = TestSelectedFiles.First().Name;
             try {
                 CheckIfFileSelectionCorrect();
-                MatchedFileNames.Add(new MatchedFileNames(MasterSelectedFiles[0], TestSelectedFiles[0]));
+                MatchedFileNames.Add(new MatchedFileNames(MasterSelectedFiles.First().FilePath, TestSelectedFiles.First().FilePath));
                 IsReady = true;
             } catch (InvalidOperationException ex) {
                 var userResponse = NotifyUser(ex.Message, MessageBoxButton.YesNo);
                 if (userResponse == MessageBoxResult.Yes) {
-                    MatchedFileNames.Add(new MatchedFileNames(MasterSelectedFiles[0], TestSelectedFiles[0]));
+                    MatchedFileNames.Add(new MatchedFileNames(MasterSelectedFiles.First().FilePath, TestSelectedFiles.First().FilePath));
                     IsReady = true;
                 } else if (userResponse == MessageBoxResult.No) {
                     IsReady = false;
@@ -74,42 +78,10 @@ namespace Reflection.ViewModels {
             return fileName;
         }
 
-        private void MatchMultipleFileNames() {
-            MatchedFileNames.Clear();
-            var testFiles = TestSelectedFiles.ToList();
-            var prevLen = 0;
-            string bestMatchedTest = "";
-            foreach (var masterPath in MasterSelectedFiles) {
-                var masterFile = GetCorrectedFileName(masterPath);
-                prevLen = 0;
-                MatchedFileNames pair = null;
-                foreach (var testPath in testFiles) {
-                    var testFile = GetCorrectedFileName(testPath);
-                    int matchedLen = Lcs(masterFile, testFile);
-                    if (matchedLen == masterFile.Length) {
-                        pair = new MatchedFileNames(masterPath, testPath);
-                        bestMatchedTest = testFile;
-                        break;
-                    } else {
-                        if (matchedLen > prevLen && matchedLen > 5) {
-                            prevLen = matchedLen;
-                            bestMatchedTest = testPath;
-                        }
-                    }
-                }
-                if (pair == null) {
-                    pair = new MatchedFileNames(masterPath, bestMatchedTest);
-                }
-                MatchedFileNames.Add(pair);
-                testFiles.Remove(bestMatchedTest);
-            }
-            var masterExtraFiles = MasterSelectedFiles.Where(item => !MatchedFileNames.Select(pair => pair.MasterFilePath).Contains(item)).Select(item => new MatchedFileNames(item, ""));
-            masterExtraFiles.Concat(MatchedFileNames.Where(item => item.TestFilePath == ""));
-            MatchedFileNames.AddRange(masterExtraFiles);
-            var testExtraFiles = TestSelectedFiles.Where(item => !MatchedFileNames.Select(pair => pair.TestFilePath).Contains(item)).Select(item => new MatchedFileNames("", item));
-            testExtraFiles.Concat(MatchedFileNames.Where(item => item.MasterFilePath == ""));
-            MatchedFileNames.AddRange(testExtraFiles);
-            MatchedFilesWindow = new MatchedFilesWindow(MatchedFileNames);
+        private void MatchMultipleFileNames() {          
+            MatchedFilesWindow = new MatchedFilesWindow(this);
+            MainWindow.ChildWindowRaised?.Invoke(MatchedFilesWindow, null);
+            MatchedFilesWindow.Owner = MainWindow;          
             MatchedFilesWindow.FilesMatched += OnFilesMatched;
             MatchedFilesWindow.ShowDialog();
         }
@@ -117,30 +89,21 @@ namespace Reflection.ViewModels {
         private void OnFilesMatched(object sender, EventArgs e) {
             IsReady = true;
             MatchedFilesWindow.FilesMatched -= OnFilesMatched;
-            var unMatchedFiles = MatchedFileNames.Where(item => item.MasterFilePath == "" || item.TestFilePath == "").ToList();
-            foreach (var item in unMatchedFiles) {
-                MatchedFileNames.Remove(item);
-            }
-        }
-
-        private int Lcs(string a, string b) {
-            var lengths = new int[a.Length, b.Length];
-            int greatestLength = 0;
-            string output = "";
-            for (int i = 0; i < a.Length; i++) {
-                for (int j = 0; j < b.Length; j++) {
-                    if (a[i] == b[j]) {
-                        lengths[i, j] = i == 0 || j == 0 ? 1 : lengths[i - 1, j - 1] + 1;
-                        if (lengths[i, j] > greatestLength) {
-                            greatestLength = lengths[i, j];
-                            output = a.Substring(i - greatestLength + 1, greatestLength);
-                        }
-                    } else {
-                        lengths[i, j] = 0;
-                    }
+            MatchedFileNames.Clear();
+            var len = MasterSelectedFiles.Count > TestSelectedFiles.Count ? MasterSelectedFiles.Count : TestSelectedFiles.Count;
+            for (int i = 0; i < len; i++) {
+                string m = "";
+                string t = "";
+                if (MasterSelectedFiles.Count > i) {
+                    m = MasterSelectedFiles[i].FilePath;
                 }
+                if (TestSelectedFiles.Count > i) {
+                    t = TestSelectedFiles[i].FilePath;
+                }
+                var pair = new MatchedFileNames(m, t);
+                MatchedFileNames.Add(pair);
             }
-            return output.Length;
+            MatchedFileNames.RemoveAll(item => item.MasterFilePath == "" || item.TestFilePath == "");          
         }
 
         private void InitializeDialog() {

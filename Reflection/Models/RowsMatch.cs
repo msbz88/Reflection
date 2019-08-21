@@ -21,7 +21,7 @@ namespace Reflection.Models {
             AllCombinations = new List<ComparedRow>();
             ComparisonTask = comparisonTask;
             columnsCount = baseStat.Select(item => item.ColumnId).Distinct().Count();
-            Comparator = new Comparator(idColumns);
+            Comparator = new Comparator(idColumns, ComparisonTask.IsDeviationsOnly);
             BestCombinations = new List<ComparedRow>();
         }
 

@@ -69,6 +69,49 @@ namespace Reflection.Views {
             }
         }
 
+        public async void ReturnToView(ComparisonTask comparisonTask) {
+            Version = "Master";
+            this.DataContext = MasterViewModel;
+            SuggestedKeyColumnNames = new ColumnNamesViewModel("SuggestedKey");
+            UserIdColumnNames = new ColumnNamesViewModel("UserId");
+            ExcludeColumnNames = new ColumnNamesViewModel("ExcludeColumn");
+            MasterViewModel = new ImportViewModel();
+            TestViewModel = new ImportViewModel();
+            MasterViewModel.PropertyChanged += OnIsHeaderExistsChanged;
+            TestViewModel.PropertyChanged += OnIsHeaderExistsChanged;
+            MasterViewModel.FilePath = comparisonTask.MasterConfiguration.FilePath;
+            TestViewModel.FilePath = comparisonTask.TestConfiguration.FilePath;
+            SingleFileView?.Invoke(null, null);
+            await AsyncRenderFileWithAnalyseToView(MasterViewModel);
+            CheckSelectedKey(UserIdColumnNames, comparisonTask.ComparisonKeys.UserIdColumns.Concat(comparisonTask.ComparisonKeys.UserIdColumnsBinary).ToList());
+            CheckSelectedKey(ExcludeColumnNames, comparisonTask.ComparisonKeys.ExcludeColumns.Concat(comparisonTask.MasterConfiguration.UserExcludeColumns).Concat(comparisonTask.TestConfiguration.UserExcludeColumns).ToList());
+            ShowAvailableKeys();
+            ShowSelectedKeys();
+            CheckSelectedKey(SuggestedKeyColumnNames, comparisonTask.ComparisonKeys.MainKeys);
+            TextBlockCurrentUserSelection.Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#0e0fed"));
+            TextBlockCurrentUserSelection.Text = "Comparison Key";
+            HandleSelectedKeys();
+        }
+
+        private void CheckSelectedKey(ColumnNamesViewModel columnNamesViewModel, List<int> selectedColumns) {
+            CurrentColumnNamesVM = columnNamesViewModel;
+            LoadColumnNames();
+            foreach (var item in selectedColumns) {
+                var columnName = columnNamesViewModel.AvailableKeys.Where(key => key.Id == item).FirstOrDefault();
+                columnName.IsChecked = true;
+                HandleChecked(columnName);
+            }
+        }
+
+        private void HandleSelectedKeys() {
+            if (UserIdColumnNames.SelectedKeys.Count > 0) {
+                ChangeButtonColor(ButtonAddIdColumns, new SolidColorBrush(Colors.DarkSlateBlue));
+            }
+            if (ExcludeColumnNames.SelectedKeys.Count > 0) {
+                ChangeButtonColor(ButtonExcludeColumns, new SolidColorBrush(Colors.DarkSlateBlue));
+            }
+        }
+
         private async void AsyncRunMultyFiles() {
             await Task.Run(() => {
                 var configs = new List<ImportConfiguration>();
@@ -136,7 +179,7 @@ namespace Reflection.Views {
             }
         }
 
-        private async void AsyncRenderFileWithAnalyseToView(ImportViewModel importViewModel) {
+        private async Task AsyncRenderFileWithAnalyseToView(ImportViewModel importViewModel) {
             dgData.Columns.Clear();
             dgData.ItemsSource = null;
             await Task.Run(() => {
@@ -346,12 +389,7 @@ namespace Reflection.Views {
             }
         }
 
-        private void OnKeyChecked(object senderIn, RoutedEventArgs eIn) {
-            if (ListBoxSelectedKeys.Visibility == Visibility.Collapsed) {
-                ShowSelectedKeys();
-            }
-            var checkBox = (CheckBox)senderIn;
-            var columnName = (ColumnName)checkBox.DataContext;
+        private void HandleChecked(ColumnName columnName) {
             if (CurrentColumnNamesVM.Name == "SuggestedKey") {
                 ExcludeColumnNames.UnAvailableKeys.Add(columnName.Id);
                 UserIdColumnNames.UnAvailableKeys.Add(columnName.Id);
@@ -362,6 +400,15 @@ namespace Reflection.Views {
                 SuggestedKeyColumnNames.UnAvailableKeys.Add(columnName.Id);
                 UserIdColumnNames.UnAvailableKeys.Add(columnName.Id);
             }
+        }
+
+        private void OnKeyChecked(object senderIn, RoutedEventArgs eIn) {
+            if (ListBoxSelectedKeys.Visibility == Visibility.Collapsed) {
+                ShowSelectedKeys();
+            }
+            var checkBox = (CheckBox)senderIn;
+            var columnName = (ColumnName)checkBox.DataContext;
+            HandleChecked(columnName);
         }
 
         private void OnKeyUnChecked(object senderIn, RoutedEventArgs eIn) {
@@ -384,8 +431,8 @@ namespace Reflection.Views {
 
         private void SwitchModelView(string name) {
             if (name == "Master") {
-                this.DataContext = MasterViewModel;                
-            }else if (name == "Test") {
+                this.DataContext = MasterViewModel;
+            } else if (name == "Test") {
                 this.DataContext = TestViewModel;
             }
             Version = name;
@@ -423,12 +470,12 @@ namespace Reflection.Views {
             MasterViewModel.PreviewFileName = "";
             SwitchModelView("Test");
             if (TestViewModel.IsFirstStart) {
-                    AsyncRenderFileWithAnalyseToView(TestViewModel);
-                } else {
-                    AsyncRenderFileWithSetPreviewToView(TestViewModel);
-                }             
-                ButtonGoForward.Visibility = Visibility.Collapsed;
-                ButtonGoBack.ToolTip = "Back to Master file";               
+                AsyncRenderFileWithAnalyseToView(TestViewModel);
+            } else {
+                AsyncRenderFileWithSetPreviewToView(TestViewModel);
+            }
+            ButtonGoForward.Visibility = Visibility.Collapsed;
+            ButtonGoBack.ToolTip = "Back to Master file";
         }
 
         private void OnExpanded(object senderIn, RoutedEventArgs eIn) {
@@ -452,7 +499,7 @@ namespace Reflection.Views {
                 if (currViewModel.RowsToSkip != val) {
                     currViewModel.RowsToSkip = val;
                     AsyncRenderFileWithSetPreviewToView(currViewModel);
-                } 
+                }
             }
         }
 
@@ -462,28 +509,28 @@ namespace Reflection.Views {
         }
 
         private void DataGridLoadingRow(object sender, DataGridRowEventArgs e) {
-            e.Row.Header = (e.Row.GetIndex() +1).ToString();
+            e.Row.Header = (e.Row.GetIndex() + 1).ToString();
         }
 
         private void OnIsHeaderExistsChanged(object sender, PropertyChangedEventArgs e) {
             if (e.PropertyName == "IsHeadersExist") {
                 if (Version == "Master" && MasterViewModel.IsUserInput && !MasterViewModel.IsFirstStart) {
                     AsyncRenderFileWithSetPreviewToView(MasterViewModel);
-                } else if(Version == "Test" && TestViewModel.IsUserInput && !MasterViewModel.IsFirstStart) {
+                } else if (Version == "Test" && TestViewModel.IsUserInput && !MasterViewModel.IsFirstStart) {
                     AsyncRenderFileWithSetPreviewToView(TestViewModel);
                 }
             }
         }
 
         private void TextBoxHeaderRowLostFocus(object senderIn, RoutedEventArgs eIn) {
-            if (TextBoxHeaderRow.Text=="") {
+            if (TextBoxHeaderRow.Text == "") {
                 TextBoxHeaderRow.Text = MasterViewModel.RowsToSkip.ToString();
             }
         }
 
         private void ButtonSuggestKeyClick(object senderIn, RoutedEventArgs eIn) {
             TextBlockCurrentUserSelection.Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#0e0fed"));
-            TextBlockCurrentUserSelection.Text = "Suggest Key";          
+            TextBlockCurrentUserSelection.Text = "Suggest Key";
             CurrentColumnNamesVM = SuggestedKeyColumnNames;
             if (SuggestedKeyColumnNames.SelectedKeys.Count > 0) {
                 ShowAvailableKeys();
@@ -511,7 +558,7 @@ namespace Reflection.Views {
             TextBlockCurrentUserSelection.Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#FC4A1A"));
             TextBlockCurrentUserSelection.Text = "Exclude Columns";
             CurrentColumnNamesVM = ExcludeColumnNames;
-            if (ExcludeColumnNames.SelectedKeys.Count > 0) {              
+            if (ExcludeColumnNames.SelectedKeys.Count > 0) {
                 ShowAvailableKeys();
                 ShowSelectedKeys();
             } else {

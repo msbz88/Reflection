@@ -15,8 +15,9 @@ namespace Reflection.Models {
         public List<int> UserKeys { get; set; }
         public List<int> UserIdColumns { get; set; }
         public List<int> UserExcludeColumns { get; set; }
+        public int ColumnsCount { get; set; }
 
-        public ImportConfiguration(string filePath, string delimiter, int rowsToSkip, bool isHeadersExist, Encoding encoding, List<int> userKeys, List<int> userIdColumns, List<int> userExcludeColumns) {
+        public ImportConfiguration(string filePath, string delimiter, int rowsToSkip, bool isHeadersExist, Encoding encoding, List<int> userKeys, List<int> userIdColumns, List<int> userExcludeColumns, int columnsCount) {
             FilePath = filePath;
             Delimiter = delimiter;
             RowsToSkip = rowsToSkip;
@@ -25,6 +26,7 @@ namespace Reflection.Models {
             UserKeys = userKeys;
             UserIdColumns = userIdColumns;
             UserExcludeColumns = userExcludeColumns;
+            ColumnsCount = columnsCount;
         }
     }
 }

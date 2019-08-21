@@ -211,14 +211,14 @@
                                             <Style.Triggers>
                                                 <MultiDataTrigger>
                                                     <MultiDataTrigger.Conditions>
-                                                        <Condition Binding="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=IsSelected}" Value="True"/>
+                                                        <!--<Condition Binding="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=IsSelected}" Value="True"/>-->
                                                         <Condition Binding="{Binding Path=Status}" Value="Failed"/>
                                                     </MultiDataTrigger.Conditions>
                                                     <Setter Property="Visibility" Value="Visible"/>
                                                 </MultiDataTrigger>
                                                 <MultiDataTrigger>
                                                     <MultiDataTrigger.Conditions>
-                                                        <Condition Binding="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=IsSelected}" Value="True"/>
+                                                        <!--<Condition Binding="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=IsSelected}" Value="True"/>-->
                                                         <Condition Binding="{Binding Path=Status}" Value="Passed"/>
                                                     </MultiDataTrigger.Conditions>
                                                     <Setter Property="Visibility" Value="Visible"/>
@@ -313,6 +313,23 @@
                                 <Label Grid.Row="4" Grid.Column="1" Content="{Binding ElapsedTime}" HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="12" Foreground="DarkGray"/>
                                 <Label Grid.Row="4" Grid.Column="2" Margin="20,0,0,0" Content="{Binding DeviationsView}" HorizontalAlignment="Left" VerticalAlignment="Bottom" FontSize="12" Foreground="DarkGray"/>
                                 <Label Grid.Row="4" Grid.Column="2" Margin="195,0,0,0" Content="{Binding ResultFileView}" HorizontalAlignment="Left" VerticalAlignment="Bottom" FontSize="12" Foreground="DarkGray"/>
+                                <Button Name="ButtonBackToImport" Grid.Row="4" Grid.Column="2" Margin="0,5,5,0" Content="Comparison settings" Height="20" Width="120" HorizontalAlignment="Right" VerticalAlignment="Center" Click="ButtonBackToImportClick">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                            <Setter Property="FontSize" Value="10" />
+                                            <Setter Property="Background" Value="#2998ff"/>
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding Path=IsKeyReady}" Value="True"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                             </Grid>
                         </Grid>
                         <Border.Effect>

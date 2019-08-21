@@ -50,6 +50,7 @@ namespace Reflection {
             ChildWindowRaised += OnChildWindowRaised;
             PageMain.LinearView += OnChangeDeviationsView;
             PageMain.ResultFileView += OnChangeResultView;
+            PageMain.BackToImport += OnBackToImport;
         }
 
         private void OnOpenFiles(object sender, EventArgs e) {
@@ -143,11 +144,17 @@ namespace Reflection {
                 ie.MenuBar = false;
                 ie.ToolBar = false;
                 ie.Visible = true;
-                ie.Navigate(@"");
+                ie.Navigate(@"O:\DATA\COMMON\core\doc\doc.html");
             } catch (Exception) {
                 StatusBarContent.Foreground = new SolidColorBrush(Colors.Red);
                 StatusBarContent.Text = "Sorry, documentation is currently unavailable";
             }
+        }
+
+        private void OnBackToImport(object senderIn, EventArgs eIn) {
+            var compTask = (ComparisonTask)senderIn;
+            PageImport.SingleFileView += OnIsSingle;
+            PageImport.ReturnToView(compTask);
         }
     }
 }

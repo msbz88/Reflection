@@ -23,13 +23,14 @@ namespace Reflection.Models {
         public void LoadData(IEnumerable<string> data, string delimiter, bool isHeadersExist, ComparisonTask comparisonTask) {
             var userExcludeColumns = comparisonTask.MasterConfiguration.UserExcludeColumns.Concat(comparisonTask.TestConfiguration.UserExcludeColumns).OrderBy(item => item).Distinct().ToList();
             Delimiter = delimiter;
-            var firstLine = Parse(data.First(), userExcludeColumns);           
-            ColumnsCount = firstLine.Length;
-            if (isHeadersExist) {
-                Headers = new Row(0, firstLine);
-                data = data.Skip(1);
-            } else {
+            var firstLine = data.FirstOrDefault();
+            ColumnsCount = comparisonTask.MasterConfiguration.ColumnsCount;
+            if (firstLine == null || !isHeadersExist) {
                 Headers = GenerateDefaultHeaders();
+            }else {
+                var firstRow = Parse(firstLine, userExcludeColumns);
+                Headers = new Row(0, firstRow);
+                data = data.Skip(1);
             }
             RowsCount = 0;
             var totalLines = comparisonTask.MasterRowsCount > comparisonTask.TestRowsCount ? comparisonTask.MasterRowsCount : comparisonTask.TestRowsCount;
