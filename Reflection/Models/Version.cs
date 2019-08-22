@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Reflection.Models {
     class Version {
         public static string GetVersion() {
-            return "1.5";
+            return "1.6";
         }
     }
 }

@@ -21,14 +21,13 @@ namespace Reflection.Models {
         }
 
         public void LoadData(IEnumerable<string> data, string delimiter, bool isHeadersExist, ComparisonTask comparisonTask) {
-            var userExcludeColumns = comparisonTask.MasterConfiguration.UserExcludeColumns.Concat(comparisonTask.TestConfiguration.UserExcludeColumns).OrderBy(item => item).Distinct().ToList();
             Delimiter = delimiter;
             var firstLine = data.FirstOrDefault();
-            ColumnsCount = comparisonTask.MasterConfiguration.ColumnsCount - userExcludeColumns.Count;
+            ColumnsCount = comparisonTask.MasterConfiguration.ColumnsCount;
             if (firstLine == null || !isHeadersExist) {
                 Headers = GenerateDefaultHeaders();
             }else {
-                var firstRow = Parse(firstLine, userExcludeColumns);
+                var firstRow = Parse(firstLine);
                 Headers = new Row(0, firstRow);
                 data = data.Skip(1);
             }
@@ -36,7 +35,7 @@ namespace Reflection.Models {
             var totalLines = comparisonTask.MasterRowsCount > comparisonTask.TestRowsCount ? comparisonTask.MasterRowsCount : comparisonTask.TestRowsCount;
             foreach (var line in data) {
                 comparisonTask.IfCancelRequested();
-                var row = new Row(++RowsCount, Parse(line, userExcludeColumns));
+                var row = new Row(++RowsCount, Parse(line));
                 if (row.Data.Length == ColumnsCount) {
                     Rows.Add(row);
                     comparisonTask.UpdateProgress(10.0 / (totalLines / 0.5));
@@ -57,13 +56,8 @@ namespace Reflection.Models {
             //}
         }
 
-        private string[] Parse(string lineToSplit, List<int> userExcludeColumns) {
-            if (userExcludeColumns.Any()) {
-                var row = lineToSplit.Split(new[] { Delimiter }, StringSplitOptions.None);
-                return row.Where((val, idx) => !userExcludeColumns.Contains(idx)).ToArray();
-            } else {
+        private string[] Parse(string lineToSplit) {
                 return lineToSplit.Split(new[] { Delimiter }, StringSplitOptions.None);
-            }            
         }
 
         private Row GenerateDefaultHeaders() {
@@ -84,6 +78,9 @@ namespace Reflection.Models {
             File.WriteAllLines(filePath, result);
         }
 
-       
+       public void CleanUp() {
+            RowsCount = 0;
+            Rows.Clear();
+        }
     }
 }

@@ -32,7 +32,6 @@ namespace Reflection.Models {
         public int TestExtraCount { get { return ExtraTest.Count; } }
         string Delimiter { get; set; }
         List<ComparedRow> PassedRows;
-        ComparisonKeys ComparisonKeys { get; set; }
         bool IsExcelInstaled { get; set; }
         List<string> Headers;
         List<int> DeviationColumns;
@@ -41,28 +40,25 @@ namespace Reflection.Models {
         DefectsSearch DefectsSearch { get; set; }
         OraSession OraSession { get; set; }
         ComparisonTask ComparisonTask;
-
-        public CompareTable(ComparisonTask comparisonTask) {
-            Data = new List<ComparedRow>();
-            ExtraMaster = new List<string>();
-            ExtraTest = new List<string>();
-            IsExcelInstaled = Type.GetTypeFromProgID("Excel.Application") == null ? false : true;
-            RowCount = 0;
-            ComparisonTask = comparisonTask;
-        }
+        List<int> BinaryValues;
+        List<int> MainIdColumns;
 
         public CompareTable(Row masterHeaders, Row testHeaders, ComparisonTask comparisonTask) {
             Data = new List<ComparedRow>();
             ExtraMaster = new List<string>();
             ExtraTest = new List<string>();
-            Delimiter = comparisonTask.MasterConfiguration.Delimiter;
             MasterHeaders = masterHeaders;
             TestHeaders = testHeaders;
-            ComparisonKeys = comparisonTask.ComparisonKeys;
             PassedRows = new List<ComparedRow>();
             IsExcelInstaled = Type.GetTypeFromProgID("Excel.Application") == null ? false : true;
             NumberedColumnNames = NumberAllColumnNames(masterHeaders.Data);
             ComparisonTask = comparisonTask;
+            Delimiter = ComparisonTask.MasterConfiguration.Delimiter;
+        }
+
+        private void SetIdColumns() {
+            BinaryValues = ComparisonTask.ComparisonKeys.BinaryValues.Concat(ComparisonTask.ComparisonKeys.UserIdColumnsBinary).Distinct().ToList();
+            MainIdColumns = ComparisonTask.ComparisonKeys.MainKeys.Concat(ComparisonTask.ComparisonKeys.UserIdColumns).Distinct().ToList();
         }
 
         public void AddComparedRows(IEnumerable<ComparedRow> comparedRows) {
@@ -89,6 +85,10 @@ namespace Reflection.Models {
             }
         }
 
+        public void AddMasterExtraRows(IEnumerable<string> extraRows) {
+            ExtraMaster.AddRange(extraRows);
+        }
+
         public IEnumerable<int> GetMasterComparedRowsId() {
             return Data.Select(row => row.MasterRowId).Concat(PassedRows.Select(row=>row.MasterRowId));
         }
@@ -103,7 +103,12 @@ namespace Reflection.Models {
             }
         }
 
+        public void AddTestExtraRows(IEnumerable<string> extraRows) {
+            ExtraTest.AddRange(extraRows);
+        }
+
         public void SaveComparedRows(string filePath) {
+            SetIdColumns();
             string[,] dataToSave = null;
             string fileExt = "";
             int rowsCount = 1;
@@ -134,6 +139,7 @@ namespace Reflection.Models {
                 SaveToExcel(filePath + fileExt, dataToSave, false);
                 ComparisonTask.IsToExcelSaved = true;
             }
+            dataToSave = null;
         }
 
         private void AddPassedRows(string[,] dataToSave) {
@@ -149,22 +155,12 @@ namespace Reflection.Models {
         }
 
         private void AddExceptedRecords(string[,] dataToSave) {
-            var binaryValues = ComparisonKeys.BinaryValues.Concat(ComparisonKeys.UserIdColumnsBinary).Distinct().ToList();
-            var mainIdColumns = ComparisonKeys.MainKeys.Concat(ComparisonKeys.UserIdColumns).Distinct().ToList();
-            var masterExceptedRecords = File.ReadLines(ComparisonTask.CommonDirectoryPath + "\\MasterPassed.temp");          
+            var exceptedRecords = File.ReadLines(ComparisonTask.CommonDirectoryPath + "\\Passed.temp");
             int rowsIndex = 0;
-            foreach (var masterLine in masterExceptedRecords) {
-                RowToSave rowToSave = null;
-                var masterParsedRow = masterLine.Split(new string[] { Delimiter }, StringSplitOptions.None);
-                if (binaryValues.Any()) {
-                    var testExceptedRecords = File.ReadLines(ComparisonTask.CommonDirectoryPath + "\\TestPassed.temp");
-                    var testLine = testExceptedRecords.Skip(rowsIndex).FirstOrDefault();
-                    var testParsedRow = testLine.Split(new string[] { Delimiter }, StringSplitOptions.None);
-                    rowToSave = new RowToSave(masterParsedRow, testParsedRow);
-                }else {
-                    rowToSave = new RowToSave(masterParsedRow);
-                }              
-                var result = rowToSave.PrepareExceptedRow(binaryValues, mainIdColumns);
+            foreach (var masterLine in exceptedRecords) {
+                var parsedRow = masterLine.Split(new string[] { Delimiter }, StringSplitOptions.None);
+                var rowToSave = new RowToSave(parsedRow);         
+                var result = rowToSave.PrepareExceptedRow(BinaryValues, MainIdColumns);
                 ComparisonTask.IfCancelRequested();
                 RowCount++;
                 for (int col = 0; col < result.Count; col++) {
@@ -172,8 +168,7 @@ namespace Reflection.Models {
                 }
                 rowsIndex++;
             }
-            File.Delete(ComparisonTask.CommonDirectoryPath + "\\MasterPassed.temp");
-            File.Delete(ComparisonTask.CommonDirectoryPath + "\\TestPassed.temp");
+            File.Delete(ComparisonTask.CommonDirectoryPath + "\\Passed.temp");
         }
 
         public void SavePassed(string filePath, string delimiter, string[,] array) {
@@ -188,11 +183,9 @@ namespace Reflection.Models {
         }
 
         private string[,] PrepareDataTabular(int rowsCount) {
-            var binaryValues = ComparisonKeys.BinaryValues.Concat(ComparisonKeys.UserIdColumnsBinary).Distinct().ToList();
-            var mainIdColumns = ComparisonKeys.MainKeys.Concat(ComparisonKeys.UserIdColumns).Distinct().ToList();
             DeviationColumns = Data.SelectMany(row => row.Deviations.Select(col => col.ColumnId)).Distinct().OrderBy(colId => colId).ToList();
-            var allColumns = mainIdColumns.Concat(DeviationColumns).ToList();
-            Headers = GenerateHeadersForFile(binaryValues, allColumns);
+            var allColumns = MainIdColumns.Concat(DeviationColumns).ToList();
+            Headers = GenerateHeadersForFile(BinaryValues, allColumns);
             int columnCount = Headers.Count;
             string[,] dataToSave = new string[rowsCount, columnCount];
             for (int col = 0; col < Headers.Count; col++) {
@@ -209,15 +202,13 @@ namespace Reflection.Models {
                     dataToSave[RowCount, col] = result[col];
                 }
             }
-            AddExtraRows(dataToSave, "Master", ExtraMaster, binaryValues, mainIdColumns);
-            AddExtraRows(dataToSave, "Test", ExtraTest, binaryValues, mainIdColumns);
+            AddExtraRows(dataToSave, "Master", ExtraMaster, BinaryValues, MainIdColumns);
+            AddExtraRows(dataToSave, "Test", ExtraTest, BinaryValues, MainIdColumns);
             return dataToSave;
         }
 
         private string[,] PrepareDataLinar(int rowsCount) {
-            var binaryValues = ComparisonKeys.BinaryValues.Concat(ComparisonKeys.UserIdColumnsBinary).Distinct().ToList();
-            var mainIdColumns = ComparisonKeys.MainKeys.Concat(ComparisonKeys.UserIdColumns).Distinct().ToList();
-            Headers = GenerateHeadersForFile(binaryValues, mainIdColumns);           
+            Headers = GenerateHeadersForFile(BinaryValues, MainIdColumns);           
             Headers.Add("Column Name");
             Headers.Add("Master Value");
             Headers.Add("Test Value");
@@ -241,9 +232,8 @@ namespace Reflection.Models {
                 }
             }
             OraSession.CloseConnection();
-            //var deviations = Data.Where(row => !row.IsPassed).SelectMany(item => item.Deviations.Select(col => col.ColumnId)).Distinct().ToList();
-            AddExtraRows(dataToSave, "Master", ExtraMaster, binaryValues, mainIdColumns);
-            AddExtraRows(dataToSave, "Test", ExtraTest, binaryValues, mainIdColumns);
+            AddExtraRows(dataToSave, "Master", ExtraMaster, BinaryValues, MainIdColumns);
+            AddExtraRows(dataToSave, "Test", ExtraTest, BinaryValues, MainIdColumns);
             return dataToSave;
         }
 
@@ -481,7 +471,12 @@ namespace Reflection.Models {
             }
             return columnName;
         }
-      
 
+        public void CleanUp() {
+            Data.Clear();
+            ExtraMaster.Clear();
+            ExtraTest.Clear();
+            PassedRows.Clear();
+        }
     }
 }

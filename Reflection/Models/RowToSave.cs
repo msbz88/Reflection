@@ -10,8 +10,7 @@ namespace Reflection.Models {
         private string DefectNo { get; set; }
         private string Diff { get; set; }
         ComparedRow ComparedRow { get; set; }
-        string[] MasterParsedExtraRow { get; set; }
-        string[] TestParsedExtraRow { get; set; }
+        string[] ParsedExtraRow { get; set; }
 
         public RowToSave(ComparedRow comparedRow) {
             ComparedRow = comparedRow;
@@ -19,14 +18,8 @@ namespace Reflection.Models {
         }
 
         public RowToSave(string[] parsedExtraRow) {
-            MasterParsedExtraRow = parsedExtraRow;
-            Diff = MasterParsedExtraRow.Length.ToString();
-        }
-
-        public RowToSave(string[] masterParsedExtraRow, string[] testParsedExtraRow) {
-            MasterParsedExtraRow = masterParsedExtraRow;
-            TestParsedExtraRow = testParsedExtraRow;
-            Diff = "0";
+            ParsedExtraRow = parsedExtraRow;
+            Diff = ParsedExtraRow.Length.ToString();
         }
 
         private void FindDefect(Dictionary<int, string> columnNames, DefectsSearch defectsSearch, Deviation deviation) {
@@ -50,13 +43,19 @@ namespace Reflection.Models {
                 AddDefect(defect);
             }
             if (string.IsNullOrEmpty(DefectNo)) {
-                var defect = defectsSearch.SearchDefectByValueForSameUpgrades(deviation.MasterValue, deviation.TestValue, columnNames[deviation.ColumnId]);
-                defect = defect == "" ? "" : "UpgradeMatch: " + defect + "?";
+                var defectExtr = defectsSearch.SearchDefectByValueForSameUpgrades(deviation.MasterValue, deviation.TestValue, columnNames[deviation.ColumnId]);
+                string defect = "";
+                if(defectExtr.Length > 1) {
+                    defect = "UpgradeMatch (" + defectExtr[1] + "): " + defectExtr[0] + "?";
+                }
                 AddDefect(defect);
             }
             if (string.IsNullOrEmpty(DefectNo)) {
-                var defect = defectsSearch.SearchDefectByValueInAllProjects(deviation.MasterValue, deviation.TestValue, columnNames[deviation.ColumnId]);
-                defect = defect == "" ? "" : "DeepMatch: " + defect + "?";
+                var defectExtr = defectsSearch.SearchDefectByValueInAllProjects(deviation.MasterValue, deviation.TestValue, columnNames[deviation.ColumnId]);
+                string defect = "";
+                if (defectExtr.Length > 1) {
+                    defect = "DeepMatch (" + defectExtr[1] + " | " + defectExtr[2] + "): " + defectExtr[0] + "?";
+                }
                 AddDefect(defect);
             }
         }
@@ -117,7 +116,7 @@ namespace Reflection.Models {
 
         private void AddDefect(string defect) {
             if (!string.IsNullOrEmpty(defect)) {
-                if (!string.IsNullOrEmpty(DefectNo)) {
+                if (!string.IsNullOrEmpty(DefectNo) && !DefectNo.Contains(defect)) {
                     DefectNo = DefectNo + ", " + defect;
                 } else {
                     DefectNo = defect;
@@ -133,11 +132,11 @@ namespace Reflection.Models {
             List<string> transNoValues = new List<string>();
             foreach (var colId in transNoColumns) {
                 if (version == "Master") {
-                    transNoValues.Add(MasterParsedExtraRow[colId]);
+                    transNoValues.Add(ParsedExtraRow[colId]);
                     transNoValues.Add("");
                 } else {
                     transNoValues.Add("");
-                    transNoValues.Add(MasterParsedExtraRow[colId]);
+                    transNoValues.Add(ParsedExtraRow[colId]);
                 }
             }
             var idColumnsValues = GetValuesByPositions(mainIdColumns);
@@ -150,11 +149,11 @@ namespace Reflection.Models {
             var result = new List<string>();
             result.Add("");
             result.Add("Passed");
-            result.Add(Diff);
+            result.Add("0");
             List<string> transNoValues = new List<string>();
             foreach (var colId in transNoColumns) {
-                transNoValues.Add(MasterParsedExtraRow[colId]);
-                transNoValues.Add(TestParsedExtraRow[colId]);
+                transNoValues.Add(ParsedExtraRow[colId]);
+                transNoValues.Add(ParsedExtraRow[colId]);
             }
             var idColumnsValues = GetValuesByPositions(mainIdColumns);
             result.AddRange(transNoValues);
@@ -180,7 +179,7 @@ namespace Reflection.Models {
         private List<string> GetValuesByPositions(IEnumerable<int> positions) {
             var query = new List<string>();
             foreach (var item in positions) {
-                query.Add(MasterParsedExtraRow[item]);
+                query.Add(ParsedExtraRow[item]);
             }
             return query;
         }

@@ -49,19 +49,32 @@ namespace Reflection.Models {
             perfCounter.Stop("Except files");
             MasterTable = new WorkTable("Master");
             TestTable = new WorkTable("Test");
-            //if (ChaeckPreparison(exceptedMasterData, exceptedTestData)) {
+            if (IsComparisonNeeded(exceptedMasterData, exceptedTestData)) {
                 perfCounter.Start();
                 ComparisonTask.IfCancelRequested();
-            IEnumerable<string> headersLine = Enumerable.Empty<string>();
-            if (ComparisonTask.MasterConfiguration.IsHeadersExist) {
-                headersLine = masterFileContent.Take(1);
-            }
+                IEnumerable<string> headersLine = Enumerable.Empty<string>();
+                if (ComparisonTask.MasterConfiguration.IsHeadersExist) {
+                    headersLine = masterFileContent.Take(1);
+                }
                 var headers = ComparisonTask.MasterConfiguration.IsHeadersExist ? masterFileContent.FirstOrDefault() : null;
                 MasterTable.LoadData(headersLine.Concat(exceptedMasterData), masterConfiguration.Delimiter, masterConfiguration.IsHeadersExist, ComparisonTask);
                 ComparisonTask.IfCancelRequested();
                 TestTable.LoadData(headersLine.Concat(exceptedTestData), testConfiguration.Delimiter, testConfiguration.IsHeadersExist, ComparisonTask);
                 perfCounter.Stop("Load two files to WorkTable");
-            //} 
+            } else {
+                var comparisonKeys = AnalyseFiles(masterFileContent, testFileContent);
+                CompareTable = new CompareTable(MasterTable.Headers, TestTable.Headers, ComparisonTask);
+                CompareTable.AddMasterExtraRows(exceptedMasterData);
+                CompareTable.AddTestExtraRows(exceptedTestData);              
+                ComparisonTask.ComparisonKeys.MainKeys = comparisonKeys.MainKeys;
+                ComparisonTask.ComparisonKeys.BinaryValues = comparisonKeys.BinaryValues.Concat(comparisonKeys.UserIdColumnsBinary).Distinct().ToList();
+                ComparisonTask.ComparisonKeys.UserIdColumns = comparisonKeys.UserIdColumns;
+                MasterTable.CleanUp();
+                TestTable.CleanUp();
+                ComparisonTask.RowsWithDeviations = CompareTable.ComparedRowsCount;
+                ComparisonTask.ExtraMasterCount = CompareTable.MasterExtraCount;
+                ComparisonTask.ExtraTestCount = CompareTable.TestExtraCount;
+            }
         }
 
         public bool StartComparison(IFileReader fileReader, ComparisonTask comparisonTask) {
@@ -70,10 +83,10 @@ namespace Reflection.Models {
             ComparisonTask.Status = Status.Executing;
             ComparisonTask.StartClock();
             FileReader = fileReader;
-            CompareTable = new CompareTable(comparisonTask);
+            CompareTable = null;
             ComparisonTask.IfCancelRequested();
-            PrepareData(ComparisonTask.MasterConfiguration, ComparisonTask.TestConfiguration);         
-            if (MasterTable.RowsCount > 0 || TestTable.RowsCount > 0) {
+            PrepareData(ComparisonTask.MasterConfiguration, ComparisonTask.TestConfiguration);
+            if (MasterTable.RowsCount > 0 && TestTable.RowsCount > 0) {
                 ComparisonCore comparisonCore = new ComparisonCore(perfCounter, ComparisonTask);
                 ComparisonTask.IfCancelRequested();
                 CompareTable = comparisonCore.Execute(MasterTable, TestTable);
@@ -85,7 +98,7 @@ namespace Reflection.Models {
                 ComparisonTask.SetResultFile(true);
                 CompareTable.SavePassed(ComparisonTask.ResultFile, ComparisonTask.MasterConfiguration.Delimiter, array);
                 ComparisonTask.Status = Status.Passed;
-            } else {              
+            } else {
                 ComparisonTask.SetResultFile(false);
                 CompareTable.SaveComparedRows(ComparisonTask.ResultFile);
                 ComparisonTask.Status = Status.Failed;
@@ -93,29 +106,39 @@ namespace Reflection.Models {
             ComparisonTask.UpdateProgress(100);
             ComparisonTask.StopClock();
             WriteLog();
-            IsBusy = false;        
+            MasterTable.CleanUp();
+            TestTable.CleanUp();
+            CompareTable.CleanUp();
+            IsBusy = false;
             return true;
         }
 
-        private bool ChaeckPreparison(IEnumerable<string> master, IEnumerable<string> test) {
-            if (master.Any() && test.Any()) {
-                var m = master.Take(2);
-                var t = test.Take(2);
-                if(m.Count()==1 && test.Count() == 1) {
+        private bool IsComparisonNeeded(IEnumerable<string> master, IEnumerable<string> test) {
+            IEnumerable<string> masterLines = Enumerable.Empty<string>();
+            IEnumerable<string> testLines = Enumerable.Empty<string>();
+            if (ComparisonTask.MasterConfiguration.IsHeadersExist) {
+                masterLines = master.Take(2);
+                testLines = test.Take(2);
+                if (masterLines.Count() < 2 || testLines.Count() < 2) {
                     return false;
-                } else { return true; }
-            }else {
-                return false;
+                }
+            } else {
+                masterLines = master.Take(1);
+                testLines = test.Take(1);
+                if (masterLines.Count() < 1 || testLines.Count() < 1) {
+                    return false;
+                }
             }
+            return true;
         }
 
         private IEnumerable<string> Except(IEnumerable<string> dataFirst, IEnumerable<string> dataSecond, string version) {
             //IEnumerable<string> headersLine = Enumerable.Empty<string>();
-            //if (ComparisonTask.MasterConfiguration.IsHeadersExist) {
-            //    headersLine = dataFirst.Take(1);
-            //    dataFirst = dataFirst.Skip(1);
-            //    dataSecond = dataSecond.Skip(1);
-            //}
+            if (ComparisonTask.MasterConfiguration.IsHeadersExist) {
+                //headersLine = dataFirst.Take(1);
+                dataFirst = dataFirst.Skip(1);
+                dataSecond = dataSecond.Skip(1);
+            }
             Dictionary<string, int> duplicates = new Dictionary<string, int>();
             var uniqHashes = new HashSet<string>();
             List<string> passed = new List<string>();
@@ -124,11 +147,11 @@ namespace Reflection.Models {
                 if (!uniqHashes.Add(hash)) {
                     if (duplicates.ContainsKey(hash)) {
                         duplicates[hash] = duplicates[hash] + 1;
-                    }else {
+                    } else {
                         duplicates.Add(hash, 2);
                     }
                 }
-            }           
+            }
             foreach (var item in dataFirst) {
                 var hash = CalculateMD5Hash(item);
                 var isPresent = uniqHashes.Contains(hash);
@@ -136,7 +159,7 @@ namespace Reflection.Models {
                     var isDuplicated = duplicates.ContainsKey(hash);
                     if (isDuplicated) {
                         duplicates[hash] = duplicates[hash] - 1;
-                        if(duplicates[hash] < 0) {
+                        if (duplicates[hash] < 0) {
                             yield return item;
                         }
                     }
@@ -147,8 +170,8 @@ namespace Reflection.Models {
                     yield return item;
                 }
             }
-            if (!ComparisonTask.IsDeviationsOnly) {
-                File.WriteAllLines(ComparisonTask.CommonDirectoryPath + "\\" + version + "Passed.temp", passed);
+            if (!ComparisonTask.IsDeviationsOnly && !File.Exists(ComparisonTask.CommonDirectoryPath + "\\Passed.temp")) {
+                File.WriteAllLines(ComparisonTask.CommonDirectoryPath + "\\Passed.temp", passed);
                 ComparisonTask.ExceptedRecords = passed.Count;
             }
             //return headersLine.Concat(res);
@@ -168,7 +191,7 @@ namespace Reflection.Models {
         private bool IsPassedRowsExcepted() {
             if (File.Exists(ComparisonTask.CommonDirectoryPath + "\\passed.temp")) {
                 return File.ReadLines(ComparisonTask.CommonDirectoryPath + "\\passed.temp").Any();
-            }else {
+            } else {
                 return false;
             }
         }
@@ -205,12 +228,12 @@ namespace Reflection.Models {
 
         private string[,] GetPassedIds(IEnumerable<string> masterFileContent, IEnumerable<string> testFileContent) {
             List<int> mainColumnsToGet = new List<int>();
-            if(ComparisonTask.ComparisonKeys.MainKeys.Count == 0) {
+            if (ComparisonTask.ComparisonKeys.MainKeys.Count == 0) {
                 var comparisonKeys = AnalyseFiles(masterFileContent, testFileContent);
                 ComparisonTask.ComparisonKeys.MainKeys = comparisonKeys.MainKeys;
                 ComparisonTask.ComparisonKeys.BinaryValues = comparisonKeys.BinaryValues.Concat(comparisonKeys.UserIdColumnsBinary).Distinct().ToList();
                 ComparisonTask.ComparisonKeys.UserIdColumns = comparisonKeys.UserIdColumns;
-            }           
+            }
             mainColumnsToGet = ComparisonTask.ComparisonKeys.MainKeys.Concat(ComparisonTask.ComparisonKeys.UserIdColumns).Distinct().ToList();
             int allColumnsCount = 1 + mainColumnsToGet.Count + ComparisonTask.ComparisonKeys.BinaryValues.Count * 2;
             string[,] outputArray = new string[1 + ComparisonTask.MasterRowsCount, allColumnsCount];
@@ -222,7 +245,7 @@ namespace Reflection.Models {
                 columnCount++;
                 outputArray[rowCount, columnCount] = "M_" + item;
                 columnCount++;
-                outputArray[rowCount, columnCount] = "T_" + item;              
+                outputArray[rowCount, columnCount] = "T_" + item;
             }
             var mainHeaders = GetValuesByPositions(MasterTable.Headers.Data, mainColumnsToGet);
             foreach (var item in mainHeaders) {
@@ -247,9 +270,9 @@ namespace Reflection.Models {
                     rowCount++;
                     for (int i = 0; i < rowToSave.Count; i++) {
                         outputArray[rowCount, i] = rowToSave[i];
-                    }                  
+                    }
                 }
-            }else {
+            } else {
                 foreach (var line in masterFileContent) {
                     var rowMaster = line.Split(new[] { ComparisonTask.MasterConfiguration.Delimiter }, StringSplitOptions.None);
                     List<string> rowToSave = new List<string>();
@@ -258,7 +281,7 @@ namespace Reflection.Models {
                     rowCount++;
                     for (int i = 0; i < rowToSave.Count; i++) {
                         outputArray[rowCount, i] = rowToSave[i];
-                    }                    
+                    }
                 }
             }
             return outputArray;
@@ -290,6 +313,6 @@ namespace Reflection.Models {
             }
             return query;
         }
-      
+
     }
 }

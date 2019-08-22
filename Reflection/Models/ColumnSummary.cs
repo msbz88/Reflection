@@ -20,8 +20,9 @@ namespace Reflection.Models {
         public bool IsString { get; set; }
         public bool IsDouble { get; set; }
         public bool HasNulls { get; set; }
-        private bool IsNumber { get; set; }
+        public bool IsNumber { get; set; }
         public bool IsTransNo { get; set; }
+        public bool IsDate { get; set; }
         //public bool IsIK { get; set; }
         public bool IsTimestamp { get; set; }
 
@@ -42,12 +43,30 @@ namespace Reflection.Models {
             if (!IsTransNo && !IsNumber) {
                 IsTimestamp = CheckIfTimestamp(masterUniqVals);
             }
+            IsDate = ChechIfDate(masterUniqVals);
+            if (IsDate) {
+                IsNumber = false;
+            }
         }
 
         private bool CheckIfDouble(HashSet<string> columnData) {
             double d;
             var clearSeq = columnData.Where(item => item != "" && item.ToUpper() != "NULL");
             return clearSeq.Any() ? clearSeq.All(item => double.TryParse(CleanUpNumber(item.Replace(" ", "")), out d)) : false;
+        }
+
+
+        private bool ChechIfDate(HashSet<string> columnData) {
+            if (!IsNumber) {
+                return false;
+            }else {
+                DateTime date;
+                string[] format = new string[] {
+                "yyyyMMdd", "yyyy-MM-dd", "yyyy/MM/dd", "yyyy.MM.dd",
+                "MMddyyyy", "MM-dd-yyyy","MM/dd/yyyy", "MM.dd.yyyy",
+                "ddMMyyyy", "dd-MM-yyyy","dd/MM/yyyy", "dd.MM.yyyy"};
+                return columnData.All(item => DateTime.TryParseExact(item, format, CultureInfo.InvariantCulture, DateTimeStyles.NoCurrentDateDefault, out date));
+            }
         }
 
         private string CleanUpNumber(string str) {

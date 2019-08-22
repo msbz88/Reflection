@@ -62,12 +62,14 @@ namespace Reflection.ViewModels {
                             comparisonTask.Status = Status.Canceled;
                             comparisonTask.ErrorMessage = "Task was canceled by user";
                             ComparisonProcessor.IsBusy = false;
+                            CleanUpTempFilesOnError(comparisonTask);
                         } else {
                             comparisonTask.StopClock();
                             comparisonTask.Status = Status.Error;
                             comparisonTask.ErrorMessage = e.Message;
                             ComparisonProcessor.IsBusy = false;
                             WriteLog(comparisonTask);
+                            CleanUpTempFilesOnError(comparisonTask);
                         }
                     }
                 } else {
@@ -105,6 +107,12 @@ namespace Reflection.ViewModels {
                 content.Add("--------------------------------------------------------------------------");
                 File.AppendAllLines(logFile, content);
             } catch (Exception) { }
+        }
+
+        private void CleanUpTempFilesOnError(ComparisonTask comparisonTask) {
+            if(File.Exists(comparisonTask.CommonDirectoryPath + "\\Passed.temp")) {
+                File.Delete(comparisonTask.CommonDirectoryPath + "\\Passed.temp");
+            }
         }
 
     }

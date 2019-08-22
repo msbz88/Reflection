@@ -15,5 +15,6 @@ namespace Reflection.Models.Interfaces {
         //Task<Dictionary<int, HashSet<string>>> GetColumnsAsync();
         void LoadData(IEnumerable<string> data, string delimiter, bool isHeadersExist, ComparisonTask comparisonTask);
         void SaveToFile(string filePath);
+        void CleanUp();
     }
 }

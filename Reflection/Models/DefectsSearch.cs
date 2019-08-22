@@ -56,7 +56,7 @@ namespace Reflection.Models {
             return extract == null ? "" : extract.DefectNo;
         }
 
-        public string SearchDefectByValueForSameUpgrades(string masterVal, string testVal, string columnName) {
+        public string[] SearchDefectByValueForSameUpgrades(string masterVal, string testVal, string columnName) {
             string query = "select * from VT_DEFECTS where UPGRADE = :upgrade and Master_Value = :masterVal and Test_Value = :testVal and Deviation_Column_Name = :columnName";
             OracleCommand cmd = new OracleCommand(query, OraSession.OracleConnection);
             cmd.Parameters.Add(":upgrade", OracleDbType.Varchar2).Value = UpgradeName;
@@ -65,10 +65,10 @@ namespace Reflection.Models {
             cmd.Parameters.Add(":columnName", OracleDbType.Varchar2).Value = columnName;
             var extract = OraSession.AsyncGetDefectsTable(cmd).Result.FirstOrDefault();
             //OraSession.CloseConnection(oracleConnection);
-            return extract == null ? "" : extract.DefectNo;
+            return extract == null ? new string[] {""} : new string[] { extract.DefectNo , extract.Project};
         }
 
-        public string SearchDefectByValueInAllProjects(string masterVal, string testVal, string columnName) {
+        public string[] SearchDefectByValueInAllProjects(string masterVal, string testVal, string columnName) {
             //OracleConnection oracleConnection = StartSession();
             string query = "select * from VT_DEFECTS where Master_Value = :masterVal and Test_Value = :testVal and Deviation_Column_Name = :columnName";
             OracleCommand cmd = new OracleCommand(query, OraSession.OracleConnection);
@@ -77,7 +77,7 @@ namespace Reflection.Models {
             cmd.Parameters.Add(":columnName", OracleDbType.Varchar2).Value = columnName;
             var extract = OraSession.AsyncGetDefectsTable(cmd).Result.FirstOrDefault();
             //OraSession.CloseConnection(oracleConnection);
-            return extract == null ? "" : extract.DefectNo;
+            return extract == null ? new string[] { "" } : new string[] { extract.DefectNo, extract.Project, extract.Upgrade };
         }
 
         //private List<KnownDefect> GetKnownDefects(string project, string upgrade) {
