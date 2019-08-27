@@ -7,7 +7,8 @@ using System.Threading.Tasks;
 namespace Reflection.Models {
     public class KnownDefect {
         public string Project { get; set; }
-        public string Upgrade { get; set; }
+        public double LowerVersion { get; set; }
+        public double UpperVersion { get; set; }
         public string DefectNo { get; set; }
         public string MasterTransNo { get; set; }
         public string TestTransNo { get; set; }
@@ -15,10 +16,12 @@ namespace Reflection.Models {
         public string DeviationColumnName { get; set; }
         public string MasterValue { get; set; }
         public string TestValue { get; set; }
+        public DateTime ChangedDate { get; set; }
 
-        public KnownDefect(string project, string upgrade, string defectNo, string masterTransNo, string testTransNo, string secId, string deviationColumnName, string masterValue, string testValue) {
+        public KnownDefect(string project, double lowerVersion, double upperVersion, string defectNo, string masterTransNo, string testTransNo, string secId, string deviationColumnName, string masterValue, string testValue, DateTime changedDate) {
             Project = project.Trim();
-            Upgrade = upgrade.Trim();
+            LowerVersion = lowerVersion;
+            UpperVersion = upperVersion;
             DefectNo = defectNo.Trim();
             MasterTransNo = masterTransNo.Trim();
             TestTransNo = testTransNo.Trim();
@@ -26,6 +29,7 @@ namespace Reflection.Models {
             DeviationColumnName = deviationColumnName.Trim();
             MasterValue = masterValue.Trim();
             TestValue = testValue.Trim();
+            ChangedDate = changedDate;
         }
     }
 }

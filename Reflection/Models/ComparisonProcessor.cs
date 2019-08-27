@@ -49,14 +49,13 @@ namespace Reflection.Models {
             perfCounter.Stop("Except files");
             MasterTable = new WorkTable("Master");
             TestTable = new WorkTable("Test");
-            if (IsComparisonNeeded(exceptedMasterData, exceptedTestData)) {
+            IEnumerable<string> headersLine = Enumerable.Empty<string>();
+            if (ComparisonTask.MasterConfiguration.IsHeadersExist) {
+                headersLine = masterFileContent.Take(1);
+            }
+            if (IsComparisonNeeded(headersLine.Concat(exceptedMasterData), headersLine.Concat(exceptedTestData))) {
                 perfCounter.Start();
                 ComparisonTask.IfCancelRequested();
-                IEnumerable<string> headersLine = Enumerable.Empty<string>();
-                if (ComparisonTask.MasterConfiguration.IsHeadersExist) {
-                    headersLine = masterFileContent.Take(1);
-                }
-                var headers = ComparisonTask.MasterConfiguration.IsHeadersExist ? masterFileContent.FirstOrDefault() : null;
                 MasterTable.LoadData(headersLine.Concat(exceptedMasterData), masterConfiguration.Delimiter, masterConfiguration.IsHeadersExist, ComparisonTask);
                 ComparisonTask.IfCancelRequested();
                 TestTable.LoadData(headersLine.Concat(exceptedTestData), testConfiguration.Delimiter, testConfiguration.IsHeadersExist, ComparisonTask);

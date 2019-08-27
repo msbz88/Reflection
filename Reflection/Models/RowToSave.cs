@@ -22,49 +22,15 @@ namespace Reflection.Models {
             Diff = ParsedExtraRow.Length.ToString();
         }
 
-        private void FindDefect(Dictionary<int, string> columnNames, DefectsSearch defectsSearch, Deviation deviation) {
-            foreach (var transNo in ComparedRow.TransNoColumns) {
-                var defect = defectsSearch.SearchDefectByTransNo(transNo.MasterValue, transNo.TestValue, columnNames[deviation.ColumnId]);
-                defect = defect == "" ? "" : "TransMatch: " + defect;
-                AddDefect(defect);
-            }
-            if (string.IsNullOrEmpty(DefectNo)) {
-                var secCols = SearchForSecId(columnNames);
-                var exSecCols = secCols.Intersect(ComparedRow.IdColumns.Select(item => item.Key));
-                foreach (var col in exSecCols) {
-                    var defect = defectsSearch.SearchDefectBySecId(ComparedRow.IdColumns[col], columnNames[deviation.ColumnId]);
-                    defect = defect == "" ? "" : "SecMatch: " + defect + "?";
-                    AddDefect(defect);
-                }
-            }
-            if (string.IsNullOrEmpty(DefectNo)) {
-                var defect = defectsSearch.SearchDefectByValue(deviation.MasterValue, deviation.TestValue, columnNames[deviation.ColumnId]);
-                defect = defect == "" ? "" : "ValMatch: " + defect + "?";
-                AddDefect(defect);
-            }
-            if (string.IsNullOrEmpty(DefectNo)) {
-                var defectExtr = defectsSearch.SearchDefectByValueForSameUpgrades(deviation.MasterValue, deviation.TestValue, columnNames[deviation.ColumnId]);
-                string defect = "";
-                if(defectExtr.Length > 1) {
-                    defect = "UpgradeMatch (" + defectExtr[1] + "): " + defectExtr[0] + "?";
-                }
-                AddDefect(defect);
-            }
-            if (string.IsNullOrEmpty(DefectNo)) {
-                var defectExtr = defectsSearch.SearchDefectByValueInAllProjects(deviation.MasterValue, deviation.TestValue, columnNames[deviation.ColumnId]);
-                string defect = "";
-                if (defectExtr.Length > 1) {
-                    defect = "DeepMatch (" + defectExtr[1] + " | " + defectExtr[2] + "): " + defectExtr[0] + "?";
-                }
-                AddDefect(defect);
-            }
-        }
+
 
         public List<List<string>> PrepareRowLinear(Dictionary<int, string> columnNames, DefectsSearch defectsSearch) {
             var result = new List<List<string>>();
             foreach (var deviation in ComparedRow.Deviations) {
                 var innerResult = new List<string>();
-                FindDefect(columnNames, defectsSearch, deviation);
+                if (defectsSearch.IsEnabled) {
+                    DefectNo = defectsSearch.FindDefect(columnNames, ComparedRow.TransNoColumns, ComparedRow.IdColumns, deviation);
+                }
                 innerResult.Add(DefectNo);
                 innerResult.Add("Deviations");
                 innerResult.Add(Diff);
@@ -83,7 +49,7 @@ namespace Reflection.Models {
             return result;
         }
 
-        public List<string> PrepareRowTabular(Dictionary<int, string> columnNames, DefectsSearch defectsSearch, List<int> deviationsPattern) {
+        public List<string> PrepareRowTabular(Dictionary<int, string> columnNames, List<int> deviationsPattern) {
             var result = new List<string>();
             result.Add("");
             result.Add("Deviations");
@@ -106,27 +72,12 @@ namespace Reflection.Models {
             return result;
         }
 
-        private List<int> SearchForSecId(Dictionary<int, string> columnNames) {
-            return columnNames.Where(item =>
-            item.Value.ToLower().Contains("secshort")
-            || item.Value.ToLower().Contains("secid")
-            || item.Value.ToLower().Contains("sec_id")
-            ).Select(item => item.Key).ToList();
-        }
-
-        private void AddDefect(string defect) {
-            if (!string.IsNullOrEmpty(defect)) {
-                if (!string.IsNullOrEmpty(DefectNo) && !DefectNo.Contains(defect)) {
-                    DefectNo = DefectNo + ", " + defect;
-                } else {
-                    DefectNo = defect;
-                }
-            }
-        }
-
-        public List<string> PrepareExtraRow(string version, List<int> transNoColumns, List<int> mainIdColumns) {
+        public List<string> PrepareExtraRow(string version, List<int> transNoColumns, List<int> mainIdColumns, DefectsSearch defectsSearch) {
             var result = new List<string>();
-            result.Add("");
+            //if (defectsSearch.IsEnabled) {
+            //    defectsSearch.FindDefect(columnNames, deviation);
+            //}
+            result.Add(DefectNo);
             result.Add("Extra from " + version);
             result.Add(Diff);
             List<string> transNoValues = new List<string>();

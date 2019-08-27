@@ -138,6 +138,7 @@
                 </Style>
         </Button.Style>
         </Button>
+        <TextBox Name="TextBoxSearchColumnNames" Style="{DynamicResource TextBoxVM}" Grid.Row="5" Grid.Column="2" Width="150" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" TextChanged="TextBoxSearchColumnNamesTextChanged"/>
         <GridSplitter Name="SpliterUserKeys" Margin="0,5,0,0" Grid.Column="1" Grid.Row="1" Grid.RowSpan="9" Width="3" HorizontalAlignment="Left" Background="Transparent"/>
         <Border Name="BorderUserKeys" Margin="5,5,0,0" BorderBrush="LightGray" Visibility="Collapsed" BorderThickness="1" Grid.Column="1" Grid.Row="1" Grid.RowSpan="9">
             <Grid >

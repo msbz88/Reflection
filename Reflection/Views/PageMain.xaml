@@ -8,48 +8,6 @@
       d:DesignHeight="350" d:DesignWidth="750"
       Title="PageMain">
     <Page.Resources>
-        <!--TextBox-->
-        <Style TargetType="TextBox">
-            <Setter Property="Padding" Value="2"/>
-            <Setter Property="FontSize" Value="15"/>
-            <Setter Property="FontFamily" Value="Segoe UI" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type TextBox}">
-                        <Grid>
-                            <Border x:Name="border" CornerRadius="2" BorderBrush="Black" BorderThickness="1" Background="White">
-                                <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
-                            </Border>
-                            <Label Margin="5,0,0,0" x:Name="WaterMarkLabel" Content="Search here" VerticalAlignment="Center"
-                               Visibility="Collapsed" Foreground="Gray" FontFamily="Arial" FontSize="12" FontStyle="Italic"/>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <MultiTrigger>
-                                <MultiTrigger.Conditions>
-                                    <Condition Property="Text" Value=""/>
-                                </MultiTrigger.Conditions>
-                                <Setter Property="Visibility" TargetName="WaterMarkLabel" Value="Visible"/>
-                            </MultiTrigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Foreground" Value="DimGray"/>
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="true">
-                                <Setter Property="BorderBrush" TargetName="border" Value="DarkGray"/>
-                            </Trigger>
-                            <Trigger Property="IsFocused" Value="true">
-                                <Setter Property="Foreground" Value="Blue" />
-                                <Setter Property="BorderBrush" TargetName="border" Value="Blue"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="false">
-                                <Setter Property="Text" Value="Search here"/>
-                                <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
         <!--Circular button-->
         <Style x:Key="MyFocusVisual">
             <Setter Property="Control.Template">
@@ -343,7 +301,7 @@
             </ListView.ItemTemplate>
         </ListView>
         <TextBlock Name ="WelcomeTextBlock" Foreground="DarkGray" HorizontalAlignment="Center" FontFamily="Segoe UI" FontSize="30" Grid.Row="1" Grid.RowSpan="2" Grid.Column="0"/>
-        <TextBox Grid.Row="0" Grid.Column="2" Name="TextBoxSearchFile" Width="150" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center" TextChanged="TextBoxSearchFileTextChanged"/>
+        <TextBox Style="{DynamicResource TextBoxVM}" Grid.Row="0" Grid.Column="2" Name="TextBoxSearchFile" Width="150" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center" TextChanged="TextBoxSearchFileTextChanged"/>
         <GroupBox Header="Deviations View" Grid.Row="1" Grid.RowSpan="2" Grid.Column="1" Margin="5,10,5,0" Height="60" VerticalAlignment="Top">
             <StackPanel>
                 <RadioButton Name="LinearDeviationsView" Content="Linear" FontFamily="Segoe UI" ToolTip="Will be applied to the next comparison" IsChecked="True" Checked="LinearDeviationsView_Checked"/>

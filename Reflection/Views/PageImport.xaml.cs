@@ -83,7 +83,7 @@ namespace Reflection.Views {
             TestViewModel.FilePath = comparisonTask.TestConfiguration.FilePath;
             SingleFileView?.Invoke(null, null);
             await AsyncRenderFileWithAnalyseToView(MasterViewModel);
-            CheckSelectedKey(UserIdColumnNames, comparisonTask.ComparisonKeys.UserIdColumns.Concat(comparisonTask.ComparisonKeys.UserIdColumnsBinary).ToList());
+            CheckSelectedKey(UserIdColumnNames, comparisonTask.ComparisonKeys.UserIdColumns.Concat(comparisonTask.ComparisonKeys.UserIdColumnsBinary).Concat(comparisonTask.ComparisonKeys.BinaryValues).ToList());
             CheckSelectedKey(ExcludeColumnNames, comparisonTask.ComparisonKeys.ExcludeColumns.Concat(comparisonTask.MasterConfiguration.UserExcludeColumns).Concat(comparisonTask.TestConfiguration.UserExcludeColumns).ToList());
             ShowAvailableKeys();
             ShowSelectedKeys();
@@ -310,7 +310,7 @@ namespace Reflection.Views {
                 }
                 index++;
             }
-            ListBoxAvailableKeys.ItemsSource = CurrentColumnNamesVM.AvailableKeys;
+            ListBoxAvailableKeys.ItemsSource = CurrentColumnNamesVM.FilteredAvailableKeys;
             ListBoxSelectedKeys.ItemsSource = CurrentColumnNamesVM.SelectedKeys;
         }
 
@@ -325,6 +325,7 @@ namespace Reflection.Views {
             LabelAvailableKeys.Visibility = Visibility.Visible;
             ListBoxAvailableKeys.Visibility = Visibility.Visible;
             ButtonApplyUserKey.Visibility = Visibility.Visible;
+            TextBoxSearchColumnNames.Visibility = Visibility.Visible;
         }
 
         private void ShowSelectedKeys() {
@@ -346,6 +347,7 @@ namespace Reflection.Views {
             LabelAvailableKeys.Visibility = Visibility.Collapsed;
             ListBoxAvailableKeys.Visibility = Visibility.Collapsed;
             ButtonApplyUserKey.Visibility = Visibility.Collapsed;
+            TextBoxSearchColumnNames.Visibility = Visibility.Collapsed;
         }
 
         private void HideSelectedKeys() {
@@ -458,6 +460,7 @@ namespace Reflection.Views {
             HideAvailableKeys();
             HideSelectedKeys();
             TextBlockCurrentUserSelection.Text = "";
+            TextBoxSearchColumnNames.Text = "";
         }
 
         private void ButtonGoForwardClick(object senderIn, RoutedEventArgs eIn) {
@@ -541,6 +544,7 @@ namespace Reflection.Views {
         }
 
         private void ButtonSuggestKeyClick(object senderIn, RoutedEventArgs eIn) {
+            TextBoxSearchColumnNames.Text = "";
             TextBlockCurrentUserSelection.Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#0e0fed"));
             TextBlockCurrentUserSelection.Text = "Suggest Key";
             CurrentColumnNamesVM = SuggestedKeyColumnNames;
@@ -554,6 +558,7 @@ namespace Reflection.Views {
         }
 
         private void ButtonAddIdColumnsClick(object senderIn, RoutedEventArgs eIn) {
+            TextBoxSearchColumnNames.Text = "";
             TextBlockCurrentUserSelection.Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#FFFFA500"));
             TextBlockCurrentUserSelection.Text = "Add Id Columns";
             CurrentColumnNamesVM = UserIdColumnNames;
@@ -567,6 +572,7 @@ namespace Reflection.Views {
         }
 
         private void ButtonExcludeColumnsClick(object senderIn, RoutedEventArgs eIn) {
+            TextBoxSearchColumnNames.Text = "";
             TextBlockCurrentUserSelection.Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#FC4A1A"));
             TextBlockCurrentUserSelection.Text = "Exclude Columns";
             CurrentColumnNamesVM = ExcludeColumnNames;
@@ -579,6 +585,10 @@ namespace Reflection.Views {
             LoadColumnNames();
         }
 
+        private void TextBoxSearchColumnNamesTextChanged(object sender, TextChangedEventArgs e) {
+            var text = TextBoxSearchColumnNames.Text.ToLower();
+            CurrentColumnNamesVM.FilteredAvailableKeys.Filter = i => ((ColumnName)i).Value.ToLower().Contains(text);
+        }
     }
 }
 

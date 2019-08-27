@@ -75,11 +75,7 @@ namespace Reflection.Views {
         }
 
         public void TryOpenExcel(ComparisonTask comparisonTask) {
-            if (comparisonTask.IsLinearView && comparisonTask.Status != Status.Passed) {
-                Task.Run(() => Process.Start(comparisonTask.ResultFile + ".xlsm"));
-            } else {
-                Task.Run(() => Process.Start(comparisonTask.ResultFile + ".xlsx"));
-            }
+             Task.Run(() => Process.Start(comparisonTask.ResultFile + ".xlsx"));
         }
 
         private bool UserFilter(object item) {

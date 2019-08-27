@@ -49,14 +49,16 @@ namespace Reflection.Models {
                 while (dataAdapter.Read()) {
                     var knownDefect = new KnownDefect(
                         dataAdapter.IsDBNull(0) ? "" : dataAdapter.GetString(0),
-                        dataAdapter.IsDBNull(1) ? "" : dataAdapter.GetString(1),
-                        dataAdapter.IsDBNull(2) ? "" : dataAdapter.GetString(2),
+                        dataAdapter.GetDouble(1),
+                        dataAdapter.GetDouble(2),
                         dataAdapter.IsDBNull(3) ? "" : dataAdapter.GetString(3),
                         dataAdapter.IsDBNull(4) ? "" : dataAdapter.GetString(4),
                         dataAdapter.IsDBNull(5) ? "" : dataAdapter.GetString(5),
                         dataAdapter.IsDBNull(6) ? "" : dataAdapter.GetString(6),
                         dataAdapter.IsDBNull(7) ? "" : dataAdapter.GetString(7),
-                        dataAdapter.IsDBNull(8) ? "" : dataAdapter.GetString(8)
+                        dataAdapter.IsDBNull(8) ? "" : dataAdapter.GetString(8),
+                        dataAdapter.IsDBNull(9) ? "" : dataAdapter.GetString(9),
+                        dataAdapter.GetDateTime(10)
                         );
                     result.Add(knownDefect);
                 }
