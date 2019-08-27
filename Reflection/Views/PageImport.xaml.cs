@@ -144,6 +144,9 @@ namespace Reflection.Views {
                 case "\t":
                 viewDelimiter = "<\\t> (Tab)";
                 break;
+                case "\\t":
+                viewDelimiter = "<\\t> (Tab)";
+                break;
                 case ";":
                 viewDelimiter = "<;> (Semicolon)";
                 break;
@@ -173,9 +176,14 @@ namespace Reflection.Views {
         }
 
         private void TextBoxDelimiterLostFocus(object senderIn, RoutedEventArgs eIn) {
-            if (TextBoxDelimiter.Text != MasterViewModel.Delimiter && TextBoxDelimiter.Text != "\\t") {
+            if (TextBoxDelimiter.Text != MasterViewModel.Delimiter) {
                 customDelimiter = TextBoxDelimiter.Text;
                 TextBoxDelimiter.Text = PresentDelimiter(TextBoxDelimiter.Text);
+                MasterViewModel.Delimiter = customDelimiter=="\\t"?"\t": customDelimiter;
+                var currViewModel = Version == "Master" ? MasterViewModel : TestViewModel;
+                if (currViewModel.IsUserInput && !currViewModel.IsFirstStart) {
+                    AsyncRenderFileWithSetPreviewToView(currViewModel, false);
+                }
             } else {
                 TextBoxDelimiter.Text = PresentDelimiter(MasterViewModel.Delimiter);
             }
@@ -196,9 +204,12 @@ namespace Reflection.Views {
             });
         }
 
-        private async void AsyncRenderFileWithSetPreviewToView(ImportViewModel importViewModel) {
+        private async void AsyncRenderFileWithSetPreviewToView(ImportViewModel importViewModel, bool isReread) {
             dgData.ItemsSource = null;
             await Task.Run(() => {
+                if(isReread) {
+                    importViewModel.RereadFile();
+                }
                 importViewModel.ManualUpdate();
                 Dispatcher.Invoke(() => {
                     UpdateDataGrid(importViewModel);
@@ -214,11 +225,10 @@ namespace Reflection.Views {
 
         private void ComboBoxSelectionChanged(object senderIn, RoutedEventArgs eIn) {
             var encodingInfo = (EncodingInfo)comboBoxEncoding.SelectedItem;
-            MasterViewModel.Encoding = encodingInfo.GetEncoding();
-            if (TextBlockFileName.Text == (System.IO.Path.GetFileName(MasterViewModel.FilePath))) {
-                //RenderFileToView(ImportViewModel.PathMasterFile);
-            } else {
-                //RenderFileToView(ImportViewModel.PathTestFile);
+            var currViewModel = Version == "Master" ? MasterViewModel : TestViewModel;
+            if (currViewModel.Encoding.HeaderName != encodingInfo.Name) {
+                currViewModel.Encoding = encodingInfo.GetEncoding();
+                AsyncRenderFileWithSetPreviewToView(currViewModel, true);
             }
         }
 
@@ -445,7 +455,7 @@ namespace Reflection.Views {
         private void ButtonGoBackClick(object senderIn, RoutedEventArgs eIn) {
             MasterViewModel.PreviewFileName = "";
             if (Version == "Test") {
-                AsyncRenderFileWithSetPreviewToView(MasterViewModel);
+                AsyncRenderFileWithSetPreviewToView(MasterViewModel, false);
                 ButtonGoForward.Visibility = Visibility.Visible;
                 ButtonGoBack.ToolTip = "Back to Main Page";
                 SwitchModelView("Master");
@@ -469,7 +479,7 @@ namespace Reflection.Views {
             if (TestViewModel.IsFirstStart) {
                 AsyncRenderFileWithAnalyseToView(TestViewModel);
             } else {
-                AsyncRenderFileWithSetPreviewToView(TestViewModel);
+                AsyncRenderFileWithSetPreviewToView(TestViewModel, false);
             }
             ButtonGoForward.Visibility = Visibility.Collapsed;
             ButtonGoBack.ToolTip = "Back to Master file";
@@ -514,7 +524,7 @@ namespace Reflection.Views {
                 }
                 if (currViewModel.RowsToSkip != val) {
                     currViewModel.RowsToSkip = val;
-                    AsyncRenderFileWithSetPreviewToView(currViewModel);
+                    AsyncRenderFileWithSetPreviewToView(currViewModel, false);
                 }
             }
         }
@@ -532,7 +542,7 @@ namespace Reflection.Views {
             var importViewmodel = (ImportViewModel)sender;
             if (e.PropertyName == "IsHeadersExist") {
                 if (importViewmodel.IsUserInput && !importViewmodel.IsFirstStart) {
-                    AsyncRenderFileWithSetPreviewToView(importViewmodel);
+                    AsyncRenderFileWithSetPreviewToView(importViewmodel, false);
                 }
             }
         }

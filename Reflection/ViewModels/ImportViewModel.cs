@@ -111,6 +111,10 @@ namespace Reflection.ViewModels {
             IsUserInput = true;
         }
 
+        public void RereadFile() {
+            FileContent = FileReader.ReadFewLines(FilePath, PreviewCount, Encoding).ToArray();
+        }
+
         public void ManualUpdate() {
             if (RowsToSkip >= FileContent.Length - 1) {
                 UpdateHeaders(GenerateDefaultHeaders(FirstRow.Length));
@@ -181,6 +185,9 @@ namespace Reflection.ViewModels {
         }
 
         private string[] HeaderCheck(string[] firstRow, string[] secondRow) {
+            if(firstRow.Length != secondRow.Length) {
+                return null;
+            }
             var result = new string[firstRow.Length];
             for (int i = 0; i < firstRow.Length; i++) {
                 var isFirstString = IsString(firstRow[i]);
