@@ -39,7 +39,7 @@ namespace Reflection.Models {
             ComparisonTask.TestRowsCount = countTestLines;
             ComparisonTask.ActualRowsDiff = ComparisonTask.MasterRowsCount - ComparisonTask.TestRowsCount;
             perfCounter.Stop("Read two init files");
-            CheckIfEqualColumns(masterFileContent.FirstOrDefault(), testFileContent.FirstOrDefault());
+            //CheckIfEqualColumns(masterFileContent.FirstOrDefault(), testFileContent.FirstOrDefault());
             perfCounter.Start();
             var exceptedMasterData = Except(masterFileContent, testFileContent, "Master");
             ComparisonTask.IfCancelRequested();
@@ -49,16 +49,24 @@ namespace Reflection.Models {
             perfCounter.Stop("Except files");
             MasterTable = new WorkTable("Master");
             TestTable = new WorkTable("Test");
-            IEnumerable<string> headersLine = Enumerable.Empty<string>();
+            IEnumerable<string> MasterHeadersLine = Enumerable.Empty<string>();
+            IEnumerable<string> TestHeadersLine = Enumerable.Empty<string>();
             if (ComparisonTask.MasterConfiguration.IsHeadersExist) {
-                headersLine = masterFileContent.Take(1);
+                MasterHeadersLine = masterFileContent.Take(1);
             }
-            if (IsComparisonNeeded(headersLine.Concat(exceptedMasterData), headersLine.Concat(exceptedTestData))) {
+            if (ComparisonTask.TestConfiguration.IsHeadersExist) {
+                TestHeadersLine = testFileContent.Take(1);
+            }
+            var masterHeaders = FindHeaders(masterFileContent.FirstOrDefault(), masterConfiguration.IsHeadersExist, masterConfiguration.Delimiter);
+            var testHeaders = FindHeaders(testFileContent.FirstOrDefault(), testConfiguration.IsHeadersExist, testConfiguration.Delimiter);
+            ColumnsCorrection colCorr = new ColumnsCorrection(masterHeaders.ToList(), testHeaders.ToList());
+            colCorr.AnalyseFileDimensions();
+            if (IsComparisonNeeded(MasterHeadersLine.Concat(exceptedMasterData), TestHeadersLine.Concat(exceptedTestData))) {
                 perfCounter.Start();
                 ComparisonTask.IfCancelRequested();
-                MasterTable.LoadData(headersLine.Concat(exceptedMasterData), masterConfiguration.Delimiter, masterConfiguration.IsHeadersExist, ComparisonTask);
+                MasterTable.LoadData(MasterHeadersLine.Concat(exceptedMasterData), masterConfiguration.Delimiter, masterConfiguration.IsHeadersExist, ComparisonTask, colCorr.MasterCorrection);
                 ComparisonTask.IfCancelRequested();
-                TestTable.LoadData(headersLine.Concat(exceptedTestData), testConfiguration.Delimiter, testConfiguration.IsHeadersExist, ComparisonTask);
+                TestTable.LoadData(TestHeadersLine.Concat(exceptedTestData), testConfiguration.Delimiter, testConfiguration.IsHeadersExist, ComparisonTask, colCorr.TestCorrection);
                 perfCounter.Stop("Load two files to WorkTable");
             } else {
                 var comparisonKeys = AnalyseFiles(masterFileContent, testFileContent);
@@ -298,8 +306,8 @@ namespace Reflection.Models {
                 .Take(rowsForAnalysis)
                 .Concat(testFileContent.Skip(middleOfFile).Take(rowsForAnalysis))
                 .Concat(testFileContent.Skip(ComparisonTask.MasterRowsCount - rowsForAnalysis));
-            MasterTable.LoadData(masterData, ComparisonTask.MasterConfiguration.Delimiter, ComparisonTask.MasterConfiguration.IsHeadersExist, ComparisonTask);
-            TestTable.LoadData(testData, ComparisonTask.TestConfiguration.Delimiter, ComparisonTask.TestConfiguration.IsHeadersExist, ComparisonTask);
+            MasterTable.LoadData(masterData, ComparisonTask.MasterConfiguration.Delimiter, ComparisonTask.MasterConfiguration.IsHeadersExist, ComparisonTask, new List<MoveColumn>());
+            TestTable.LoadData(testData, ComparisonTask.TestConfiguration.Delimiter, ComparisonTask.TestConfiguration.IsHeadersExist, ComparisonTask, new List<MoveColumn>());
             ComparisonCore comparisonCore = new ComparisonCore(perfCounter, ComparisonTask);
             var stat = comparisonCore.GatherStatistics(MasterTable.Rows, TestTable.Rows);
             return comparisonCore.AnalyseForPivotKey(MasterTable.Rows, stat, MasterTable.Headers.Data);
@@ -312,6 +320,26 @@ namespace Reflection.Models {
             }
             return query;
         }
+
+        private string[] FindHeaders(string firstLine, bool isHeadersExist, string delimiter) {
+            string[] res;
+            var firstRow = firstLine.Split(new string[] { delimiter }, StringSplitOptions.None);
+            if (isHeadersExist) {
+                res = firstRow;
+            }else {
+                res = GenerateDefaultHeaders(firstRow.Length);
+            }
+            return res;
+        }
+
+        private string[] GenerateDefaultHeaders(int count) {
+            string[] res = new string[count];
+            for (int i = 0; i < count; i++) {
+                res[i] = "Column" + (i + 1);
+            }
+            return res;
+        }
+
 
     }
 }

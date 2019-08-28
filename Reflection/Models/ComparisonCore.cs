@@ -192,7 +192,7 @@ namespace Reflection.Models {
             var additionalKeys = FindAdditionalKeys(clearedStats, maxMatchingRate, mainPivotKey);
             List<int> compositeKey = new List<int>() { mainPivotKey };
             var insType = FindInsType(headers);
-            if (insType != -1) {
+            if (insType != -1 && baseStat.Where(item=>item.ColumnId == insType).FirstOrDefault().UniqMatchCount>0) {
                 compositeKey.Add(insType);
             }
             var groups = Group(sampleRows, compositeKey);

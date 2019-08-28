@@ -63,7 +63,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Models\ColumnsCorrection.cs" />
     <Compile Include="Models\AsyncObservableCollection.cs" />
+    <Compile Include="Models\MoveColumn.cs" />
     <Compile Include="Models\Comparator.cs" />
     <Compile Include="Models\ColumnName.cs" />
     <Compile Include="Models\ColumnSummary.cs" />

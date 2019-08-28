@@ -20,14 +20,14 @@ namespace Reflection.Models {
             Rows = new List<Row>();
         }
 
-        public void LoadData(IEnumerable<string> data, string delimiter, bool isHeadersExist, ComparisonTask comparisonTask) {
+        public void LoadData(IEnumerable<string> data, string delimiter, bool isHeadersExist, ComparisonTask comparisonTask, List<MoveColumn> correctionColumns) {
             Delimiter = delimiter;
             var firstLine = data.FirstOrDefault();
             ColumnsCount = comparisonTask.MasterConfiguration.ColumnsCount;
             if (firstLine == null || !isHeadersExist) {
                 Headers = GenerateDefaultHeaders();
             }else {
-                var firstRow = Parse(firstLine);
+                var firstRow = Parse(firstLine, correctionColumns);
                 Headers = new Row(0, firstRow);
                 data = data.Skip(1);
             }
@@ -35,7 +35,7 @@ namespace Reflection.Models {
             var totalLines = comparisonTask.MasterRowsCount > comparisonTask.TestRowsCount ? comparisonTask.MasterRowsCount : comparisonTask.TestRowsCount;
             foreach (var line in data) {
                 comparisonTask.IfCancelRequested();
-                var row = new Row(++RowsCount, Parse(line));
+                var row = new Row(++RowsCount, Parse(line, correctionColumns));
                 if (row.Data.Length == ColumnsCount) {
                     Rows.Add(row);
                     comparisonTask.UpdateProgress(10.0 / (totalLines / 0.5));
@@ -56,8 +56,28 @@ namespace Reflection.Models {
             //}
         }
 
-        private string[] Parse(string lineToSplit) {
-                return lineToSplit.Split(new[] { Delimiter }, StringSplitOptions.None);
+        private string[] Parse(string lineToSplit, List<MoveColumn> corrections) {
+            var row = lineToSplit.Split(new[] { Delimiter }, StringSplitOptions.None);
+            if (corrections.Any()) {
+                int maxCorrCol = corrections.Max(item=>item.To);
+                ColumnsCount = row.Length > maxCorrCol + 1 ? row.Length : maxCorrCol + 1;
+                var correctedRow = Enumerable.Repeat("*null*", ColumnsCount).ToList();
+                foreach (var item in corrections) {
+                    if(item.From == item.To) {
+                        correctedRow[item.To] = "";
+                    }else {
+                        correctedRow[item.To] = row[item.From];
+                    }                   
+                }
+                for (int i = 0; i < row.Length; i++) {
+                    if (correctedRow[i] == "*null*") {
+                        correctedRow[i] = row[i];
+                    }
+                }
+                return correctedRow.ToArray();
+            }else {
+                return row;
+            }
         }
 
         private Row GenerateDefaultHeaders() {

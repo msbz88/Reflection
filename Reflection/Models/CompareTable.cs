@@ -50,7 +50,7 @@ namespace Reflection.Models {
             TestHeaders = testHeaders;
             PassedRows = new List<ComparedRow>();
             IsExcelInstaled = Type.GetTypeFromProgID("Excel.Application") == null ? false : true;
-            NumberedColumnNames = NumberAllColumnNames(masterHeaders.Data);
+            NumberedColumnNames = NumberAllColumnNames();
             ComparisonTask = comparisonTask;
             Delimiter = ComparisonTask.MasterConfiguration.Delimiter;
             DefectsSearch = new DefectsSearch();
@@ -280,18 +280,35 @@ namespace Reflection.Models {
             headers.Add("Diff");
             foreach (var item in binaryValues) {
                 headers.Add("M_" + MasterHeaders[item]);
-                headers.Add("T_" + MasterHeaders[item]);
+                headers.Add("T_" + TestHeaders[item]);
             }
             foreach (var item in allColumns) {
-                headers.Add(MasterHeaders[item]);
+                string headerName = "";
+                if (MasterHeaders[item] == "") {
+                    headerName = "(Test extra column) " + TestHeaders[item];
+                }else if(TestHeaders[item] == "") {
+                    headerName = "(Master extra column) " + MasterHeaders[item];
+                }else {
+                    headerName = MasterHeaders[item];
+                }
+                headers.Add(headerName);
             }
             return headers;
         }
 
-        private Dictionary<int, string> NumberAllColumnNames(string[] columnNames) {
+        private Dictionary<int, string> NumberAllColumnNames() {
+            var columnsCount = MasterHeaders.Data.Length;
             Dictionary<int, string> result = new Dictionary<int, string>();
-            for (int i = 0; i < columnNames.Length; i++) {
-                result.Add(i, columnNames[i]);
+            for (int i = 0; i < columnsCount; i++) {
+                string headerName = "";
+                if (MasterHeaders[i] == "") {
+                    headerName = "(Test extra column) " + TestHeaders[i];
+                } else if (TestHeaders[i] == "") {
+                    headerName = "(Master extra column) " + MasterHeaders[i];
+                } else {
+                    headerName = MasterHeaders[i];
+                }
+                result.Add(i, headerName);
             }
             return result;
         }
