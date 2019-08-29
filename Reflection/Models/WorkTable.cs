@@ -40,7 +40,7 @@ namespace Reflection.Models {
                     Rows.Add(row);
                     comparisonTask.UpdateProgress(10.0 / (totalLines / 0.5));
                 } else {
-                    throw new Exception("Unable to parse " + RowsCount + " line with the specified delimiter.");
+                    throw new Exception("Unable to parse " + RowsCount + " line with the specified delimiter. Expected " + ColumnsCount + " column(s), but got " + row.Data.Length);
                 }
             }
             //Rows = data.Select(line => new Row(++RowsCount, Parse(line))).ToList();         

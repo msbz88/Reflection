@@ -21,6 +21,7 @@ namespace Reflection.Models {
         }
 
         public void AnalyseFileDimensions() {
+            CheckHowHeadersAreDifferent();
             int innerColumnsCount = ColumnsCount;
             for (int i = 0; i < ColumnsCount; i++) {
                 if (i >= TestHeaders.Count) {
@@ -41,7 +42,7 @@ namespace Reflection.Models {
                             TestHeaders.Insert(testIndex, "");
                             TestCorrection.Add(new MoveColumn(testIndex, testIndex));
                             innerColumnsCount++;
-                        }                 
+                        }
                     } else if (testIndex >= 0 && masterIndex >= 0) {
                         TestCorrection.Add(new MoveColumn(testIndex, i));
                         MasterCorrection.Add(new MoveColumn(i, masterIndex));
@@ -49,7 +50,7 @@ namespace Reflection.Models {
                         if (MasterHeaders[i] != "") {
                             MasterCorrection.Add(new MoveColumn(i, innerColumnsCount));
                             MasterCorrection.Add(new MoveColumn(masterIndex, i));
-                            TestCorrection.Add(new MoveColumn(innerColumnsCount, innerColumnsCount));                          
+                            TestCorrection.Add(new MoveColumn(innerColumnsCount, innerColumnsCount));
                             MasterHeaders.RemoveAt(testIndex);
                             MasterHeaders.Insert(testIndex, "");
                             MasterCorrection.Add(new MoveColumn(masterIndex, masterIndex));
@@ -62,20 +63,16 @@ namespace Reflection.Models {
                         }
                     }
                 }
-                //if (masterIndex >= 0) {
-                //            var curVal = MasterHeaders[i];
-                //            var corrVal = MasterHeaders[masterIndex];
-                //            MasterHeaders.RemoveAt(i);
-                //            MasterHeaders.Insert(i, corrVal);
-                //            MasterHeaders.RemoveAt(masterIndex);
-                //            MasterHeaders.Insert(masterIndex, curVal);
-                //            MasterCorrection.Add(new MoveColumn(masterIndex, i));
-                //            MasterCorrection.Add(new MoveColumn(i, masterIndex));
-
-                //    }
-                }
             }
-        
+        }
+
+        private void CheckHowHeadersAreDifferent() {
+            var matchedNames = MasterHeaders.Intersect(TestHeaders);
+            var res = matchedNames.Count() / (double)ColumnsCount;
+            if (res <= 0.80 && MasterHeaders.Count != TestHeaders.Count) {
+                throw new Exception("Unable to match columns for comparison. Master and Test files have different numbers of columns, and the headers between them are very different.");
+            }
+        }
 
 
     }

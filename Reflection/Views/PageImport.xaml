@@ -79,8 +79,8 @@
         </Grid.ColumnDefinitions>
         <Grid Name="HeaderGrid" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="80" />
-                <ColumnDefinition Width="175" />
+                <ColumnDefinition Width="70" />
+                <ColumnDefinition Width="180" />
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0" Grid.ColumnSpan="3" Name="TextBlockFileName" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="DarkGray" FontSize="18" TextWrapping="Wrap" TextAlignment="Center" Text="{Binding PreviewFileName, NotifyOnTargetUpdated=True}">
@@ -102,15 +102,16 @@
                     <BlurEffect Radius="0"/>
                 </TextBlock.Effect>
             </TextBlock>
-            <Expander Name="ExpanderSkippedRows" VerticalAlignment="Center" HorizontalAlignment="Left" Grid.Column="1" Header="Automatically skipped rows" ExpandDirection="Down" Expanded="OnExpanded">
-                <Popup Name="PopupSkipedRows" Margin ="5,0,0,0" PlacementTarget="{Binding ElementName=ExpanderSkippedRows}" StaysOpen="False" IsOpen="true" AllowsTransparency="True" PopupAnimation="Slide" Placement="Bottom" Closed="PopupSkipedRowsClosed">
+            <Button Name="ButtonSkippedRows" VerticalAlignment="Center" HorizontalAlignment="Left" Grid.Column="1" Style="{StaticResource NavButtton}" Visibility="Collapsed" Content="&#xED0D;" Click="ButtonSkippedRowsClick"/>
+            <Label Name="LabelSkippedRows" Content="Automatically skipped rows" VerticalAlignment="Center" HorizontalAlignment="Left" Grid.Column="1" Margin="25,0,0,0" Visibility="Collapsed"/>
+            <Popup Name="PopupSkipedRows" Margin ="5,0,0,0" PlacementTarget="{Binding ElementName=ButtonSkippedRows}" StaysOpen="False" PopupAnimation="Slide" Placement="Bottom">
                     <Border BorderThickness="1" Background="Ivory" BorderBrush="Gray">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxWidth="500" HorizontalScrollBarVisibility="Auto" Height="100">
-                            <TextBlock Name="TextBlockSkippedRows" Foreground="Gray" Padding="5"/>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxWidth="500" HorizontalScrollBarVisibility="Disabled" Height="100">
+                            <TextBlock Name="TextBlockSkippedRows" Foreground="Gray" Padding="5" TextTrimming="WordEllipsis"/>
                         </ScrollViewer>
                     </Border>
                 </Popup>
-            </Expander>
+
             <Button Grid.Column="0" Name="ButtonGoBack" Style="{StaticResource NavButtton}" Content="&#xE830;" ToolTip ="Back to Main Page" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="5,0,0,0" Click="ButtonGoBackClick"/>
             <Button Grid.Column="0" Grid.Row="0" Margin="35,0,0,0" Name="ButtonGoForward" Style="{StaticResource NavButtton}" Content="&#xEA47;" ToolTip ="Go to Test file" VerticalAlignment="Center" HorizontalAlignment="Left" Click="ButtonGoForwardClick"/>
         </Grid>

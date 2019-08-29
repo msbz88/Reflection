@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Reflection.Models.Interfaces;
 
 namespace Reflection.Models {
-    public class ImportConfiguration : IImportConfiguration {
+    public class ImportConfiguration : IImportConfiguration, IEquatable<ImportConfiguration> {
         public string FilePath { get; set; }
         public string Delimiter { get; set; }
         public int RowsToSkip { get; set; }
@@ -27,6 +27,24 @@ namespace Reflection.Models {
             UserIdColumns = userIdColumns;
             UserExcludeColumns = userExcludeColumns;
             ColumnsCount = columnsCount;
+        }
+
+        public void EqualizeTo(ImportConfiguration other) {
+            Delimiter = other.Delimiter;
+            RowsToSkip = other.RowsToSkip;
+            IsHeadersExist = other.IsHeadersExist;
+            Encoding = other.Encoding;
+        }
+
+        public bool Equals(ImportConfiguration other) {
+            if (Delimiter == other.Delimiter &&
+            RowsToSkip == other.RowsToSkip &&
+            IsHeadersExist == other.IsHeadersExist &&
+            Encoding == other.Encoding) {
+                return true;
+            }else {
+                return false;
+            }
         }
     }
 }

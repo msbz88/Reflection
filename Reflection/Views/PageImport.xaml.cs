@@ -36,6 +36,8 @@ namespace Reflection.Views {
         private string customDelimiter;
         private string Version { get; set; }
         ColumnNamesViewModel CurrentColumnNamesVM { get; set; }
+        bool IsShowPopup = true;
+        bool IsButtonSkipedRowsClicked;
 
         public PageImport() {
             InitializeComponent();
@@ -179,8 +181,8 @@ namespace Reflection.Views {
             if (TextBoxDelimiter.Text != MasterViewModel.Delimiter) {
                 customDelimiter = TextBoxDelimiter.Text;
                 TextBoxDelimiter.Text = PresentDelimiter(TextBoxDelimiter.Text);
-                MasterViewModel.Delimiter = customDelimiter=="\\t"?"\t": customDelimiter;
                 var currViewModel = Version == "Master" ? MasterViewModel : TestViewModel;
+                currViewModel.Delimiter = customDelimiter=="\\t"?"\t": customDelimiter;               
                 if (currViewModel.IsUserInput && !currViewModel.IsFirstStart) {
                     AsyncRenderFileWithSetPreviewToView(currViewModel, false);
                 }
@@ -205,6 +207,7 @@ namespace Reflection.Views {
         }
 
         private async void AsyncRenderFileWithSetPreviewToView(ImportViewModel importViewModel, bool isReread) {
+            dgData.Columns.Clear();
             dgData.ItemsSource = null;
             await Task.Run(() => {
                 if(isReread) {
@@ -212,7 +215,7 @@ namespace Reflection.Views {
                 }
                 importViewModel.ManualUpdate();
                 Dispatcher.Invoke(() => {
-                    UpdateDataGrid(importViewModel);
+                    InitializeDataGrid(importViewModel);
                     PrintSkippedLines(importViewModel.SkippedLines);
                     ShowHeaderRow(importViewModel.RowsToSkip);
                     ShowRowsAndColumnsCount(importViewModel);
@@ -284,26 +287,37 @@ namespace Reflection.Views {
         private void PrintSkippedLines(List<string> skippedLines) {
             if (skippedLines.Count > 0) {
                 TextBlockSkippedRows.Text = string.Join(Environment.NewLine, skippedLines);
-                ExpanderSkippedRows.Visibility = Visibility.Visible;
-                ExpanderSkippedRows.IsExpanded = true;
+                ButtonSkippedRows.Visibility = Visibility.Visible;
+                LabelSkippedRows.Visibility = Visibility.Visible;
+                ButtonSkippedRowsClick(null, null);
             } else {
-                ExpanderSkippedRows.Visibility = Visibility.Collapsed;
-                PopupSkipedRows.IsOpen = false;
+                ButtonSkippedRows.Visibility = Visibility.Collapsed;
+                LabelSkippedRows.Visibility = Visibility.Collapsed;
             }
         }
 
         private void ButtonExecuteClick(object senderIn, RoutedEventArgs eIn) {
             MasterViewModel.IsUserInput = false;
-            var configs = new List<ImportConfiguration>();
             if (TestViewModel.IsFirstStart) {
                 TestViewModel.AnalyseFile();
             }
-            configs.Add(MasterViewModel.SetImportConfiguration());
-            configs.Add(TestViewModel.SetImportConfiguration());
+            var masterConfig = MasterViewModel.SetImportConfiguration();
+            var testConfig = TestViewModel.SetImportConfiguration();
+            var configs = VerifyConfigs(masterConfig, testConfig);            
             FilesLoaded?.Invoke(configs, eIn);
             ResetUserKeys();
             MasterViewModel.PropertyChanged -= OnIsHeaderExistsChanged;
             TestViewModel.PropertyChanged -= OnIsHeaderExistsChanged;
+        }
+
+        private List<ImportConfiguration> VerifyConfigs(ImportConfiguration masterConfig, ImportConfiguration testConfig) {
+            if (!masterConfig.Equals(testConfig)) {
+                var userResponse = MessageBox.Show("Master and Test files have different import settings.\nDo you want to set the same settings for the Test file as the Master file?", "", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.Yes);
+                if (userResponse == MessageBoxResult.Yes) {
+                    testConfig.EqualizeTo(masterConfig);
+                }
+            }
+            return new List<ImportConfiguration>() { masterConfig, testConfig };
         }
 
         private void LoadColumnNames() {
@@ -485,18 +499,10 @@ namespace Reflection.Views {
             ButtonGoBack.ToolTip = "Back to Master file";
         }
 
-        private void OnExpanded(object senderIn, RoutedEventArgs eIn) {
-            PopupSkipedRows.IsOpen = true;
-        }
-
         public void ResetPopUp() {
             var offset = PopupSkipedRows.HorizontalOffset;
             PopupSkipedRows.HorizontalOffset = offset + 1;
             PopupSkipedRows.HorizontalOffset = offset;
-        }
-
-        private void PopupSkipedRowsClosed(object sender, EventArgs e) {
-            ExpanderSkippedRows.IsExpanded = false;
         }
 
         private void ClearSelectedKeys() {
@@ -599,6 +605,11 @@ namespace Reflection.Views {
             var text = TextBoxSearchColumnNames.Text.ToLower();
             CurrentColumnNamesVM.FilteredAvailableKeys.Filter = i => ((ColumnName)i).Value.ToLower().Contains(text);
         }
+  
+        private void ButtonSkippedRowsClick(object sender, RoutedEventArgs e) {
+                PopupSkipedRows.IsOpen = true;
+        }
+
     }
 }
 
