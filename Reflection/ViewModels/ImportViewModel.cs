@@ -118,8 +118,7 @@ namespace Reflection.ViewModels {
         public void ManualUpdate() {
             if (RowsToSkip >= FileContent.Length - 1) {
                 UpdateHeaders(GenerateDefaultHeaders(FirstRow.Length));
-                SkippedLines.Clear();
-                SkippedLines.AddRange(FileContent.Take(RowsToSkip));
+                UpdateSkippedRows();
                 UpdatePreview();
                 return;
             }
@@ -138,11 +137,19 @@ namespace Reflection.ViewModels {
             SetPreview(FilePath);
         }
 
+        private void UpdateSkippedRows() {
+            SkippedLines.Clear();
+            foreach (var item in FileContent.Take(RowsToSkip)) {
+                var len = item.Length;
+                var trimmedItem = len <= 500 ? item : item.Substring(0, 499);
+                SkippedLines.Add(trimmedItem);
+            }          
+        }
+
         private void SetPreview(string path) {
             UpdatePreview();
             IsGeneratedHeaders = FileHeaders.Any(item => item.Contains("Column"));
-            SkippedLines.Clear();
-            SkippedLines.AddRange(FileContent.Take(RowsToSkip));
+            UpdateSkippedRows();
         }
 
         private void UpdatePreview() {

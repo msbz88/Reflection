@@ -36,8 +36,6 @@ namespace Reflection.Views {
         private string customDelimiter;
         private string Version { get; set; }
         ColumnNamesViewModel CurrentColumnNamesVM { get; set; }
-        bool IsShowPopup = true;
-        bool IsButtonSkipedRowsClicked;
 
         public PageImport() {
             InitializeComponent();
