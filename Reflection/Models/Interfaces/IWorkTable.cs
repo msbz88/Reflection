@@ -11,9 +11,9 @@ namespace Reflection.Models.Interfaces {
         List<Row> Rows { get; }
         int ColumnsCount { get; }
         int RowsCount { get; }
-        string Delimiter { get; }
+        char[] Delimiter { get; }
         //Task<Dictionary<int, HashSet<string>>> GetColumnsAsync();
-        void LoadData(IEnumerable<string> data, string delimiter, bool isHeadersExist, ComparisonTask comparisonTask, List<MoveColumn> correctionColumns);
+        void LoadData(IEnumerable<string> data, char[] delimiter, bool isHeadersExist, ComparisonTask comparisonTask, List<MoveColumn> correctionColumns);
         void SaveToFile(string filePath);
         void CleanUp();
     }

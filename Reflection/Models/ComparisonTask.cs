@@ -188,17 +188,36 @@ namespace Reflection.Models {
         }
 
         private string FindCommonDirectory(string masterPath, string testPath) {
-            var mDir = masterPath.Split(new[] { @"\" }, StringSplitOptions.None);
-            var tDir = testPath.Split(new[] { @"\" }, StringSplitOptions.None);
-            var result = "";
-            var countDir = mDir.Length > tDir.Length ? tDir.Length : mDir.Length;
+            var mDir = Splitter.Split(masterPath, new char[] {'\\'});
+            var tDir = Splitter.Split(testPath, new char[] { '\\' });
+            var lenArr = new int[] { mDir.Length - 1, tDir.Length - 1, ChechForbiddenChars(mDir), ChechForbiddenChars(tDir) };     
+            var countDir = lenArr.Where(item=>item > 0).Min();
+            int nodesToTake = countDir;
             for (int i = 0; i < countDir; i++) {
                 if (mDir[i] != tDir[i]) {
-                    mDir[0] = mDir[0] + @"\";
-                    result = Path.Combine(mDir.Take(i).ToArray());
+                    nodesToTake = i;
+                    break;
                 }
             }
-            return result;
+            mDir[0] = mDir[0] + @"\";
+            return Path.Combine(mDir.Take(nodesToTake).ToArray());
+        }
+
+        private int ChechForbiddenChars(string[] parsedPath) {
+            List<int> res = new List<int>();
+            List<char> forbiddenChars = new List<char> { '<' , '>', '?', '[', ']', ':', '|', '*'};
+            for (int i = 1; i < parsedPath.Length; i++) {
+                foreach (var chr in forbiddenChars) {
+                    if (parsedPath[i].Contains(chr)) {
+                        res.Add(i);
+                    }
+                }
+            }
+            if (res.Any()) {
+                return res.Min();
+            }else {
+                return -1;
+            }
         }
 
         private string GetLongestCommonPrefix(string[] s) {

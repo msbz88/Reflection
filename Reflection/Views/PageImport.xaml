@@ -105,13 +105,12 @@
             <Button Name="ButtonSkippedRows" VerticalAlignment="Center" HorizontalAlignment="Left" Grid.Column="1" Style="{StaticResource NavButtton}" Visibility="Collapsed" Content="&#xED0D;" Click="ButtonSkippedRowsClick"/>
             <Label Name="LabelSkippedRows" Content="Automatically skipped rows" VerticalAlignment="Center" HorizontalAlignment="Left" Grid.Column="1" Margin="25,0,0,0" Visibility="Collapsed"/>
             <Popup Name="PopupSkipedRows" Margin ="5,0,0,0" PlacementTarget="{Binding ElementName=ButtonSkippedRows}" StaysOpen="False" PopupAnimation="Slide" Placement="Bottom">
-                    <Border BorderThickness="1" Background="Ivory" BorderBrush="Gray">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxWidth="500" HorizontalScrollBarVisibility="Disabled" Height="100">
-                            <TextBlock Name="TextBlockSkippedRows" Foreground="Gray" Padding="5" TextTrimming="WordEllipsis"/>
-                        </ScrollViewer>
-                    </Border>
-                </Popup>
-
+                <Border BorderThickness="1" Background="Ivory" BorderBrush="Gray">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxWidth="500" HorizontalScrollBarVisibility="Disabled" Height="100">
+                        <TextBlock Name="TextBlockSkippedRows" Foreground="Gray" Padding="5" TextTrimming="WordEllipsis"/>
+                    </ScrollViewer>
+                </Border>
+            </Popup>
             <Button Grid.Column="0" Name="ButtonGoBack" Style="{StaticResource NavButtton}" Content="&#xE830;" ToolTip ="Back to Main Page" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="5,0,0,0" Click="ButtonGoBackClick"/>
             <Button Grid.Column="0" Grid.Row="0" Margin="35,0,0,0" Name="ButtonGoForward" Style="{StaticResource NavButtton}" Content="&#xEA47;" ToolTip ="Go to Test file" VerticalAlignment="Center" HorizontalAlignment="Left" Click="ButtonGoForwardClick"/>
         </Grid>

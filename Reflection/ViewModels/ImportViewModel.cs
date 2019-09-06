@@ -19,7 +19,7 @@ namespace Reflection.ViewModels {
         public List<int> UserKeys { get; set; }
         public List<int> UserIdColumns { get; set; }
         public List<int> UserExcludeColumns { get; set; }
-        public string Delimiter { get; set; }
+        public char[] Delimiter { get; set; }
         public int RowsToSkip { get; set; }
         bool isHeadersExist;
         public bool IsHeadersExist {
@@ -86,8 +86,8 @@ namespace Reflection.ViewModels {
                 Delimiter = FindDelimiter(FileContent.Take(50));
                 RowsToSkip = FindDataBeginning(FileContent.Take(50));
                 if (FileContent.Skip(RowsToSkip).Count() > 1) {
-                    FirstRow = FileContent.Skip(RowsToSkip).FirstOrDefault().Split(new[] { Delimiter }, StringSplitOptions.None);
-                    SecondRow = FileContent.Skip(RowsToSkip + 1).FirstOrDefault().Split(new[] { Delimiter }, StringSplitOptions.None);
+                    FirstRow = Splitter.Split(FileContent.Skip(RowsToSkip).FirstOrDefault(), Delimiter);
+                    SecondRow = Splitter.Split(FileContent.Skip(RowsToSkip + 1).FirstOrDefault(), Delimiter);
                     var headers = HeaderCheck(FirstRow, SecondRow);
                     if (headers == null) {
                         UpdateHeaders(GenerateDefaultHeaders(FirstRow.Length));
@@ -97,7 +97,7 @@ namespace Reflection.ViewModels {
                         IsHeadersExist = true;
                     }                   
                 } else {
-                    var headers = FileContent.First().Split(new[] { Delimiter }, StringSplitOptions.None);
+                    var headers = Splitter.Split(FileContent.First(), Delimiter);
                     IsHeadersExist = IsHeadersRow(headers);
                     if (IsHeadersExist) {
                         UpdateHeaders(headers);
@@ -123,8 +123,8 @@ namespace Reflection.ViewModels {
                 return;
             }
             if (IsHeadersExist) {
-                FirstRow = FileContent.Skip(RowsToSkip).FirstOrDefault().Split(new[] { Delimiter }, StringSplitOptions.None);
-                SecondRow = FileContent.Skip(RowsToSkip + 1).FirstOrDefault().Split(new[] { Delimiter }, StringSplitOptions.None);
+                FirstRow = Splitter.Split(FileContent.Skip(RowsToSkip).FirstOrDefault(), Delimiter);
+                SecondRow = Splitter.Split(FileContent.Skip(RowsToSkip + 1).FirstOrDefault(), Delimiter);
                 var headers = HeaderCheck(FirstRow, SecondRow);
                 if (headers == null) {
                     UpdateHeaders(FirstRow);
@@ -156,25 +156,25 @@ namespace Reflection.ViewModels {
             var fileContentCorr = IsHeadersExist ? FileContent.Skip(RowsToSkip + 1) : FileContent.Skip(RowsToSkip);
             PreviewContent.Clear();
             foreach (var item in fileContentCorr) {
-                PreviewContent.Add(item.Split(new[] { Delimiter }, StringSplitOptions.None));
+                PreviewContent.Add(Splitter.Split(item, Delimiter));
             }
         }
 
-        public string FindDelimiter(IEnumerable<string> fileContent) {
+        public char[] FindDelimiter(IEnumerable<string> fileContent) {
             List<char> delimiters = new List<char> { '\t', ';', ',', '|' };
             Dictionary<char, int> counts = delimiters.ToDictionary(key => key, value => 0);
             foreach (char delimiter in delimiters) {
                 counts[delimiter] = fileContent.Sum(item => item.Where(chr => chr == delimiter).Count());
             }
             var maxRepeated = counts.Max(item => item.Value);
-            return counts.Where(item => item.Value == maxRepeated).Select(item => item.Key).FirstOrDefault().ToString();
+            return new char[] { counts.Where(item => item.Value == maxRepeated).Select(item => item.Key).FirstOrDefault() };
         }
 
         private int FindDataBeginning(IEnumerable<string> fileContent) {
             if (!fileContent.Any()) {
                 return 0;
             }
-            var data = fileContent.Select(line => line.Split(new string[] { Delimiter }, StringSplitOptions.None).Length);
+            var data = fileContent.Select(line => Splitter.Split(line, Delimiter).Length);
             var max = data.Max();
             return data.ToList().IndexOf(max);
         }

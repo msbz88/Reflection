@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Reflection.Models.Interfaces {
     public interface IImportConfiguration {
         string FilePath { get; set; }
-        string Delimiter { get; set; }
+        char[] Delimiter { get; set; }
         int RowsToSkip { get; set; }
         bool IsHeadersExist { get; set; }
         Encoding Encoding { get; set; }

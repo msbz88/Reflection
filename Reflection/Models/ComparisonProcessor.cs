@@ -204,8 +204,8 @@ namespace Reflection.Models {
         }
 
         private void CheckIfEqualColumns(string masterFirstLine, string testFirstLine) {
-            var parseMaster = masterFirstLine.Split(new[] { ComparisonTask.MasterConfiguration.Delimiter }, StringSplitOptions.None);
-            var parseTest = testFirstLine.Split(new[] { ComparisonTask.TestConfiguration.Delimiter }, StringSplitOptions.None);
+            var parseMaster = Splitter.Split(masterFirstLine, ComparisonTask.MasterConfiguration.Delimiter);
+            var parseTest = Splitter.Split(testFirstLine, ComparisonTask.TestConfiguration.Delimiter);
             if (parseMaster.Length != parseTest.Length) {
                 throw new Exception("There is different number of columns between master and test files.");
             }
@@ -227,6 +227,8 @@ namespace Reflection.Models {
                 content.Add("ExtraMasterCount: " + ComparisonTask.ExtraMasterCount.ToString());
                 content.Add("ExtraTestCount: " + ComparisonTask.ExtraTestCount.ToString());
                 content.Add("Status: " + ComparisonTask.Status);
+                content.Add("Time: " + ComparisonTask.ElapsedTime);
+                content.Add("Progress: " + ComparisonTask.Progress);
                 content.Add("ErrorMessage: " + ComparisonTask.ErrorMessage);
                 content.Add("--------------------------------------------------------------------------");
                 File.AppendAllLines(logFile, content);
@@ -263,8 +265,8 @@ namespace Reflection.Models {
             testFileContent = ComparisonTask.TestConfiguration.IsHeadersExist ? testFileContent.Skip(1) : testFileContent;
             if (ComparisonTask.ComparisonKeys.BinaryValues.Count > 0) {
                 foreach (var line in masterFileContent) {
-                    var rowMaster = line.Split(new[] { ComparisonTask.MasterConfiguration.Delimiter }, StringSplitOptions.None);
-                    var rowTest = testFileContent.Skip(rowCount).First().Split(new[] { ComparisonTask.TestConfiguration.Delimiter }, StringSplitOptions.None);
+                    var rowMaster = Splitter.Split(line, ComparisonTask.MasterConfiguration.Delimiter);
+                    var rowTest = Splitter.Split(testFileContent.Skip(rowCount).First(), ComparisonTask.TestConfiguration.Delimiter);
                     List<string> rowToSave = new List<string>();
                     rowToSave.Add("Passed");
                     var masterVals = GetValuesByPositions(rowMaster, ComparisonTask.ComparisonKeys.BinaryValues);
@@ -281,7 +283,7 @@ namespace Reflection.Models {
                 }
             } else {
                 foreach (var line in masterFileContent) {
-                    var rowMaster = line.Split(new[] { ComparisonTask.MasterConfiguration.Delimiter }, StringSplitOptions.None);
+                    var rowMaster = Splitter.Split(line, ComparisonTask.MasterConfiguration.Delimiter);
                     List<string> rowToSave = new List<string>();
                     rowToSave.Add("Passed");
                     rowToSave.AddRange(GetValuesByPositions(rowMaster, mainColumnsToGet));
@@ -321,9 +323,9 @@ namespace Reflection.Models {
             return query;
         }
 
-        private string[] FindHeaders(string firstLine, bool isHeadersExist, string delimiter) {
+        private string[] FindHeaders(string firstLine, bool isHeadersExist, char[] delimiter) {
             string[] res;
-            var firstRow = firstLine.Split(new string[] { delimiter }, StringSplitOptions.None);
+            var firstRow = Splitter.Split(firstLine, delimiter);
             if (isHeadersExist) {
                 res = firstRow;
             }else {

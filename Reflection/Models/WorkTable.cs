@@ -13,14 +13,14 @@ namespace Reflection.Models {
         public List<Row> Rows { get; private set; }
         public int RowsCount { get; private set; }
         public int ColumnsCount { get; private set; }
-        public string Delimiter { get; private set; }
+        public char[] Delimiter { get; private set; }
 
         public WorkTable(string name) {
             Name = name;
             Rows = new List<Row>();
         }
 
-        public void LoadData(IEnumerable<string> data, string delimiter, bool isHeadersExist, ComparisonTask comparisonTask, List<MoveColumn> correctionColumns) {
+        public void LoadData(IEnumerable<string> data, char[] delimiter, bool isHeadersExist, ComparisonTask comparisonTask, List<MoveColumn> correctionColumns) {
             Delimiter = delimiter;
             var firstLine = data.FirstOrDefault();
             ColumnsCount = comparisonTask.MasterConfiguration.ColumnsCount;
@@ -57,7 +57,7 @@ namespace Reflection.Models {
         }
 
         private string[] Parse(string lineToSplit, List<MoveColumn> corrections) {
-            var row = lineToSplit.Split(new[] { Delimiter }, StringSplitOptions.None);
+            var row = Splitter.Split(lineToSplit, Delimiter);
             if (corrections.Any()) {
                 int maxCorrCol = corrections.Max(item=>item.To);
                 ColumnsCount = row.Length > maxCorrCol + 1 ? row.Length : maxCorrCol + 1;
@@ -90,7 +90,7 @@ namespace Reflection.Models {
 
         public void SaveToFile(string filePath) {
             List<string> result = new List<string>();
-            var headres = "RowNum" + Delimiter + "Id" + Delimiter + string.Join(Delimiter, Headers);
+            var headres = "RowNum" + Delimiter + "Id" + Delimiter + string.Join(string.Join("", Delimiter), Headers);
             result.Add(headres);
             foreach (var item in Rows) {
                 result.Add(item.ToString());

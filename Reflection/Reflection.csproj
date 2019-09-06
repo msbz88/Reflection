@@ -87,6 +87,7 @@
     <Compile Include="Models\Deviation.cs" />
     <Compile Include="Models\BinaryValue.cs" />
     <Compile Include="Models\RowToSave.cs" />
+    <Compile Include="Models\Splitter.cs" />
     <Compile Include="Models\Status.cs" />
     <Compile Include="Models\RowsMatch.cs" />
     <Compile Include="Models\Version.cs" />

@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -91,7 +92,7 @@ namespace Reflection.Views {
         private void ListViewItemSelected(object sender, SelectionChangedEventArgs e) {
             var comparisonTask = (ComparisonTask)lvComparisonDetails.SelectedItem;
             if (comparisonTask != null) {
-                if (comparisonTask.Status == Status.Error || comparisonTask.Status == Status.Canceled) {
+                if (comparisonTask.Status == Status.Canceled) {
                     Error?.Invoke(comparisonTask.ErrorMessage, null);
                 } else {
                     Error?.Invoke("", null);
@@ -163,6 +164,19 @@ namespace Reflection.Views {
             }
         }
 
+        private void ButtonViewErrorClick(object sender, RoutedEventArgs e) {
+            var listViewItem = GetAncestorOfType<ListViewItem>(sender as Button);
+            ContentPresenter myContentPresenter = FindVisualChild<ContentPresenter>(listViewItem);
+            DataTemplate myDataTemplate = myContentPresenter.ContentTemplate;
+            TextBlock textBlockError = (TextBlock)myDataTemplate.FindName("TextBlockError", myContentPresenter);
+            if(textBlockError.Text == "") {
+                var compTask = (ComparisonTask)listViewItem.DataContext;
+                textBlockError.Text = compTask.ErrorMessage;
+            }
+            Popup popupError = (Popup)myDataTemplate.FindName("PopupError", myContentPresenter);
+            popupError.IsOpen = true;
+        }
+
         private void OpenTextFile(string path) {
             try {
                 Process.Start("notepad++.exe", path);
@@ -207,7 +221,7 @@ namespace Reflection.Views {
             string userName = "";
             try {
                 userName = await Task.Run(() => System.DirectoryServices.AccountManagement.UserPrincipal.Current.DisplayName);
-                WelcomeTextBlock.Text = "Hello, " + userName.Split(' ')[0] + "!";
+                WelcomeTextBlock.Text = "Hello, " + Splitter.Split(userName, new char[]{' '})[0] + "!";
             } catch (Exception) {
                 WelcomeTextBlock.Visibility = Visibility.Collapsed;
             }

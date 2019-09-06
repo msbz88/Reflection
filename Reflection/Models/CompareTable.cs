@@ -30,7 +30,7 @@ namespace Reflection.Models {
         public int MasterExtraCount { get { return ExtraMaster.Count; } }
         List<string> ExtraTest { get; set; }
         public int TestExtraCount { get { return ExtraTest.Count; } }
-        string Delimiter { get; set; }
+        char[] Delimiter { get; set; }
         List<ComparedRow> PassedRows;
         bool IsExcelInstaled { get; set; }
         List<string> Headers;
@@ -81,7 +81,7 @@ namespace Reflection.Models {
 
         public void AddMasterExtraRows(IEnumerable<Row> extraRows) {
             foreach (var item in extraRows) {
-                ExtraMaster.Add(string.Join(Delimiter, item.Data));
+                ExtraMaster.Add(string.Join(string.Join("", Delimiter), item.Data));
             }
         }
 
@@ -99,7 +99,7 @@ namespace Reflection.Models {
 
         public void AddTestExtraRows(IEnumerable<Row> extraRows) {
             foreach (var item in extraRows) {
-                ExtraTest.Add(string.Join(Delimiter, item.Data));
+                ExtraTest.Add(string.Join(string.Join("", Delimiter), item.Data));
             }
         }
 
@@ -167,7 +167,7 @@ namespace Reflection.Models {
             var exceptedRecords = File.ReadLines(ComparisonTask.CommonDirectoryPath + "\\Passed.temp");
             int rowsIndex = 0;
             foreach (var masterLine in exceptedRecords) {
-                var parsedRow = masterLine.Split(new string[] { Delimiter }, StringSplitOptions.None);
+                var parsedRow = Splitter.Split(masterLine, Delimiter);
                 var rowToSave = new RowToSave(parsedRow);
                 var result = rowToSave.PrepareExceptedRow(BinaryValues, MainIdColumns);
                 ComparisonTask.IfCancelRequested();
@@ -180,7 +180,7 @@ namespace Reflection.Models {
             File.Delete(ComparisonTask.CommonDirectoryPath + "\\Passed.temp");
         }
 
-        public void SavePassed(string filePath, string delimiter, string[,] array) {
+        public void SavePassed(string filePath, char[] delimiter, string[,] array) {
             if (!IsExcelInstaled || array.GetLength(0) > 1000000) {
                 Delimiter = delimiter;
                 SaveToFlatFile(filePath, array);
@@ -262,7 +262,7 @@ namespace Reflection.Models {
 
         private void AddExtraRows(string[,] dataToSave, string version, List<string> extraLines, List<int> binaryValues, List<int> mainIdColumns) {
             foreach (var extraRow in extraLines) {
-                var parsedRow = extraRow.Split(new string[] { Delimiter }, StringSplitOptions.None);
+                var parsedRow = Splitter.Split(extraRow, Delimiter);
                 RowToSave rowToSave = new RowToSave(parsedRow);
                 var result = rowToSave.PrepareExtraRow(version, binaryValues, mainIdColumns, DefectsSearch);
                 ComparisonTask.IfCancelRequested();
@@ -316,7 +316,7 @@ namespace Reflection.Models {
 
 
         private string GetProjectName(string filePath) {
-            var r = filePath.Split('\\');
+            var r = Splitter.Split(filePath, new char[] { '\\' });
             if (r.Length > 3) {
                 return r[2].Trim();
             } else {
@@ -325,7 +325,7 @@ namespace Reflection.Models {
         }
 
         private List<double> GetUpgradeName(string filePath) {
-            var r = filePath.Split('\\');
+            var r = Splitter.Split(filePath, new char[] { '\\' });
             if (r.Length <= 3) {
                 return null;
             }
@@ -390,7 +390,7 @@ namespace Reflection.Models {
                 range.set_Value(XlRangeValueDataType.xlRangeValueDefault, outputArray);
                 ComparisonTask.UpdateProgress(2);
                 FormatExcelSheet(sheet, range, columnsCount, rowsCount, isPassed);
-                workbook.SaveAs(filePath, Type.Missing, Type.Missing, Type.Missing, false, false, XlSaveAsAccessMode.xlNoChange, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing);
+                workbook.SaveAs(filePath + ".xlsx");
                 workbook.Close();
                 excelApplication.Quit();
             } catch (Exception ex) {

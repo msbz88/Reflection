@@ -185,6 +185,30 @@
                                         </Style>
                                     </Button.Style>
                                 </Button>
+                                <Button Name="ButtonViewError" Grid.Column="0" Grid.Row="1" Content="View Error" Height="20" Width="70" HorizontalAlignment="Center" VerticalAlignment="Top" Click="ButtonViewErrorClick">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                            <Setter Property="FontSize" Value="10" />
+                                            <Setter Property="Background" Value="Red"/>
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding Path=Status}" Value="Error"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                                <Popup Name="PopupError" Margin ="5,0,0,0" PlacementTarget="{Binding ElementName=ButtonViewError}" StaysOpen="False" PopupAnimation="Slide" Placement="Bottom">
+                                    <Border BorderThickness="1" Background="Ivory" BorderBrush="Gray">
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxWidth="500" HorizontalScrollBarVisibility="Auto" Height="100">
+                                            <TextBlock Name="TextBlockError" Foreground="Gray" Padding="5"/>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Popup>
                                 <TextBlock Name="TextBlockStatus" Grid.Row="2" Grid.Column="0" Text="{Binding Path=Status, NotifyOnTargetUpdated=True}" VerticalAlignment="Top" HorizontalAlignment="Center" FontSize="15" TargetUpdated="TextBlockStatusTargetUpdated">
                                     <TextBlock.Style>
                                         <Style TargetType="{x:Type TextBlock}">

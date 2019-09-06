@@ -103,6 +103,8 @@ namespace Reflection.ViewModels {
                 content.Add("ExtraMasterCount: " + comparisonTask.ExtraMasterCount.ToString());
                 content.Add("ExtraTestCount: " + comparisonTask.ExtraTestCount.ToString());
                 content.Add("Status: " + comparisonTask.Status);
+                content.Add("Time: " + comparisonTask.ElapsedTime);
+                content.Add("Progress: " + comparisonTask.Progress);
                 content.Add("ErrorMessage: " + comparisonTask.ErrorMessage);
                 content.Add("--------------------------------------------------------------------------");
                 File.AppendAllLines(logFile, content);

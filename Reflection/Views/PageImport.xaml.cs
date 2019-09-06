@@ -33,7 +33,7 @@ namespace Reflection.Views {
         public EventHandler GoBack { get; set; }
         public EventHandler SingleFileView { get; set; }
         public EventHandler Message { get; set; }
-        private string customDelimiter;
+        private char[] customDelimiter;
         private string Version { get; set; }
         ColumnNamesViewModel CurrentColumnNamesVM { get; set; }
 
@@ -138,9 +138,9 @@ namespace Reflection.Views {
             comboBoxEncoding.SelectedIndex = comboBoxEncoding.SelectedIndex = comboBoxEncoding.Items.IndexOf(comboBoxItem);
         }
 
-        private string PresentDelimiter(string delimiter) {
+        private string PresentDelimiter(char[] delimiter) {
             string viewDelimiter = "";
-            switch (delimiter) {
+            switch (delimiter[0].ToString()) {
                 case "\t":
                 viewDelimiter = "<\\t> (Tab)";
                 break;
@@ -157,7 +157,7 @@ namespace Reflection.Views {
                 viewDelimiter = "<|> (Vertical line)";
                 break;
                 default:
-                viewDelimiter = "<" + delimiter + "> (Custom)";
+                viewDelimiter = "<" + string.Join("", delimiter) + "> (Custom)";
                 break;
             }
             return viewDelimiter;
@@ -166,21 +166,21 @@ namespace Reflection.Views {
         private void TextBoxDelimiterGotFocus(object senderIn, RoutedEventArgs eIn) {
             if (PresentDelimiter(MasterViewModel.Delimiter) == TextBoxDelimiter.Text) {
                 var delimiter = MasterViewModel.Delimiter;
-                if (delimiter == "\t") {
-                    delimiter = "\\t";
+                if (delimiter[0].ToString() == "\\t") {
+                    delimiter = new char[] { '\t' };
                 }
-                TextBoxDelimiter.Text = delimiter;
+                TextBoxDelimiter.Text = string.Join("", delimiter);
             } else {
-                TextBoxDelimiter.Text = customDelimiter;
+                TextBoxDelimiter.Text = string.Join("", customDelimiter);
             }
         }
 
         private void TextBoxDelimiterLostFocus(object senderIn, RoutedEventArgs eIn) {
-            if (TextBoxDelimiter.Text != MasterViewModel.Delimiter) {
-                customDelimiter = TextBoxDelimiter.Text;
-                TextBoxDelimiter.Text = PresentDelimiter(TextBoxDelimiter.Text);
+            if (TextBoxDelimiter.Text.ToCharArray() != MasterViewModel.Delimiter) {
+                customDelimiter = TextBoxDelimiter.Text.ToCharArray();
+                TextBoxDelimiter.Text = PresentDelimiter(TextBoxDelimiter.Text.ToCharArray());
                 var currViewModel = Version == "Master" ? MasterViewModel : TestViewModel;
-                currViewModel.Delimiter = customDelimiter=="\\t"?"\t": customDelimiter;               
+                currViewModel.Delimiter = customDelimiter[0].ToString() == "\\t"? new char[] { '\t' } : customDelimiter;               
                 if (currViewModel.IsUserInput && !currViewModel.IsFirstStart) {
                     AsyncRenderFileWithSetPreviewToView(currViewModel, false);
                 }

@@ -17,7 +17,7 @@ namespace Reflection.Models {
         IWorkTable MasterTable;
         IWorkTable TestTable;
         ComparisonTask ComparisonTask { get; set; }
-        string Delimiter;
+        char[] Delimiter;
         public List<ColumnSummary> BaseStat;
 
         public ComparisonCore(PerformanceCounter perfCounter, ComparisonTask comparisonTask) {
@@ -126,9 +126,9 @@ namespace Reflection.Models {
         //    }
         //}
 
-        private string SetDelimiter() {
-            if (MasterTable.Delimiter.Contains("|")) {
-                return ";";
+        private char[] SetDelimiter() {
+            if (MasterTable.Delimiter.Any(item=>item == '|')) {
+                return new char[] { ';' };
             } else {
                 return MasterTable.Delimiter;
             }
@@ -233,7 +233,7 @@ namespace Reflection.Models {
 
         private List<int> AddKeysToAcceptExtra(List<ColumnSummary> clearedStats, double maxMatchingRate, int mainPivotKey) {
             var statForAdditionalKeys = clearedStats.Where(col => col.MatchingRate <= maxMatchingRate && col.ColumnId != mainPivotKey).ToList();
-            var standartDeviation = StandartDeviation(statForAdditionalKeys.Select(col => col.MatchingRate).ToList());
+            var standartDeviation = statForAdditionalKeys.Select(col => col.MatchingRate).Average();
             var notStringKeys = statForAdditionalKeys.Where(col => !col.IsString && col.UniqMatchCount > 2 && col.MatchingRate >= standartDeviation).Select(col => col.ColumnId);
             var stringKeys = statForAdditionalKeys.Where(col => col.IsString && col.MatchingRate >= standartDeviation).Select(col => col.ColumnId);
             return stringKeys.Concat(notStringKeys).Distinct().ToList();
