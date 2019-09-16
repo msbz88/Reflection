@@ -141,7 +141,6 @@ namespace Reflection.Models {
                 }
             }
             comparedRow = bestMatched.First();
-            //File.WriteAllLines(@"C:\Users\MSBZ\Desktop\test.txt", bestMatched.Select(item=>item.ToString()).ToList());
             return comparedRow;
         }
 

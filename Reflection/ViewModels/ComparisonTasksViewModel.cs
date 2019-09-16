@@ -55,6 +55,8 @@ namespace Reflection.ViewModels {
                     }
                     try {                       
                         await Task.Run(() => ComparisonProcessor.StartComparison(FileReader, comparisonTask));
+                        GC.Collect();
+                        WriteLog(comparisonTask);
                     } catch (Exception e) {
                         var cancelTask = e as OperationCanceledException;
                         if (cancelTask != null) {
@@ -89,25 +91,13 @@ namespace Reflection.ViewModels {
 
         private void WriteLog(ComparisonTask comparisonTask) {
             try {
-                string userName = System.Security.Principal.WindowsIdentity.GetCurrent().Name.Replace("SCDOM\\", "");
-                string logFile = @"O:\DATA\COMMON\core\log\" + userName + "_result.log";
-                List<string> content = new List<string>();
-                content.Add("StartTime: " + comparisonTask.StartTime);
-                content.Add("MasterFilePath: " + comparisonTask.MasterConfiguration.FilePath);
-                content.Add("TestFilePath: " + comparisonTask.TestConfiguration.FilePath);
-                content.Add("IsLinearView: " + comparisonTask.IsLinearView.ToString());
-                content.Add("MasterRowsCount: " + comparisonTask.MasterRowsCount.ToString());
-                content.Add("TestRowsCount: " + comparisonTask.TestRowsCount.ToString());
-                content.Add("ActualRowsDiff: " + comparisonTask.ActualRowsDiff.ToString());
-                content.Add("RowsWithDeviations: " + comparisonTask.RowsWithDeviations.ToString());
-                content.Add("ExtraMasterCount: " + comparisonTask.ExtraMasterCount.ToString());
-                content.Add("ExtraTestCount: " + comparisonTask.ExtraTestCount.ToString());
-                content.Add("Status: " + comparisonTask.Status);
-                content.Add("Time: " + comparisonTask.ElapsedTime);
-                content.Add("Progress: " + comparisonTask.Progress);
-                content.Add("ErrorMessage: " + comparisonTask.ErrorMessage);
-                content.Add("--------------------------------------------------------------------------");
-                File.AppendAllLines(logFile, content);
+                var userName = System.Security.Principal.WindowsIdentity.GetCurrent().Name.Replace("SCDOM\\", "").ToUpper();
+                if (userName != "MSBZ") {
+                    OraSession oraSession = new OraSession("DK01SV7020", "1521", "TESTIMMD", "TESTIMMD", "T7020230");
+                    oraSession.OpenConnection();
+                    oraSession.InsertIntoLogTable(comparisonTask, userName);
+                    oraSession.CloseConnection();
+                }
             } catch (Exception) { }
         }
 

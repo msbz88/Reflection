@@ -32,28 +32,27 @@ namespace Reflection.Models {
                 data = data.Skip(1);
             }
             RowsCount = 0;
-            var totalLines = comparisonTask.MasterRowsCount > comparisonTask.TestRowsCount ? comparisonTask.MasterRowsCount : comparisonTask.TestRowsCount;
             foreach (var line in data) {
                 comparisonTask.IfCancelRequested();
-                var row = new Row(++RowsCount, Parse(line, correctionColumns));
-                if (row.Data.Length == ColumnsCount) {
+                var parsedLine = Parse(line, correctionColumns);
+                if (parsedLine.Length == ColumnsCount) {
+                    var row = new Row(++RowsCount, parsedLine);
                     Rows.Add(row);
-                    comparisonTask.UpdateProgress(10.0 / (totalLines / 0.5));
+                } else if (parsedLine.Length < ColumnsCount) {
+                    var extendedRow = new string[ColumnsCount];
+                    for (int i = 0; i < ColumnsCount; i++) {
+                        if (parsedLine.Length > i) {
+                            extendedRow[i] = parsedLine[i];
+                        }else {
+                            extendedRow[i] = "";
+                        }
+                    }
+                    var row = new Row(++RowsCount, extendedRow);
+                    Rows.Add(row);
                 } else {
-                    throw new Exception("Unable to parse " + RowsCount + " line with the specified delimiter. Expected " + ColumnsCount + " column(s), but got " + row.Data.Length);
+                    throw new Exception("Unable to parse " + RowsCount + " line with the specified delimiter. Expected " + ColumnsCount + " column(s), but got " + parsedLine.Length + ".\nTry to extract files with quoted coma or quoted semicolon delimiter.");
                 }
             }
-            //Rows = data.Select(line => new Row(++RowsCount, Parse(line))).ToList();         
-            //RowsRep = new Dictionary<int, Row>(RowsCount);
-            ////Rows = new List<Row>(RowsCount);
-            //for (int i = 0; i < RowsCount; i++) {
-            //    RowsRep.Add(i + 1, new Row(i + 1, ColumnsCount));
-            //}
-            //rowId = 0;
-            //foreach (var line in data) {
-            //    var splittedLine = Parse(line);
-            //    Rows[rowId++].Fill(splittedLine);
-            //}
         }
 
         private string[] Parse(string lineToSplit, List<MoveColumn> corrections) {
@@ -101,6 +100,7 @@ namespace Reflection.Models {
        public void CleanUp() {
             RowsCount = 0;
             Rows.Clear();
+            Rows.TrimExcess();
         }
     }
 }

@@ -14,7 +14,7 @@ namespace Reflection.Models {
     public class CompareTable {
         Row MasterHeaders { get; set; }
         Row TestHeaders { get; set; }
-        List<ComparedRow> Data { get; set; }
+        public List<ComparedRow> Data { get; set; }
         int comparedRowsCount;
         public int ComparedRowsCount {
             get {
@@ -26,17 +26,17 @@ namespace Reflection.Models {
                 }
             }
         }
-        List<string> ExtraMaster { get; set; }
+        public List<string> ExtraMaster { get; set; }
         public int MasterExtraCount { get { return ExtraMaster.Count; } }
-        List<string> ExtraTest { get; set; }
+        public List<string> ExtraTest { get; set; }
         public int TestExtraCount { get { return ExtraTest.Count; } }
         char[] Delimiter { get; set; }
-        List<ComparedRow> PassedRows;
+        public List<ComparedRow> PassedRows;
         bool IsExcelInstaled { get; set; }
         List<string> Headers;
         List<int> DeviationColumns;
         private int RowCount { get; set; }
-        Dictionary<int, string> NumberedColumnNames { get; set; }
+        public Dictionary<int, string> NumberedColumnNames { get; set; }
         DefectsSearch DefectsSearch { get; set; }
         ComparisonTask ComparisonTask;
         List<int> BinaryValues;
@@ -52,11 +52,12 @@ namespace Reflection.Models {
             IsExcelInstaled = Type.GetTypeFromProgID("Excel.Application") == null ? false : true;
             NumberedColumnNames = NumberAllColumnNames();
             ComparisonTask = comparisonTask;
+            ComparisonTask.NumberedColumnNames = NumberedColumnNames;
             Delimiter = ComparisonTask.MasterConfiguration.Delimiter;
             DefectsSearch = new DefectsSearch();
         }
 
-        private void SetIdColumns() {
+        public void SetIdColumns() {
             BinaryValues = ComparisonTask.ComparisonKeys.BinaryValues.Concat(ComparisonTask.ComparisonKeys.UserIdColumnsBinary).Distinct().ToList();
             MainIdColumns = ComparisonTask.ComparisonKeys.MainKeys.Concat(ComparisonTask.ComparisonKeys.UserIdColumns).Distinct().ToList();
         }
@@ -118,6 +119,8 @@ namespace Reflection.Models {
                 rowsCount += Data.Sum(row => row.Deviations.Count) + ExtraMaster.Count + ExtraTest.Count;
                 var projectName = GetProjectName(filePath);
                 var upgradeVersions = GetUpgradeName(filePath);
+                ComparisonTask.ProjectName = projectName;
+                ComparisonTask.UpgradeVersions = upgradeVersions;
                 EnableDefectsSearchEngine(projectName, upgradeVersions);
                 dataToSave = PrepareDataLinar(rowsCount);
                 DisableDefectsSearchEngine();
@@ -180,18 +183,20 @@ namespace Reflection.Models {
             File.Delete(ComparisonTask.CommonDirectoryPath + "\\Passed.temp");
         }
 
-        public void SavePassed(string filePath, char[] delimiter, string[,] array) {
-            if (!IsExcelInstaled || array.GetLength(0) > 1000000) {
+        public void SavePassed(string filePath, char[] delimiter, IEnumerable<string> masterContent, IEnumerable<string> testContent) {
+            string[,] array = null;
+            if (!IsExcelInstaled || ComparisonTask.MasterRowsCount > 1000000) {
                 Delimiter = delimiter;
-                SaveToFlatFile(filePath, array);
+                SavePassedToFlatFile(filePath, masterContent, testContent);
                 ComparisonTask.IsToExcelSaved = false;
             } else {
+                array = GetPassedForExcel(masterContent, testContent);
                 SaveToExcel(filePath, array, true);
                 ComparisonTask.IsToExcelSaved = true;
             }
         }
 
-        private string[,] PrepareDataTabular(int rowsCount) {
+        public string[,] PrepareDataTabular(int rowsCount) {
             DeviationColumns = Data.SelectMany(row => row.Deviations.Select(col => col.ColumnId)).Distinct().OrderBy(colId => colId).ToList();
             var allColumns = MainIdColumns.Concat(DeviationColumns).ToList();
             Headers = GenerateHeadersForFile(BinaryValues, allColumns);
@@ -216,7 +221,7 @@ namespace Reflection.Models {
             return dataToSave;
         }
 
-        private string[,] PrepareDataLinar(int rowsCount) {
+        public string[,] PrepareDataLinar(int rowsCount) {
             Headers = GenerateHeadersForFile(BinaryValues, MainIdColumns);
             Headers.Add("Column Name");
             Headers.Add("Master Value");
@@ -254,7 +259,7 @@ namespace Reflection.Models {
                 ComparisonTask.UpdateProgress(10 / (double)numRows);
                 sb.Append(values[row, 0]);
                 for (int col = 1; col < numCols; col++)
-                    sb.Append(Delimiter + values[row, col]);
+                    sb.Append(string.Join("", Delimiter) + values[row, col]);
                 sb.AppendLine();
             }
             File.WriteAllText(filePath + ".txt", sb.ToString());
@@ -312,8 +317,6 @@ namespace Reflection.Models {
             }
             return result;
         }
-
-
 
         private string GetProjectName(string filePath) {
             var r = Splitter.Split(filePath, new char[] { '\\' });
@@ -527,6 +530,128 @@ namespace Reflection.Models {
             ExtraMaster.Clear();
             ExtraTest.Clear();
             PassedRows.Clear();
+        }
+
+        private void SavePassedToFlatFile(string path, IEnumerable<string> masterFileContent, IEnumerable<string> testFileContent) {
+            List<string> rowToSave = new List<string>();
+            List<int> mainColumnsToGet = new List<int>();
+            var delimiter = string.Join("", Delimiter);
+            mainColumnsToGet = ComparisonTask.ComparisonKeys.MainKeys.Concat(ComparisonTask.ComparisonKeys.UserIdColumns).Distinct().ToList();
+            rowToSave.Add("Comparison Result");
+            var transHeaders = GetValuesByPositions(MasterHeaders.Data, ComparisonTask.ComparisonKeys.BinaryValues);
+            foreach (var item in transHeaders) {
+                rowToSave.Add("M_" + item);
+                rowToSave.Add("T_" + item);
+            }
+            var mainHeaders = GetValuesByPositions(TestHeaders.Data, mainColumnsToGet);
+            foreach (var item in mainHeaders) {
+                rowToSave.Add(item);
+            }
+            File.WriteAllText(path+".txt", string.Join(delimiter, rowToSave));
+            masterFileContent = ComparisonTask.MasterConfiguration.IsHeadersExist ? masterFileContent.Skip(1) : masterFileContent;
+            testFileContent = ComparisonTask.TestConfiguration.IsHeadersExist ? testFileContent.Skip(1) : testFileContent;
+            List<string> content = new List<string>();        
+            if (ComparisonTask.ComparisonKeys.BinaryValues.Count > 0) {
+                int rowCount = 0;
+                foreach (var line in masterFileContent) {
+                    rowToSave.Clear();
+                    rowToSave.Add(Environment.NewLine);
+                    var rowMaster = Splitter.Split(line, ComparisonTask.MasterConfiguration.Delimiter);
+                    var rowTest = Splitter.Split(testFileContent.Skip(rowCount).First(), ComparisonTask.TestConfiguration.Delimiter);
+                    rowToSave.Add("Passed");
+                    var masterVals = GetValuesByPositions(rowMaster, ComparisonTask.ComparisonKeys.BinaryValues);
+                    var testVals = GetValuesByPositions(rowTest, ComparisonTask.ComparisonKeys.BinaryValues);
+                    for (int i = 0; i < masterVals.Count; i++) {
+                        rowToSave.Add(masterVals[i]);
+                        rowToSave.Add(testVals[i]);
+                    }
+                    rowToSave.AddRange(GetValuesByPositions(rowMaster, mainColumnsToGet));
+                    rowCount++;
+                    content.Add(string.Join(delimiter, rowToSave));
+                    if (content.Count > 50000) {
+                        File.AppendAllText(path, string.Join(delimiter, content));
+                        content.Clear();
+                    }                   
+                }
+            } else {
+                foreach (var line in masterFileContent) {
+                    var rowMaster = Splitter.Split(line, ComparisonTask.MasterConfiguration.Delimiter);
+                    rowToSave.Clear();
+                    rowToSave.Add(Environment.NewLine);
+                    rowToSave.Add("Passed");
+                    rowToSave.AddRange(GetValuesByPositions(rowMaster, mainColumnsToGet));
+                    content.Add(string.Join(delimiter, rowToSave));
+                    if (content.Count > 50000) {
+                        File.AppendAllText(path, string.Join(delimiter, content));
+                        content.Clear();
+                    }
+                }
+            }
+            File.AppendAllText(path, string.Join(delimiter, content));
+            content.Clear();
+        }
+
+        public string[,] GetPassedForExcel(IEnumerable<string> masterFileContent, IEnumerable<string> testFileContent) {
+            List<int> mainColumnsToGet = new List<int>();           
+            mainColumnsToGet = ComparisonTask.ComparisonKeys.MainKeys.Concat(ComparisonTask.ComparisonKeys.UserIdColumns).Distinct().ToList();
+            int allColumnsCount = 1 + mainColumnsToGet.Count + ComparisonTask.ComparisonKeys.BinaryValues.Count * 2;
+            string[,] outputArray = new string[1 + ComparisonTask.MasterRowsCount, allColumnsCount];
+            int rowCount = 0;
+            int columnCount = 0;
+            outputArray[rowCount, 0] = "Comparison Result";
+            var transHeaders = GetValuesByPositions(MasterHeaders.Data, ComparisonTask.ComparisonKeys.BinaryValues);
+            foreach (var item in transHeaders) {
+                columnCount++;
+                outputArray[rowCount, columnCount] = "M_" + item;
+                columnCount++;
+                outputArray[rowCount, columnCount] = "T_" + item;
+            }
+            var mainHeaders = GetValuesByPositions(TestHeaders.Data, mainColumnsToGet);
+            foreach (var item in mainHeaders) {
+                columnCount++;
+                outputArray[rowCount, columnCount] = item;
+            }
+            masterFileContent = ComparisonTask.MasterConfiguration.IsHeadersExist ? masterFileContent.Skip(1) : masterFileContent;
+            testFileContent = ComparisonTask.TestConfiguration.IsHeadersExist ? testFileContent.Skip(1) : testFileContent;
+            if (ComparisonTask.ComparisonKeys.BinaryValues.Count > 0) {
+                foreach (var line in masterFileContent) {
+                    var rowMaster = Splitter.Split(line, ComparisonTask.MasterConfiguration.Delimiter);
+                    var rowTest = Splitter.Split(testFileContent.Skip(rowCount).First(), ComparisonTask.TestConfiguration.Delimiter);
+                    List<string> rowToSave = new List<string>();
+                    rowToSave.Add("Passed");
+                    var masterVals = GetValuesByPositions(rowMaster, ComparisonTask.ComparisonKeys.BinaryValues);
+                    var testVals = GetValuesByPositions(rowTest, ComparisonTask.ComparisonKeys.BinaryValues);
+                    for (int i = 0; i < masterVals.Count; i++) {
+                        rowToSave.Add(masterVals[i]);
+                        rowToSave.Add(testVals[i]);
+                    }
+                    rowToSave.AddRange(GetValuesByPositions(rowMaster, mainColumnsToGet));
+                    rowCount++;
+                    for (int i = 0; i < rowToSave.Count; i++) {
+                        outputArray[rowCount, i] = rowToSave[i];
+                    }
+                }
+            } else {
+                foreach (var line in masterFileContent) {
+                    var rowMaster = Splitter.Split(line, ComparisonTask.MasterConfiguration.Delimiter);
+                    List<string> rowToSave = new List<string>();
+                    rowToSave.Add("Passed");
+                    rowToSave.AddRange(GetValuesByPositions(rowMaster, mainColumnsToGet));
+                    rowCount++;
+                    for (int i = 0; i < rowToSave.Count; i++) {
+                        outputArray[rowCount, i] = rowToSave[i];
+                    }
+                }
+            }
+            return outputArray;
+        }
+
+        public List<string> GetValuesByPositions(string[] data, IEnumerable<int> positions) {
+            var query = new List<string>();
+            foreach (var item in positions) {
+                query.Add(data[item]);
+            }
+            return query;
         }
     }
 }

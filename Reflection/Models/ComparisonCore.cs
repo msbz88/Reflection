@@ -12,7 +12,6 @@ namespace Reflection.Models {
         RowsMatch RowsMatch;
         Comparator Comparator;
         List<string> ComparedRowSB = new List<string>();
-        PerformanceCounter PerfCounter;
         CompareTable CompareTable;
         IWorkTable MasterTable;
         IWorkTable TestTable;
@@ -20,8 +19,7 @@ namespace Reflection.Models {
         char[] Delimiter;
         public List<ColumnSummary> BaseStat;
 
-        public ComparisonCore(PerformanceCounter perfCounter, ComparisonTask comparisonTask) {
-            PerfCounter = perfCounter;
+        public ComparisonCore(ComparisonTask comparisonTask) {
             ComparisonTask = comparisonTask;
         }
 
@@ -31,39 +29,30 @@ namespace Reflection.Models {
             Delimiter = SetDelimiter();
             CompareTable = new CompareTable(MasterTable.Headers, TestTable.Headers, ComparisonTask);
             //gather base stat  
-            PerfCounter.Start();
             BaseStat = GatherStatistics(MasterTable.Rows, TestTable.Rows);
             ComparisonTask.IfCancelRequested();
-            PerfCounter.Stop("Base Gather Stat");
             //analyse
-            //File.WriteAllLines(@"C:\Users\MSBZ\Desktop\baseStat.txt", BaseStat.Select(r => r.ToString()));
-            PerfCounter.Start();
             var comparisonKeys = AnalyseForPivotKey(MasterTable.Rows, BaseStat, MasterTable.Headers.Data);
             if (ComparisonTask.ComparisonKeys.UserKeys.Count == 0) {
                 ComparisonTask.ComparisonKeys.MainKeys = comparisonKeys.MainKeys;
             } else {
                 ComparisonTask.ComparisonKeys.MainKeys = ComparisonTask.ComparisonKeys.UserKeys;
             }
-            ComparisonTask.ComparisonKeys.BinaryValues = comparisonKeys.BinaryValues;
+         ComparisonTask.ComparisonKeys.BinaryValues = comparisonKeys.BinaryValues;
             ComparisonTask.ComparisonKeys.ExcludeColumns = comparisonKeys.ExcludeColumns;
             ComparisonTask.ComparisonKeys.UserIdColumns = comparisonKeys.UserIdColumns;
             ComparisonTask.ComparisonKeys.UserIdColumnsBinary = comparisonKeys.UserIdColumnsBinary;
             ComparisonTask.IsKeyReady = true;
             ComparisonTask.IfCancelRequested();
-            PerfCounter.Stop("AnalyseForPivotKey");
-            //File.AppendAllText(@"C:\Users\MSBZ\Desktop\baseStat.txt", "baseKeyIndex: " + string.Join(";", MasterTable.Headers.ColumnIndexIn(PivotKeysIndexes.MainKeys)));
             //rows match
             RowsMatch = new RowsMatch(BaseStat, ComparisonTask.ComparisonKeys, ComparisonTask);
             Comparator = new Comparator(ComparisonTask.ComparisonKeys, ComparisonTask.IsDeviationsOnly);
             //group
-            PerfCounter.Start();
             var groupsM = Group(MasterTable.Rows, ComparisonTask.ComparisonKeys.MainKeys);
             ComparisonTask.IfCancelRequested();
             ComparisonTask.UpdateProgress(2);
             var groupsT = Group(TestTable.Rows, ComparisonTask.ComparisonKeys.MainKeys);
             ComparisonTask.UpdateProgress(2);
-            PerfCounter.Stop("Base Group");
-            PerfCounter.Start();
             ComparisonTask.IfCancelRequested();
             var uMasterRows = groupsM.Where(r => r.Value.Count() == 1).ToDictionary(item => item.Key, item => item.Value.First());
             ComparisonTask.UpdateProgress(2);
@@ -80,8 +69,6 @@ namespace Reflection.Models {
             var tRemainings = Group(GetRemainings(TestTable.Rows, CompareTable.GetTestComparedRowsId()), ComparisonTask.ComparisonKeys.MainKeys);
             ComparisonTask.UpdateProgress(2);
             ComparisonTask.IfCancelRequested();
-            PerfCounter.Stop("Preparison");
-            PerfCounter.Start();
             var groups = from m in mRemainings
                          join t in tRemainings on m.Key equals t.Key
                          select new { Key = m.Key, ComparedRows = RowsMatch.ProcessGroup(m.Value, t.Value, mRemainings.Count) };
@@ -90,9 +77,7 @@ namespace Reflection.Models {
                 ComparisonTask.IfCancelRequested();
                 CompareTable.AddComparedRows(item.ComparedRows);
             }
-            PerfCounter.Stop("Process");
             //extra
-            PerfCounter.Start();
             ComparisonTask.RowsWithDeviations = CompareTable.ComparedRowsCount;
             ComparisonTask.IfCancelRequested();
 
@@ -107,24 +92,10 @@ namespace Reflection.Models {
             CompareTable.AddTestExtraRows(testExtra);
             ComparisonTask.UpdateProgress(1);
             ComparisonTask.ExtraTestCount = CompareTable.TestExtraCount;
-            PerfCounter.Stop("Extra");
-            PerfCounter.Start();
             ComparisonTask.IfCancelRequested();
-            ComparisonTask.UpdateProgress(2);
-            PerfCounter.Stop("Save comparison");
-            //PerfCounter.SaveAllResults();      
+            ComparisonTask.UpdateProgress(2); 
             return CompareTable;
         }
-
-        //private void UserKeyCorrection(List<int> userKeys) {
-        //    foreach (var excludedCol in ComparisonTask.ComparisonKeys.UserExcludeColumns) {
-        //        for (int i = 0; i < userKeys.Count; i++) {
-        //            if(userKeys[i] > excludedCol) {
-        //                userKeys[i] -= 1;
-        //            }
-        //        }
-        //    }
-        //}
 
         private char[] SetDelimiter() {
             if (MasterTable.Delimiter.Any(item=>item == '|')) {
@@ -210,10 +181,11 @@ namespace Reflection.Models {
                 var clearedStatsWithNum = baseStat.Where(col => !col.IsDouble && !col.HasNulls && !col.IsTransNo && !col.IsTimestamp && !userExcludeColumns.Contains(col.ColumnId)).ToList();
                 compositeKey.AddRange(AddKeysToAcceptExtra(clearedStatsWithNum, maxMatchingRate, mainPivotKey));
             }
+            var detectedIks = DetectIKs(headers, baseStat);
             var excludeColumns = baseStat.Where(item => item.IsTimestamp).Select(item => item.ColumnId).ToList();
             compKeys.BinaryValues = baseStat.Where(item => item.IsTransNo).Select(item => item.ColumnId).Except(ComparisonTask.ComparisonKeys.UserKeys).Except(userExcludeColumns).ToList();
             compKeys.MainKeys = compositeKey;
-            compKeys.ExcludeColumns = excludeColumns.Concat(userExcludeColumns).ToList();
+            compKeys.ExcludeColumns = excludeColumns.Concat(userExcludeColumns).Concat(detectedIks).ToList();
             var userIdColumns = ComparisonTask.MasterConfiguration.UserIdColumns.Concat(ComparisonTask.TestConfiguration.UserIdColumns).Distinct().Except(compKeys.MainKeys).Except(compKeys.BinaryValues);
             foreach (var item in userIdColumns) {
                 if (baseStat.Where(col => col.ColumnId == item).First().MatchingRate != 100) {
@@ -223,6 +195,18 @@ namespace Reflection.Models {
                 }
             }
             return compKeys;
+        }
+
+        private List<int> DetectIKs(string[] headers, List<ColumnSummary> stat) {
+            Dictionary<int, string> columnNames = new Dictionary<int, string>();
+            for (int i = 0; i < headers.Length; i++) {
+                columnNames.Add(i, headers[i]);
+            }
+            var columnNamesIK = columnNames.Where(item=>item.Value.EndsWith("IK") || item.Value.EndsWith("(IK)")).Select(item=>item.Key).ToList();
+            return (from st in stat
+                    join ik in columnNamesIK on st.ColumnId equals ik
+                   where st.IsNumber
+                   select ik).ToList();
         }
 
         private List<int> FindAdditionalKeys(List<ColumnSummary> clearedStats, double maxMatchingRate, int mainPivotKey) {

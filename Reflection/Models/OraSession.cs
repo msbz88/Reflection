@@ -66,15 +66,44 @@ namespace Reflection.Models {
             return result;
         }
 
+        public void InsertIntoLogTable(ComparisonTask comparisonTask, string userId) {
+            string query = "INSERT INTO VT_comp_app_log(userID, StartTime, MasterFilePath, TestFilePath, IsLinearView, IsDeviationOnly, MasterRowsCount, TestRowsCount, ActualRowsDiff, RowsWithDeviations, ExtraMasterCount, ExtraTestCount, Time, Status, Progress, IsUserKey, CompKey, ExcludedColumns, IdColumns, ErrorMessage, projectName, upgrade) " +
+                "VALUES(:userID, :startTime, :masterFilePath, :testFilePath, :isLinearView, :isDeviationOnly, :masterRowsCount, :testRowsCount, :actualRowsDiff, :rowsWithDeviations, :extraMasterCount, :extraTestCount, :time, :status, :progress, :isUserKey, :compKey, :excludedColumns, :idColumns, :errorMessage, :projectName, :upgrade)";
+            OracleCommand cmd = new OracleCommand(query, OracleConnection);
+            cmd.Parameters.Add(":userID", OracleDbType.Varchar2).Value = userId;
+            cmd.Parameters.Add(":startTime", OracleDbType.TimeStamp).Value = DateTime.Parse(comparisonTask.StartTime);
+            cmd.Parameters.Add(":masterFilePath", OracleDbType.Varchar2).Value = comparisonTask.MasterConfiguration.FilePath;
+            cmd.Parameters.Add(":testFilePath", OracleDbType.Varchar2).Value = comparisonTask.TestConfiguration.FilePath;
+            cmd.Parameters.Add(":isLinearView", OracleDbType.Varchar2).Value = comparisonTask.IsLinearView;
+            cmd.Parameters.Add(":isDeviationOnly", OracleDbType.Varchar2).Value = comparisonTask.IsDeviationsOnly;
+            cmd.Parameters.Add(":masterRowsCount", OracleDbType.Int32).Value = comparisonTask.MasterRowsCount;
+            cmd.Parameters.Add(":testRowsCount", OracleDbType.Int32).Value = comparisonTask.TestRowsCount;
+            cmd.Parameters.Add(":actualRowsDiff", OracleDbType.Int32).Value = comparisonTask.ActualRowsDiff;
+            cmd.Parameters.Add(":rowsWithDeviations", OracleDbType.Int32).Value = comparisonTask.RowsWithDeviations;
+            cmd.Parameters.Add(":extraMasterCount", OracleDbType.Int32).Value = comparisonTask.ExtraMasterCount;
+            cmd.Parameters.Add(":extraTestCount", OracleDbType.Int32).Value = comparisonTask.ExtraTestCount;
+            cmd.Parameters.Add(":time", OracleDbType.Varchar2).Value = comparisonTask.ElapsedTime;
+            cmd.Parameters.Add(":status", OracleDbType.Varchar2).Value = comparisonTask.Status;
+            cmd.Parameters.Add(":progress", OracleDbType.Varchar2).Value = comparisonTask.Progress > 100 ? 100 : comparisonTask.Progress;
+            cmd.Parameters.Add(":isUserKey", OracleDbType.Varchar2).Value = comparisonTask.ComparisonKeys.UserKeys.Count > 0 ? true : false;
+            cmd.Parameters.Add(":compKey", OracleDbType.Varchar2).Value = string.Join("; ", comparisonTask.NumberedColumnNames.Where(item=> comparisonTask.ComparisonKeys.MainKeys.Contains(item.Key)).Select(item=> item.Value));
+            cmd.Parameters.Add(":excludedColumnss", OracleDbType.Varchar2).Value = string.Join("; ", comparisonTask.NumberedColumnNames.Where(item => comparisonTask.ComparisonKeys.UserExcludeColumns.Contains(item.Key)).Select(item => item.Value));
+            cmd.Parameters.Add(":idColumns", OracleDbType.Varchar2).Value = string.Join("; ", comparisonTask.NumberedColumnNames.Where(item => comparisonTask.ComparisonKeys.UserIdColumns.Concat(comparisonTask.ComparisonKeys.UserIdColumnsBinary).Contains(item.Key)).Select(item => item.Value));
+            cmd.Parameters.Add(":errorMessage", OracleDbType.Varchar2).Value = comparisonTask.ErrorMessage;
+            cmd.Parameters.Add(":projectName", OracleDbType.Varchar2).Value = comparisonTask.ProjectName;
+            string upgrade = "";
+            if (comparisonTask.UpgradeVersions != null) {
+                upgrade = string.Join("->", comparisonTask.UpgradeVersions);
+            }
+            cmd.Parameters.Add(":upgrade", OracleDbType.Varchar2).Value = upgrade;
+            cmd.ExecuteNonQuery();
+        }
+
         private Task<List<KnownDefect>> ExecuteQueryParallel(OracleCommand cmd) {
             return Task.Run(() => ExecuteQuery(cmd));
         }
 
         public async Task<List<KnownDefect>> AsyncGetDefectsTable(OracleCommand cmd) {
-            //string query = "select * from VT_DEFECTS where PROJECT = :proj and UPGRADE = :upgrade";
-            //OracleCommand cmd = new OracleCommand(query, OracleConnection);
-            //cmd.Parameters.Add(":proj", OracleDbType.Varchar2).Value = proj;
-            //cmd.Parameters.Add(":upgrade", OracleDbType.Varchar2).Value = upgrade;
             return await ExecuteQueryParallel(cmd);
         }
 

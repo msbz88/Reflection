@@ -140,7 +140,7 @@ namespace Reflection.Views {
 
         private string PresentDelimiter(char[] delimiter) {
             string viewDelimiter = "";
-            switch (delimiter[0].ToString()) {
+            switch (string.Join("", delimiter)) {
                 case "\t":
                 viewDelimiter = "<\\t> (Tab)";
                 break;
@@ -166,8 +166,8 @@ namespace Reflection.Views {
         private void TextBoxDelimiterGotFocus(object senderIn, RoutedEventArgs eIn) {
             if (PresentDelimiter(MasterViewModel.Delimiter) == TextBoxDelimiter.Text) {
                 var delimiter = MasterViewModel.Delimiter;
-                if (delimiter[0].ToString() == "\\t") {
-                    delimiter = new char[] { '\t' };
+                if (string.Join("", delimiter) == "\t") {
+                    delimiter = new char[] { '\\', 't' };
                 }
                 TextBoxDelimiter.Text = string.Join("", delimiter);
             } else {
@@ -176,11 +176,11 @@ namespace Reflection.Views {
         }
 
         private void TextBoxDelimiterLostFocus(object senderIn, RoutedEventArgs eIn) {
-            if (TextBoxDelimiter.Text.ToCharArray() != MasterViewModel.Delimiter) {
+            if (TextBoxDelimiter.Text.ToCharArray() != MasterViewModel.Delimiter && TextBoxDelimiter.Text != "") {
                 customDelimiter = TextBoxDelimiter.Text.ToCharArray();
                 TextBoxDelimiter.Text = PresentDelimiter(TextBoxDelimiter.Text.ToCharArray());
                 var currViewModel = Version == "Master" ? MasterViewModel : TestViewModel;
-                currViewModel.Delimiter = customDelimiter[0].ToString() == "\\t"? new char[] { '\t' } : customDelimiter;               
+                currViewModel.Delimiter = string.Join("", customDelimiter) == "\\t"? new char[] { '\t' } : customDelimiter;               
                 if (currViewModel.IsUserInput && !currViewModel.IsFirstStart) {
                     AsyncRenderFileWithSetPreviewToView(currViewModel, false);
                 }

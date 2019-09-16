@@ -71,7 +71,9 @@ namespace Reflection.ViewModels {
             }           
             SkippedLines = new List<string>();
             FileReader = new FileReader();
-            IsFirstStart = true;           
+            IsFirstStart = true;
+            FirstRow = new string[0];
+            SecondRow = new string[0];
         }
 
         private void UpdateHeaders(string[] headers) {

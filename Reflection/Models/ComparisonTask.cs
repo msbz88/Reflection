@@ -144,7 +144,7 @@ namespace Reflection.Models {
             }
         }
         public int ExceptedRecords { get; set; }
-        public bool IsToExcelSaved {get; set;}
+        public bool IsToExcelSaved { get; set; }
         bool isKeyReady;
         public bool IsKeyReady {
             get { return isKeyReady; }
@@ -153,6 +153,9 @@ namespace Reflection.Models {
                 OnPropertyChanged("IsKeyReady");
             }
         }
+        public Dictionary<int, string> NumberedColumnNames { get; set; }
+        public string ProjectName {get; set;}
+        public List<double> UpgradeVersions { get; set; }
 
         public ComparisonTask(int comparisonId, ImportConfiguration masterConfiguration, ImportConfiguration testConfiguration) {
             ComparisonId = comparisonId;
@@ -170,6 +173,7 @@ namespace Reflection.Models {
             Stopwatch = new Stopwatch();
             ComparisonKeys = new ComparisonKeys();
             ComparisonKeys.UserKeys = masterConfiguration.UserKeys;
+            NumberedColumnNames = new Dictionary<int, string>();
         }
 
         public void UpdateProgress(double val) {
@@ -188,6 +192,9 @@ namespace Reflection.Models {
         }
 
         private string FindCommonDirectory(string masterPath, string testPath) {
+            if (masterPath == "" || testPath == "") {
+                return "";
+            }
             var mDir = Splitter.Split(masterPath, new char[] {'\\'});
             var tDir = Splitter.Split(testPath, new char[] { '\\' });
             var lenArr = new int[] { mDir.Length - 1, tDir.Length - 1, ChechForbiddenChars(mDir), ChechForbiddenChars(tDir) };     

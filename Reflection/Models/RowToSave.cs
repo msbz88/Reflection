@@ -22,8 +22,6 @@ namespace Reflection.Models {
             Diff = ParsedExtraRow.Length.ToString();
         }
 
-
-
         public List<List<string>> PrepareRowLinear(Dictionary<int, string> columnNames, DefectsSearch defectsSearch) {
             var result = new List<List<string>>();
             foreach (var deviation in ComparedRow.Deviations) {
