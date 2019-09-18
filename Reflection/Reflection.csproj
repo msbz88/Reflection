@@ -85,6 +85,7 @@
     </ApplicationDefinition>
     <Compile Include="Models\ColumnsCorrection.cs" />
     <Compile Include="Models\AsyncObservableCollection.cs" />
+    <Compile Include="Models\Helpers.cs" />
     <Compile Include="Models\MoveColumn.cs" />
     <Compile Include="Models\Comparator.cs" />
     <Compile Include="Models\ColumnName.cs" />
@@ -100,7 +101,6 @@
     <Compile Include="Models\Interfaces\IImportConfiguration.cs" />
     <Compile Include="Models\Interfaces\IWorkTable.cs" />
     <Compile Include="Models\KnownDefect.cs" />
-    <Compile Include="Models\LevenshteinDistance.cs" />
     <Compile Include="Models\MatchedFileNames.cs" />
     <Compile Include="Models\OraSession.cs" />
     <Compile Include="Models\PerformanceCounter.cs" />
@@ -110,6 +110,7 @@
     <Compile Include="Models\Splitter.cs" />
     <Compile Include="Models\Status.cs" />
     <Compile Include="Models\RowsMatch.cs" />
+    <Compile Include="Models\UserKeys.cs" />
     <Compile Include="Models\Version.cs" />
     <Compile Include="Models\WorkTable.cs" />
     <Compile Include="ViewModels\ColumnNamesViewModel.cs" />

@@ -88,7 +88,7 @@ namespace Reflection.Models {
                     transNoValues.Add(ParsedExtraRow[colId]);
                 }
             }
-            var idColumnsValues = GetValuesByPositions(mainIdColumns);
+            var idColumnsValues = Helpers.GetValuesByPositions(ParsedExtraRow, mainIdColumns);
             result.AddRange(transNoValues);
             result.AddRange(idColumnsValues);
             return result;
@@ -104,7 +104,7 @@ namespace Reflection.Models {
                 transNoValues.Add(ParsedExtraRow[colId]);
                 transNoValues.Add(ParsedExtraRow[colId]);
             }
-            var idColumnsValues = GetValuesByPositions(mainIdColumns);
+            var idColumnsValues = Helpers.GetValuesByPositions(ParsedExtraRow, mainIdColumns);
             result.AddRange(transNoValues);
             result.AddRange(idColumnsValues);
             return result;
@@ -124,14 +124,7 @@ namespace Reflection.Models {
             }
             return result;
         }
-
-        private List<string> GetValuesByPositions(IEnumerable<int> positions) {
-            var query = new List<string>();
-            foreach (var item in positions) {
-                query.Add(ParsedExtraRow[item]);
-            }
-            return query;
-        }
+    
 
     }
 }

@@ -20,7 +20,7 @@ namespace Reflection.Models {
             TestCorrection = new List<MoveColumn>();
         }
 
-        public void AnalyseFileDimensions() {
+        public void Correct() {
             CheckHowHeadersAreDifferent();
             int innerColumnsCount = ColumnsCount;
             for (int i = 0; i < ColumnsCount; i++) {
@@ -51,8 +51,8 @@ namespace Reflection.Models {
                             MasterCorrection.Add(new MoveColumn(i, innerColumnsCount));
                             MasterCorrection.Add(new MoveColumn(masterIndex, i));
                             TestCorrection.Add(new MoveColumn(innerColumnsCount, innerColumnsCount));
-                            MasterHeaders.RemoveAt(testIndex);
-                            MasterHeaders.Insert(testIndex, "");
+                            MasterHeaders.RemoveAt(masterIndex);
+                            MasterHeaders.Insert(masterIndex, "");
                             MasterCorrection.Add(new MoveColumn(masterIndex, masterIndex));
                             innerColumnsCount++;
                         }
@@ -67,10 +67,16 @@ namespace Reflection.Models {
         }
 
         private void CheckHowHeadersAreDifferent() {
+            if (!MasterHeaders.Any()) {
+                throw new Exception("Unable to match columns for comparison.\nMaster and Test files have different numbers of columns, and Master file has no headers.");
+            }
+            if(!TestHeaders.Any()) {
+                throw new Exception("Unable to match columns for comparison.\nMaster and Test files have different numbers of columns, and Test file has no headers.");
+            }
             var matchedNames = MasterHeaders.Intersect(TestHeaders);
-            var res = matchedNames.Count() / (double)ColumnsCount;
-            if (res <= 0.80 && MasterHeaders.Count != TestHeaders.Count) {
-                throw new Exception("Unable to match columns for comparison. Master and Test files have different numbers of columns, and the headers between them are very different.");
+            var matchingRatio = matchedNames.Count() / (double)ColumnsCount;
+            if (matchingRatio < 0.75) {
+                throw new Exception("Unable to match columns for comparison.\nMaster and Test files have different numbers of columns, and the headers between them are very different.");
             }
         }
 

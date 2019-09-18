@@ -16,9 +16,6 @@ namespace Reflection.ViewModels {
     public class ImportViewModel : INotifyPropertyChanged {
         public event PropertyChangedEventHandler PropertyChanged;
         public string FilePath { get; set; }
-        public List<int> UserKeys { get; set; }
-        public List<int> UserIdColumns { get; set; }
-        public List<int> UserExcludeColumns { get; set; }
         public char[] Delimiter { get; set; }
         public int RowsToSkip { get; set; }
         bool isHeadersExist;
@@ -29,7 +26,7 @@ namespace Reflection.ViewModels {
                     isHeadersExist = value;
                     if (!IsMultiple) {
                         RaisePropertyChanged("IsHeadersExist");
-                    }                   
+                    }
                 }
             }
         }
@@ -58,17 +55,15 @@ namespace Reflection.ViewModels {
         public bool IsFirstStart { get; set; }
         public bool IsUserInput { get; set; }
         public bool IsMultiple { get; set; }
+        public ImportConfiguration ReturnedImportConfiguration { get; set; }
 
         public ImportViewModel() {
-            UserKeys = new List<int>();
-            UserIdColumns = new List<int>();
-            UserExcludeColumns = new List<int>();
             FileHeaders = new List<string>();
             if (IsMultiple) {
                 PreviewContent = new ObservableCollection<string[]>();
-            }else {
+            } else {
                 PreviewContent = new AsyncObservableCollection<string[]>();
-            }           
+            }
             SkippedLines = new List<string>();
             FileReader = new FileReader();
             IsFirstStart = true;
@@ -97,7 +92,39 @@ namespace Reflection.ViewModels {
                     } else {
                         UpdateHeaders(headers);
                         IsHeadersExist = true;
-                    }                   
+                    }
+                } else {
+                    var headers = Splitter.Split(FileContent.First(), Delimiter);
+                    IsHeadersExist = IsHeadersRow(headers);
+                    if (IsHeadersExist) {
+                        UpdateHeaders(headers);
+                    } else {
+                        UpdateHeaders(GenerateDefaultHeaders(headers.Length));
+                    }
+                }
+                SetPreview(FilePath);
+            }
+            IsFirstStart = false;
+            IsUserInput = true;
+        }
+
+        public void AnalyseFile(ImportConfiguration importConfiguration) {
+            Encoding = importConfiguration.Encoding;
+            FileContent = FileReader.ReadFewLines(importConfiguration.FilePath, PreviewCount, Encoding).ToArray();
+            if (FileContent.Any()) {
+                Delimiter = importConfiguration.Delimiter;
+                RowsToSkip = importConfiguration.RowsToSkip;
+                if (FileContent.Skip(RowsToSkip).Count() > 1) {
+                    FirstRow = Splitter.Split(FileContent.Skip(RowsToSkip).FirstOrDefault(), Delimiter);
+                    SecondRow = Splitter.Split(FileContent.Skip(RowsToSkip + 1).FirstOrDefault(), Delimiter);
+                    var headers = HeaderCheck(FirstRow, SecondRow);
+                    if (headers == null) {
+                        UpdateHeaders(GenerateDefaultHeaders(FirstRow.Length));
+                        IsHeadersExist = false;
+                    } else {
+                        UpdateHeaders(headers);
+                        IsHeadersExist = true;
+                    }
                 } else {
                     var headers = Splitter.Split(FileContent.First(), Delimiter);
                     IsHeadersExist = IsHeadersRow(headers);
@@ -145,7 +172,7 @@ namespace Reflection.ViewModels {
                 var len = item.Length;
                 var trimmedItem = len <= 500 ? item : item.Substring(0, 499);
                 SkippedLines.Add(trimmedItem);
-            }          
+            }
         }
 
         private void SetPreview(string path) {
@@ -168,8 +195,14 @@ namespace Reflection.ViewModels {
             foreach (char delimiter in delimiters) {
                 counts[delimiter] = fileContent.Sum(item => item.Where(chr => chr == delimiter).Count());
             }
-            var maxRepeated = counts.Max(item => item.Value);
-            return new char[] { counts.Where(item => item.Value == maxRepeated).Select(item => item.Key).FirstOrDefault() };
+            var topTwoDelimiters = counts.OrderByDescending(item => item.Value).Take(2);
+            if (topTwoDelimiters.Last().Key == '\t' && topTwoDelimiters.Last().Value > 0) {
+                return new char[] { '\t' };
+            } else if (topTwoDelimiters.First().Key == '\t' && topTwoDelimiters.Last().Key == ';' && topTwoDelimiters.Last().Value > 0) {
+                return new char[] { ';' };
+            } else {
+                return new char[] { topTwoDelimiters.First().Key };
+            }
         }
 
         private int FindDataBeginning(IEnumerable<string> fileContent) {
@@ -194,7 +227,7 @@ namespace Reflection.ViewModels {
         }
 
         private string[] HeaderCheck(string[] firstRow, string[] secondRow) {
-            if(firstRow.Length != secondRow.Length) {
+            if (firstRow.Length != secondRow.Length) {
                 return null;
             }
             var result = new string[firstRow.Length];
@@ -272,9 +305,6 @@ namespace Reflection.ViewModels {
                 rowsToSkip: RowsToSkip,
                 isHeadersExist: IsHeadersExist,
                 encoding: Encoding,
-                userKeys: UserKeys,
-                userIdColumns: UserIdColumns,
-                userExcludeColumns: UserExcludeColumns,
                 columnsCount: FileHeaders.Count
                 );
         }

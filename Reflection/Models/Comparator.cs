@@ -14,9 +14,7 @@ namespace Reflection.Models {
             IsDeviationsOnly = isDeviationsOnly;
             ComparisonKeys = comparisonKeys;
             ExcludedColumns = new List<int>();
-            ExcludedColumns.AddRange(comparisonKeys.BinaryValues);
-            ExcludedColumns.AddRange(comparisonKeys.ExcludeColumns);
-            ExcludedColumns = ExcludedColumns.Distinct().ToList();
+            ExcludedColumns = comparisonKeys.ExcludeColumns;
         }
 
         public ComparedRow Compare(List<ComparedRow> allCombinations, Row masterRow, Row testRow, ref int minDeviations) {
@@ -88,7 +86,7 @@ namespace Reflection.Models {
             foreach (var item in ComparisonKeys.MainKeys) {                
                 mainColumnsId.Add(item, masterRow.Data[item]);
             }
-            foreach (var item in ComparisonKeys.UserIdColumns) {
+            foreach (var item in ComparisonKeys.SingleIdColumns) {
                 if (!mainColumnsId.ContainsKey(item)) {
                     mainColumnsId.Add(item, masterRow.Data[item]);
                 }                   
@@ -98,14 +96,14 @@ namespace Reflection.Models {
 
         private List<BinaryValue> GetTransNoColumns(Row masterRow, Row testRow) {
             List<BinaryValue> transNoColumns = new List<BinaryValue>();
-            foreach (var item in ComparisonKeys.BinaryValues) {
+            foreach (var item in ComparisonKeys.BinaryIdColumns) {
                 BinaryValue transNo = new BinaryValue();
                 transNo.ColumnId = item;
                 transNo.MasterValue = masterRow.Data[item];
                 transNo.TestValue = testRow.Data[item];
                 transNoColumns.Add(transNo);
             }
-            foreach (var item in ComparisonKeys.UserIdColumnsBinary) {
+            foreach (var item in ComparisonKeys.BinaryIdColumns) {
                 if (transNoColumns.All(col => col.ColumnId != item)) {
                     BinaryValue userExcludeColumn = new BinaryValue();
                     userExcludeColumn.ColumnId = item;

@@ -43,6 +43,7 @@ namespace Reflection {
             Main.Content = PageMain;
             PageMain.OpenFiles += OnOpenFiles;
             PageMain.Error += OnError;
+            PageMain.AddCompTask += OnAddCompTask;
             PageImport = new PageImport();
             PageImport.FilesLoaded += OnFilesLoaded;
             PageImport.GoBack += OnGoBack;
@@ -66,7 +67,8 @@ namespace Reflection {
         private void OnFilesLoaded(object sender, EventArgs e) {
             StatusBarContent.Text = "";
             var configs = (List<ImportConfiguration>)sender;
-            ComparisonDetailViewModel.AddComparisonTask(configs[0], configs[1]);           
+            var userKeys = PageImport.UserKeys;
+            ComparisonDetailViewModel.AddComparisonTask(configs[0], configs[1], userKeys);           
             Main.Content = PageMain;         
         }
 
@@ -155,6 +157,11 @@ namespace Reflection {
             var compTask = (ComparisonTask)senderIn;
             PageImport.SingleFileView += OnIsSingle;
             PageImport.ReturnToView(compTask);
+        }
+
+        private void OnAddCompTask(object sender, EventArgs e) {
+            var compTask = (ComparisonTask)sender;
+            ComparisonDetailViewModel.AddComparisonTask(compTask.MasterConfiguration, compTask.TestConfiguration, compTask.UserKeys);
         }
     }
 }

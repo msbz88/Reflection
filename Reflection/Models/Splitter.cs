@@ -15,7 +15,7 @@ namespace Reflection.Models {
             }          
         }
 
-        public static string[] SplitQuoted(string str, char delimiter) {
+        private static string[] SplitQuoted(string str, char delimiter) {
             Regex pattern = new Regex("(?:^|" + delimiter + ")(\"(?:[^\"])*\"|[^" + delimiter + "]*)");
             List<string> list = new List<string>();
             string curr = null;

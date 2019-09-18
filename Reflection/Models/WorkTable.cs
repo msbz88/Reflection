@@ -102,5 +102,7 @@ namespace Reflection.Models {
             Rows.Clear();
             Rows.TrimExcess();
         }
+
+      
     }
 }

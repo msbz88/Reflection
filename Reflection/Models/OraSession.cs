@@ -66,7 +66,7 @@ namespace Reflection.Models {
             return result;
         }
 
-        public void InsertIntoLogTable(ComparisonTask comparisonTask, string userId) {
+        public void InsertIntoLogTable(ComparisonTask comparisonTask, string userId, Dictionary<int, string> numberedColumnNames, bool isUserKey) {
             string query = "INSERT INTO VT_comp_app_log(userID, StartTime, MasterFilePath, TestFilePath, IsLinearView, IsDeviationOnly, MasterRowsCount, TestRowsCount, ActualRowsDiff, RowsWithDeviations, ExtraMasterCount, ExtraTestCount, Time, Status, Progress, IsUserKey, CompKey, ExcludedColumns, IdColumns, ErrorMessage, projectName, upgrade) " +
                 "VALUES(:userID, :startTime, :masterFilePath, :testFilePath, :isLinearView, :isDeviationOnly, :masterRowsCount, :testRowsCount, :actualRowsDiff, :rowsWithDeviations, :extraMasterCount, :extraTestCount, :time, :status, :progress, :isUserKey, :compKey, :excludedColumns, :idColumns, :errorMessage, :projectName, :upgrade)";
             OracleCommand cmd = new OracleCommand(query, OracleConnection);
@@ -85,10 +85,10 @@ namespace Reflection.Models {
             cmd.Parameters.Add(":time", OracleDbType.Varchar2).Value = comparisonTask.ElapsedTime;
             cmd.Parameters.Add(":status", OracleDbType.Varchar2).Value = comparisonTask.Status;
             cmd.Parameters.Add(":progress", OracleDbType.Varchar2).Value = comparisonTask.Progress > 100 ? 100 : comparisonTask.Progress;
-            cmd.Parameters.Add(":isUserKey", OracleDbType.Varchar2).Value = comparisonTask.ComparisonKeys.UserKeys.Count > 0 ? true : false;
-            cmd.Parameters.Add(":compKey", OracleDbType.Varchar2).Value = string.Join("; ", comparisonTask.NumberedColumnNames.Where(item=> comparisonTask.ComparisonKeys.MainKeys.Contains(item.Key)).Select(item=> item.Value));
-            cmd.Parameters.Add(":excludedColumnss", OracleDbType.Varchar2).Value = string.Join("; ", comparisonTask.NumberedColumnNames.Where(item => comparisonTask.ComparisonKeys.UserExcludeColumns.Contains(item.Key)).Select(item => item.Value));
-            cmd.Parameters.Add(":idColumns", OracleDbType.Varchar2).Value = string.Join("; ", comparisonTask.NumberedColumnNames.Where(item => comparisonTask.ComparisonKeys.UserIdColumns.Concat(comparisonTask.ComparisonKeys.UserIdColumnsBinary).Contains(item.Key)).Select(item => item.Value));
+            cmd.Parameters.Add(":isUserKey", OracleDbType.Varchar2).Value = isUserKey;
+            cmd.Parameters.Add(":compKey", OracleDbType.Varchar2).Value = string.Join("; ", numberedColumnNames.Where(item=> comparisonTask.ComparisonKeys.MainKeys.Contains(item.Key)).Select(item=> item.Value));
+            cmd.Parameters.Add(":excludedColumnss", OracleDbType.Varchar2).Value = string.Join("; ", numberedColumnNames.Where(item => comparisonTask.ComparisonKeys.ExcludeColumns.Contains(item.Key)).Select(item => item.Value));
+            cmd.Parameters.Add(":idColumns", OracleDbType.Varchar2).Value = string.Join("; ", numberedColumnNames.Where(item => comparisonTask.ComparisonKeys.SingleIdColumns.Concat(comparisonTask.ComparisonKeys.BinaryIdColumns).Contains(item.Key)).Select(item => item.Value));
             cmd.Parameters.Add(":errorMessage", OracleDbType.Varchar2).Value = comparisonTask.ErrorMessage;
             cmd.Parameters.Add(":projectName", OracleDbType.Varchar2).Value = comparisonTask.ProjectName;
             string upgrade = "";

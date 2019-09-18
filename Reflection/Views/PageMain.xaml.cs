@@ -30,6 +30,7 @@ namespace Reflection.Views {
         public EventHandler LinearView { get; set; }
         public EventHandler ResultFileView { get; set; }
         public EventHandler BackToImport { get; set; }
+        public EventHandler AddCompTask { get; set; }
         public ComparisonTasksViewModel ComparisonTasksViewModel { get; set; }
         ComparisonTask currectComparisonTask;
         Button stopRestartButton;
@@ -160,7 +161,7 @@ namespace Reflection.Views {
                 currectComparisonTask.Status = Status.Canceling;
                 currectComparisonTask.CancellationToken.Cancel();
             } else if (stopRestartButton.Content.ToString() == "Restart") {
-                ComparisonTasksViewModel.AddComparisonTask(currectComparisonTask.MasterConfiguration, currectComparisonTask.TestConfiguration);
+                AddCompTask?.Invoke(currectComparisonTask, null);
             }
         }
 

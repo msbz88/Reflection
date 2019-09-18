@@ -121,7 +121,7 @@ namespace Reflection.Models {
         }
 
         private ComparedRow SortByPriority(IEnumerable<ColumnSummary> statDeviationsColumns) {
-            var columnsOrderedByPriority = statDeviationsColumns.OrderBy(col => col.MatchingRate).ThenBy(col => col.UniqMatchRate).Select(col => col.ColumnId);
+            var columnsOrderedByPriority = statDeviationsColumns.Where(col => col.UniquenessRate > 1).OrderBy(col => col.MatchingRate).ThenBy(col => col.UniqMatchRate).Select(col => col.ColumnId);
             List<ComparedRow> bestMatched = new List<ComparedRow>();
             ComparedRow comparedRow = null;
             foreach (var item in columnsOrderedByPriority) {

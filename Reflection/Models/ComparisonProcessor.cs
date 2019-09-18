@@ -9,7 +9,6 @@ using Reflection.Models.Interfaces;
 
 namespace Reflection.Models {
     public class ComparisonProcessor {
-        //public ComparisonTask ComparisonTask { get; set; }
         IFileReader FileReader { get; set; }
         public IWorkTable MasterTable;
         public IWorkTable TestTable;
@@ -23,7 +22,7 @@ namespace Reflection.Models {
         public ComparisonProcessor() {
         }
 
-        private void ReadFiles(ImportConfiguration masterConfiguration, ImportConfiguration testConfiguration, ComparisonTask comparisonTask) {        
+        private void ReadFiles(ImportConfiguration masterConfiguration, ImportConfiguration testConfiguration, ComparisonTask comparisonTask) {
             int masterHeaderRowCount = masterConfiguration.IsHeadersExist ? 1 : 0;
             int testHeaderRowCount = testConfiguration.IsHeadersExist ? 1 : 0;
             MasterFileContent = FileReader.ReadFile(masterConfiguration.FilePath, masterConfiguration.RowsToSkip, masterConfiguration.Encoding);
@@ -49,38 +48,33 @@ namespace Reflection.Models {
             TestTable = new WorkTable("Test");
             IEnumerable<string> MasterHeadersLine = Enumerable.Empty<string>();
             IEnumerable<string> TestHeadersLine = Enumerable.Empty<string>();
+            IEnumerable<string> masterHeaders = Enumerable.Empty<string>();
+            IEnumerable<string> testHeaders = Enumerable.Empty<string>();
             if (comparisonTask.MasterConfiguration.IsHeadersExist) {
-                MasterHeadersLine = MasterFileContent.Take(1);
+                MasterHeadersLine = masterContent.Take(1);
+                masterHeaders = Splitter.Split(MasterHeadersLine.First(), comparisonTask.MasterConfiguration.Delimiter);
             }
             if (comparisonTask.TestConfiguration.IsHeadersExist) {
-                TestHeadersLine = TestFileContent.Take(1);
+                TestHeadersLine = testContent.Take(1);
+                testHeaders = Splitter.Split(TestHeadersLine.First(), comparisonTask.TestConfiguration.Delimiter);
             }
-            var masterHeaders = FindHeaders(masterContent.FirstOrDefault(), comparisonTask.MasterConfiguration.IsHeadersExist, comparisonTask.MasterConfiguration.Delimiter);
-            var testHeaders = FindHeaders(testContent.FirstOrDefault(), comparisonTask.TestConfiguration.IsHeadersExist, comparisonTask.TestConfiguration.Delimiter);
-            ColumnsCorrection colCorr = new ColumnsCorrection(masterHeaders.ToList(), testHeaders.ToList());
-            colCorr.AnalyseFileDimensions();
+            ColumnsCorrection columnsCorrection = new ColumnsCorrection(masterHeaders.ToList(), testHeaders.ToList());
+            if (comparisonTask.MasterConfiguration.ColumnsCount != comparisonTask.TestConfiguration.ColumnsCount) {
+                columnsCorrection.Correct();
+            }
             comparisonTask.IfCancelRequested();
-            MasterTable.LoadData(MasterHeadersLine.Concat(exceptedMasterData), comparisonTask.MasterConfiguration.Delimiter, comparisonTask.MasterConfiguration.IsHeadersExist, comparisonTask, colCorr.MasterCorrection);
+            MasterTable.LoadData(MasterHeadersLine.Concat(exceptedMasterData), comparisonTask.MasterConfiguration.Delimiter, comparisonTask.MasterConfiguration.IsHeadersExist, comparisonTask, columnsCorrection.MasterCorrection);
             comparisonTask.IfCancelRequested();
-            TestTable.LoadData(TestHeadersLine.Concat(exceptedTestData), comparisonTask.TestConfiguration.Delimiter, comparisonTask.TestConfiguration.IsHeadersExist, comparisonTask, colCorr.TestCorrection);
+            TestTable.LoadData(TestHeadersLine.Concat(exceptedTestData), comparisonTask.TestConfiguration.Delimiter, comparisonTask.TestConfiguration.IsHeadersExist, comparisonTask, columnsCorrection.TestCorrection);
         }
 
-        public CompareTable Process(IWorkTable masterTable, IWorkTable testTable, ComparisonTask comparisonTask) {
+        public CompareTable Process(IWorkTable masterTable, IWorkTable testTable, ComparisonTask comparisonTask, UserKeys userKeys) {
+            ComparisonCore comparisonCore = new ComparisonCore(comparisonTask);
             if (masterTable.RowsCount > 0 && testTable.RowsCount > 0) {
-                ComparisonCore comparisonCore = new ComparisonCore(comparisonTask);
-                CompareTable = comparisonCore.Execute(masterTable, testTable);
+                CompareTable = comparisonCore.Execute(masterTable, testTable, userKeys);
             } else if (IsOnlyExtra()) {
-                var comparisonKeys = AnalyseFiles(MasterFileContent, TestFileContent, comparisonTask);
-                if (comparisonTask.ComparisonKeys.UserKeys.Count == 0) {
-                    comparisonTask.ComparisonKeys.MainKeys = comparisonKeys.MainKeys;
-                } else {
-                    comparisonTask.ComparisonKeys.MainKeys = comparisonTask.ComparisonKeys.UserKeys;
-                }
-                comparisonTask.ComparisonKeys.BinaryValues = comparisonKeys.BinaryValues;
-                comparisonTask.ComparisonKeys.ExcludeColumns = comparisonKeys.ExcludeColumns;
-                comparisonTask.ComparisonKeys.UserIdColumns = comparisonKeys.UserIdColumns;
-                comparisonTask.ComparisonKeys.UserIdColumnsBinary = comparisonKeys.UserIdColumnsBinary;
-                comparisonTask.IsKeyReady = true;
+                var numberedHeaders = Helpers.NumerateSequence(masterTable.Headers.Data);
+                SetComparisonKeys(comparisonCore, comparisonTask, MasterFileContent, TestFileContent, userKeys, numberedHeaders);
                 CompareTable = new CompareTable(masterTable.Headers, testTable.Headers, comparisonTask);
                 CompareTable.AddMasterExtraRows(masterTable.Rows);
                 CompareTable.AddTestExtraRows(testTable.Rows);
@@ -89,11 +83,11 @@ namespace Reflection.Models {
                 comparisonTask.ExtraTestCount = CompareTable.TestExtraCount;
             }
             masterTable.CleanUp();
-            testTable.CleanUp();          
+            testTable.CleanUp();
             return CompareTable;
         }
 
-        public bool StartComparison(IFileReader fileReader, ComparisonTask comparisonTask) {
+        public bool StartComparison(IFileReader fileReader, ComparisonTask comparisonTask, UserKeys userKeys) {
             IsBusy = true;
             comparisonTask.Status = Status.Executing;
             comparisonTask.StartClock();
@@ -103,10 +97,16 @@ namespace Reflection.Models {
             TestConfiguration = comparisonTask.TestConfiguration;
             ReadFiles(MasterConfiguration, TestConfiguration, comparisonTask);
             PrepareData(MasterFileContent, TestFileContent, comparisonTask);
-            //ComparisonTask = comparisonTask;
-            var compTable = Process(MasterTable, TestTable, comparisonTask);           
-            if (compTable == null || (compTable.ComparedRowsCount == 0 && compTable.MasterExtraCount == 0 && compTable.TestExtraCount == 0)) {
-                SetComparisonKeysForPassed(MasterFileContent, TestFileContent, comparisonTask);
+            var compTable = Process(MasterTable, TestTable, comparisonTask, userKeys);
+            if (compTable == null) {
+                ComparisonCore comparisonCore = new ComparisonCore(comparisonTask);
+                var numberedHeaders = Helpers.NumerateSequence(FindHeaders(MasterFileContent.FirstOrDefault(), comparisonTask.MasterConfiguration.IsHeadersExist, comparisonTask.MasterConfiguration.Delimiter));
+                SetComparisonKeys(comparisonCore, comparisonTask, MasterFileContent, TestFileContent, userKeys, numberedHeaders);
+                comparisonTask.SetResultFile(true);
+                compTable = new CompareTable(MasterTable.Headers, TestTable.Headers, comparisonTask);
+                compTable.SavePassed(comparisonTask.ResultFile, comparisonTask.MasterConfiguration.Delimiter, MasterFileContent, TestFileContent);
+                comparisonTask.Status = Status.Passed;
+            } else if (compTable.ComparedRowsCount == 0 && compTable.MasterExtraCount == 0 && compTable.TestExtraCount == 0) {               
                 comparisonTask.SetResultFile(true);
                 compTable = new CompareTable(MasterTable.Headers, TestTable.Headers, comparisonTask);
                 compTable.SavePassed(comparisonTask.ResultFile, comparisonTask.MasterConfiguration.Delimiter, MasterFileContent, TestFileContent);
@@ -118,28 +118,26 @@ namespace Reflection.Models {
             }
             comparisonTask.UpdateProgress(100);
             comparisonTask.StopClock();
+            comparisonTask.Headers = MasterTable.Headers.Data;
             compTable.CleanUp();
             IsBusy = false;
             return true;
         }
 
-        public void SetComparisonKeysForPassed(IEnumerable<string> masterContent, IEnumerable<string> testContent, ComparisonTask comparisonTask) {
-            if (comparisonTask.ComparisonKeys.UserKeys.Count == 0) {
-                var comparisonKeys = AnalyseFiles(masterContent, testContent, comparisonTask);
-                comparisonTask.ComparisonKeys.MainKeys = comparisonKeys.MainKeys;
-                comparisonTask.ComparisonKeys.UserIdColumns = comparisonKeys.UserIdColumns;
-            } else {
-                comparisonTask.ComparisonKeys.MainKeys = comparisonTask.ComparisonKeys.UserKeys;
-                comparisonTask.ComparisonKeys.UserIdColumns = comparisonTask.ComparisonKeys.UserIdColumns;
-            }
+        public void SetComparisonKeys(ComparisonCore comparisonCore, ComparisonTask comparisonTask, IEnumerable<string> masterContent, IEnumerable<string> testContent, UserKeys userKeys, Dictionary<int, string> numberedHeaders) {
+            var masterSample = PrepareSampleRows(masterContent, comparisonTask.MasterRowsCount, comparisonTask.MasterConfiguration, comparisonTask);
+            var testSample = PrepareSampleRows(testContent, comparisonTask.TestRowsCount, comparisonTask.TestConfiguration, comparisonTask);
+            var baseStat = comparisonCore.GatherStatistics(masterSample, testSample);
+            var sampleRows = comparisonTask.MasterRowsCount > comparisonTask.TestRowsCount ? masterSample : testSample;
+            comparisonTask.ComparisonKeys = comparisonCore.MergeComparisonKeys(userKeys, sampleRows, numberedHeaders, baseStat);
         }
 
         private bool IsOnlyExtra() {
             if ((MasterTable.RowsCount == 0 && TestTable.RowsCount > 0) || (MasterTable.RowsCount > 0 && TestTable.RowsCount == 0)) {
                 return true;
-            }else {
+            } else {
                 return false;
-            }           
+            }
         }
 
         private IEnumerable<string> Except(IEnumerable<string> dataFirst, IEnumerable<string> dataSecond, ComparisonTask comparisonTask, Encoding encoding) {
@@ -217,33 +215,25 @@ namespace Reflection.Models {
                 throw new Exception("There is different number of columns between master and test files.");
             }
         }
-     
-        private ComparisonKeys AnalyseFiles(IEnumerable<string> masterFileContent, IEnumerable<string> testFileContent, ComparisonTask comparisonTask) {
-            int rowsForAnalysis = (int)Math.Round(comparisonTask.MasterRowsCount * 0.05);
+
+        private List<Row> PrepareSampleRows(IEnumerable<string> fileContent, int rowsCount, ImportConfiguration impConfig, ComparisonTask comparisonTask) {
+            int rowsForAnalysis = (int)Math.Round(rowsCount * 0.05);
             if (rowsForAnalysis > 10000) {
                 rowsForAnalysis = 10000;
             } else if (rowsForAnalysis == 0) {
                 rowsForAnalysis = 1;
             }
-            int middleOfFile = (int)Math.Round(comparisonTask.MasterRowsCount / 2.0);
-            var masterData = masterFileContent
+            int middleOfFile = (int)Math.Round(rowsCount / 2.0);
+            var data = fileContent
                 .Take(rowsForAnalysis)
-                .Concat(masterFileContent.Skip(middleOfFile).Take(rowsForAnalysis))
-                .Concat(masterFileContent.Skip(comparisonTask.MasterRowsCount - rowsForAnalysis));
-            var testData = testFileContent
-                .Take(rowsForAnalysis)
-                .Concat(testFileContent.Skip(middleOfFile).Take(rowsForAnalysis))
-                .Concat(testFileContent.Skip(comparisonTask.MasterRowsCount - rowsForAnalysis));
-            var masterTab = new WorkTable("Master");
-            var testTab = new WorkTable("Test");
-            masterTab.LoadData(masterData, comparisonTask.MasterConfiguration.Delimiter, comparisonTask.MasterConfiguration.IsHeadersExist, comparisonTask, new List<MoveColumn>());
-            testTab.LoadData(testData, comparisonTask.TestConfiguration.Delimiter, comparisonTask.TestConfiguration.IsHeadersExist, comparisonTask, new List<MoveColumn>());
-            ComparisonCore comparisonCore = new ComparisonCore(comparisonTask);
-            var stat = comparisonCore.GatherStatistics(masterTab.Rows, testTab.Rows);
-            return comparisonCore.AnalyseForPivotKey(masterTab.Rows, stat, masterTab.Headers.Data);
+                .Concat(fileContent.Skip(middleOfFile).Take(rowsForAnalysis))
+                .Concat(fileContent.Skip(rowsCount - rowsForAnalysis));
+            var tempTable = new WorkTable("Temp");
+            tempTable.LoadData(data, impConfig.Delimiter, impConfig.IsHeadersExist, comparisonTask, new List<MoveColumn>());
+            return tempTable.Rows;
         }
 
-        private string[] FindHeaders(string firstLine, bool isHeadersExist, char[] delimiter) {
+        public string[] FindHeaders(string firstLine, bool isHeadersExist, char[] delimiter) {
             string[] res;
             var firstRow = Splitter.Split(firstLine, delimiter);
             if (isHeadersExist) {
@@ -261,6 +251,7 @@ namespace Reflection.Models {
             }
             return res;
         }
+
 
 
     }

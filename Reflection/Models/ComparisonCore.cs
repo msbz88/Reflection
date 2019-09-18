@@ -23,7 +23,7 @@ namespace Reflection.Models {
             ComparisonTask = comparisonTask;
         }
 
-        public CompareTable Execute(IWorkTable masterTable, IWorkTable testTable) {
+        public CompareTable Execute(IWorkTable masterTable, IWorkTable testTable, UserKeys userKeys) {
             MasterTable = masterTable;
             TestTable = testTable;
             Delimiter = SetDelimiter();
@@ -32,17 +32,9 @@ namespace Reflection.Models {
             BaseStat = GatherStatistics(MasterTable.Rows, TestTable.Rows);
             ComparisonTask.IfCancelRequested();
             //analyse
-            var comparisonKeys = AnalyseForPivotKey(MasterTable.Rows, BaseStat, MasterTable.Headers.Data);
-            if (ComparisonTask.ComparisonKeys.UserKeys.Count == 0) {
-                ComparisonTask.ComparisonKeys.MainKeys = comparisonKeys.MainKeys;
-            } else {
-                ComparisonTask.ComparisonKeys.MainKeys = ComparisonTask.ComparisonKeys.UserKeys;
-            }
-         ComparisonTask.ComparisonKeys.BinaryValues = comparisonKeys.BinaryValues;
-            ComparisonTask.ComparisonKeys.ExcludeColumns = comparisonKeys.ExcludeColumns;
-            ComparisonTask.ComparisonKeys.UserIdColumns = comparisonKeys.UserIdColumns;
-            ComparisonTask.ComparisonKeys.UserIdColumnsBinary = comparisonKeys.UserIdColumnsBinary;
-            ComparisonTask.IsKeyReady = true;
+            var sampleRows = MasterTable.RowsCount > TestTable.RowsCount ? MasterTable.Rows : TestTable.Rows;
+            var numberedHeaders = Helpers.NumerateSequence(masterTable.Headers.Data);
+            ComparisonTask.ComparisonKeys = MergeComparisonKeys(userKeys, sampleRows, numberedHeaders, BaseStat);
             ComparisonTask.IfCancelRequested();
             //rows match
             RowsMatch = new RowsMatch(BaseStat, ComparisonTask.ComparisonKeys, ComparisonTask);
@@ -72,7 +64,6 @@ namespace Reflection.Models {
             var groups = from m in mRemainings
                          join t in tRemainings on m.Key equals t.Key
                          select new { Key = m.Key, ComparedRows = RowsMatch.ProcessGroup(m.Value, t.Value, mRemainings.Count) };
-
             foreach (var item in groups) {
                 ComparisonTask.IfCancelRequested();
                 CompareTable.AddComparedRows(item.ComparedRows);
@@ -80,7 +71,6 @@ namespace Reflection.Models {
             //extra
             ComparisonTask.RowsWithDeviations = CompareTable.ComparedRowsCount;
             ComparisonTask.IfCancelRequested();
-
             var masterExtra = GetRemainings(MasterTable.Rows, CompareTable.GetMasterComparedRowsId());
             ComparisonTask.IfCancelRequested();
             var testExtra = GetRemainings(TestTable.Rows, CompareTable.GetTestComparedRowsId());
@@ -93,26 +83,16 @@ namespace Reflection.Models {
             ComparisonTask.UpdateProgress(1);
             ComparisonTask.ExtraTestCount = CompareTable.TestExtraCount;
             ComparisonTask.IfCancelRequested();
-            ComparisonTask.UpdateProgress(2); 
+            ComparisonTask.UpdateProgress(2);
             return CompareTable;
         }
 
         private char[] SetDelimiter() {
-            if (MasterTable.Delimiter.Any(item=>item == '|')) {
+            if (MasterTable.Delimiter.Any(item => item == '|')) {
                 return new char[] { ';' };
             } else {
                 return MasterTable.Delimiter;
             }
-        }
-
-        private void FillSummary(int mRowsCount, int tRowsCount, int compRowsCount, int extraMasterCount, int extraTestCount) {
-            var actRowsDiff = mRowsCount >= tRowsCount ? mRowsCount - tRowsCount : tRowsCount - mRowsCount;
-            ComparisonTask.MasterRowsCount = mRowsCount;
-            ComparisonTask.TestRowsCount = tRowsCount;
-            ComparisonTask.ActualRowsDiff = actRowsDiff;
-            ComparisonTask.RowsWithDeviations = compRowsCount;
-            ComparisonTask.ExtraMasterCount = extraMasterCount;
-            ComparisonTask.ExtraMasterCount = extraTestCount;
         }
 
         private IEnumerable<Row> GetRemainings(List<Row> rows, IEnumerable<int> comparedRowsId) {
@@ -128,19 +108,44 @@ namespace Reflection.Models {
         }
 
         private Dictionary<string, List<Row>> Group(IEnumerable<Row> rows, List<int> pivotFields) {
-            return rows.GroupBy(col => string.Join(" | ", col.ColumnIndexIn(pivotFields))).ToDictionary(group => group.Key, group => group.ToList());
+            return rows.GroupBy(col => string.Join(" | ", Helpers.GetValuesByPositions(col.Data, pivotFields))).ToDictionary(group => group.Key, group => group.ToList());
         }
 
         private bool IsUsefulInCompositeKey(Dictionary<string, List<Row>> rows, List<int> pivotFields, int analysisColumn) {
             return rows.Any(grp => grp.Value.Select(row => row[analysisColumn]).Distinct().Count() > 1);
         }
 
-        private int FindInsType(string[] headers) {
-            Dictionary<int, string> columnNames = new Dictionary<int, string>();
-            for (int i = 0; i < headers.Length; i++) {
-                columnNames.Add(i, headers[i]);
+        public ComparisonKeys MergeComparisonKeys(UserKeys userKeys, List<Row> sampleRows, Dictionary<int, string> numberedHeaders, List<ColumnSummary> baseStat) {
+            var comparisonKeys = new ComparisonKeys();
+            //prepare comparison key
+            List<int> mainKeys;
+            if (userKeys.UserComparisonKeys.Count == 0) {
+                mainKeys = AnalyseForComparisonKeys(sampleRows, baseStat, userKeys.UserExcludeColumns);
+            } else {
+                mainKeys = userKeys.UserComparisonKeys;
             }
-            var insType = columnNames.Where(item =>
+            comparisonKeys.MainKeys = mainKeys;
+            //prepare id columns
+            HashSet<int> singleIdColumns = new HashSet<int>(AnalyseForSingleIdColumns(numberedHeaders, baseStat));
+            HashSet<int> binaryIdColumns = new HashSet<int>(AnalyseForBinaryIdColumns(baseStat));
+            foreach (var columnId in userKeys.UserIdColumns) {
+                var itemFound = baseStat.Find(item => item.ColumnId == columnId);
+                if (itemFound != null && itemFound.MatchingRate == 100) {
+                    singleIdColumns.Add(columnId);
+                } else {
+                    binaryIdColumns.Add(columnId);
+                }
+            }
+            comparisonKeys.SingleIdColumns = singleIdColumns.Except(mainKeys).ToList();
+            comparisonKeys.BinaryIdColumns = binaryIdColumns.ToList();
+            //prepare exclude columns
+            comparisonKeys.ExcludeColumns = AnalyseForExcludeColumns(numberedHeaders, baseStat).Concat(userKeys.UserExcludeColumns).Except(mainKeys).Distinct().ToList();
+            ComparisonTask.IsKeyReady = true;
+            return comparisonKeys;
+        }
+
+        private int FindInsType(Dictionary<int, string> numberedHeaders) {
+            var insType = numberedHeaders.Where(item =>
             item.Value.ToLower().Contains("instype")
             || item.Value.ToLower().Contains("ins_type")
             || item.Value.ToLower() == "instrument_type"
@@ -149,10 +154,26 @@ namespace Reflection.Models {
             return insType.Value == null ? -1 : insType.Key;
         }
 
-        public ComparisonKeys AnalyseForPivotKey(IEnumerable<Row> sampleRows, List<ColumnSummary> baseStat, string[] headers) {
-            ComparisonKeys compKeys = new ComparisonKeys();
-            var userExcludeColumns = ComparisonTask.MasterConfiguration.UserExcludeColumns.Concat(ComparisonTask.TestConfiguration.UserExcludeColumns).OrderBy(item => item).Distinct().ToList();
-            compKeys.UserExcludeColumns = userExcludeColumns;
+        private List<int> DetectUserIks(Dictionary<int, string> numberedHeaders, List<ColumnSummary> stat) {
+            var columnNamesIK = numberedHeaders
+                .Where(item => item.Value.Contains("USR") && (item.Value.Contains("CRE") || item.Value.Contains("CHG")))
+                .Select(item => item.Key).ToList();
+            return (from st in stat
+                    join ik in columnNamesIK on st.ColumnId equals ik
+                    where st.IsNumber
+                    select ik).ToList();
+        }
+
+        private int SearchForSecId(Dictionary<int, string> numberedHeaders) {
+            var secId = numberedHeaders.Where(item =>
+            item.Value.ToLower().Contains("secshort")
+            || item.Value.ToLower().Contains("secid")
+            || item.Value.ToLower().Contains("sec_id")
+            ).FirstOrDefault();
+            return secId.Value == null ? -1 : secId.Key;          
+        }
+
+        public List<int> AnalyseForComparisonKeys(IEnumerable<Row> sampleRows, List<ColumnSummary> baseStat, List<int> userExcludeColumns) {
             var clearedStats = baseStat.Where(col => !col.IsDouble && !col.IsNumber && !col.HasNulls && !col.IsTransNo && !col.IsTimestamp && !userExcludeColumns.Contains(col.ColumnId)).ToList();
             if (!clearedStats.Any()) {
                 clearedStats = baseStat;
@@ -161,52 +182,55 @@ namespace Reflection.Models {
             var maxUniqMatchRate = clearedStats.Where(col => col.MatchingRate == maxMatchingRate).Max(col => col.UniqMatchRate);
             var mainPivotKey = clearedStats.Where(col => col.MatchingRate == maxMatchingRate && col.UniqMatchRate == maxUniqMatchRate).First().ColumnId;
             var additionalKeys = FindAdditionalKeys(clearedStats, maxMatchingRate, mainPivotKey);
-            List<int> compositeKey = new List<int>() { mainPivotKey };
-            var insType = FindInsType(headers);
-            if (insType != -1 && baseStat.Where(item=>item.ColumnId == insType).FirstOrDefault().UniqMatchCount>0) {
-                if (!compositeKey.Contains(insType)) {
-                    compositeKey.Add(insType);
-                }              
-            }
-            var groups = Group(sampleRows, compositeKey);
+            List<int> comparisonKeys = new List<int>() { mainPivotKey };
+            var groups = Group(sampleRows, comparisonKeys);
             ComparisonTask.UpdateProgress(1);
             foreach (var key in additionalKeys) {
-                if (IsUsefulInCompositeKey(groups, compositeKey, key)) {
-                    compositeKey.Add(key);
-                    groups = Group(groups.Where(grp => grp.Value.Count() > 1).SelectMany(row => row.Value), compositeKey);
+                if (IsUsefulInCompositeKey(groups, comparisonKeys, key)) {
+                    comparisonKeys.Add(key);
+                    groups = Group(groups.Where(grp => grp.Value.Count() > 1).SelectMany(row => row.Value), comparisonKeys);
                 }
                 ComparisonTask.UpdateProgress(10.0 / additionalKeys.Count);
             }
-            if (compositeKey.Count == 1) {
+            if (comparisonKeys.Count == 1) {
                 var clearedStatsWithNum = baseStat.Where(col => !col.IsDouble && !col.HasNulls && !col.IsTransNo && !col.IsTimestamp && !userExcludeColumns.Contains(col.ColumnId)).ToList();
-                compositeKey.AddRange(AddKeysToAcceptExtra(clearedStatsWithNum, maxMatchingRate, mainPivotKey));
+                comparisonKeys.AddRange(AddKeysToAcceptExtra(clearedStatsWithNum, maxMatchingRate, mainPivotKey));
             }
-            var detectedIks = DetectIKs(headers, baseStat);
-            var excludeColumns = baseStat.Where(item => item.IsTimestamp).Select(item => item.ColumnId).ToList();
-            compKeys.BinaryValues = baseStat.Where(item => item.IsTransNo).Select(item => item.ColumnId).Except(ComparisonTask.ComparisonKeys.UserKeys).Except(userExcludeColumns).ToList();
-            compKeys.MainKeys = compositeKey;
-            compKeys.ExcludeColumns = excludeColumns.Concat(userExcludeColumns).Concat(detectedIks).ToList();
-            var userIdColumns = ComparisonTask.MasterConfiguration.UserIdColumns.Concat(ComparisonTask.TestConfiguration.UserIdColumns).Distinct().Except(compKeys.MainKeys).Except(compKeys.BinaryValues);
-            foreach (var item in userIdColumns) {
-                if (baseStat.Where(col => col.ColumnId == item).First().MatchingRate != 100) {
-                    compKeys.UserIdColumnsBinary.Add(item);
-                } else {
-                    compKeys.UserIdColumns.Add(item);
-                }
-            }
-            return compKeys;
+            return comparisonKeys;
         }
 
-        private List<int> DetectIKs(string[] headers, List<ColumnSummary> stat) {
-            Dictionary<int, string> columnNames = new Dictionary<int, string>();
-            for (int i = 0; i < headers.Length; i++) {
-                columnNames.Add(i, headers[i]);
+        public List<int> AnalyseForExcludeColumns(Dictionary<int, string> numberedHeaders, List<ColumnSummary> baseStat) {
+            var detectedIks = DetectIKs(numberedHeaders, baseStat);
+            var detectedUserIks = DetectUserIks(numberedHeaders, baseStat);
+            var detectedTimestamps = baseStat.Where(item => item.IsTimestamp).Select(item => item.ColumnId);
+            var detectedTransNumbers = baseStat.Where(item => item.IsTransNo).Select(item => item.ColumnId);
+            return detectedTransNumbers.Concat(detectedIks).Concat(detectedUserIks).Concat(detectedTimestamps).Distinct().ToList();
+        }
+
+        public List<int> AnalyseForSingleIdColumns(Dictionary<int, string> numberedHeaders, List<ColumnSummary> baseStat) {
+            var idColumns = new List<int>();
+            var insType = FindInsType(numberedHeaders);
+            var secId = SearchForSecId(numberedHeaders);
+            if (insType != -1 && baseStat.Where(item => item.ColumnId == insType).FirstOrDefault().UniqMatchCount > 0) {
+                idColumns.Add(insType);
             }
-            var columnNamesIK = columnNames.Where(item=>item.Value.EndsWith("IK") || item.Value.EndsWith("(IK)")).Select(item=>item.Key).ToList();
+            if (secId != -1 && baseStat.Where(item => item.ColumnId == secId).FirstOrDefault().UniqMatchCount > 0) {
+                idColumns.Add(secId);
+            }
+            return idColumns;           
+        }
+
+        public List<int> AnalyseForBinaryIdColumns(List<ColumnSummary> baseStat) {
+            var detectedTransNumbers = baseStat.Where(item => item.IsTransNo).Select(item => item.ColumnId);
+            return detectedTransNumbers.ToList();
+        }
+
+        private List<int> DetectIKs(Dictionary<int, string> numberedHeaders,  List<ColumnSummary> stat) {
+            var columnNamesIK = numberedHeaders.Where(item => item.Value.EndsWith("IK") || item.Value.EndsWith("(IK)")).Select(item => item.Key).ToList();
             return (from st in stat
                     join ik in columnNamesIK on st.ColumnId equals ik
-                   where st.IsNumber
-                   select ik).ToList();
+                    where st.IsNumber
+                    select ik).ToList();
         }
 
         private List<int> FindAdditionalKeys(List<ColumnSummary> clearedStats, double maxMatchingRate, int mainPivotKey) {
@@ -219,19 +243,15 @@ namespace Reflection.Models {
 
         private List<int> AddKeysToAcceptExtra(List<ColumnSummary> clearedStats, double maxMatchingRate, int mainPivotKey) {
             var statForAdditionalKeys = clearedStats.Where(col => col.MatchingRate <= maxMatchingRate && col.ColumnId != mainPivotKey).ToList();
-            var standartDeviation = statForAdditionalKeys.Select(col => col.MatchingRate).Average();
-            var notStringKeys = statForAdditionalKeys.Where(col => !col.IsString && col.UniqMatchCount > 2 && col.MatchingRate >= standartDeviation).Select(col => col.ColumnId);
-            var stringKeys = statForAdditionalKeys.Where(col => col.IsString && col.MatchingRate >= standartDeviation).Select(col => col.ColumnId);
-            return stringKeys.Concat(notStringKeys).Distinct().ToList();
-        }
-
-        private double StandartDeviation(List<double> values) {
-            if (values.Count == 0) {
-                return 0;
+            if (statForAdditionalKeys.Any()) {
+                var standartDeviation = statForAdditionalKeys.Select(col => col.MatchingRate).Average();
+                var notStringKeys = statForAdditionalKeys.Where(col => !col.IsString && col.UniqMatchCount > 2 && col.MatchingRate >= standartDeviation).Select(col => col.ColumnId);
+                var stringKeys = statForAdditionalKeys.Where(col => col.IsString && col.MatchingRate >= standartDeviation).Select(col => col.ColumnId);
+                return stringKeys.Concat(notStringKeys).Distinct().ToList();
+            }else {
+                return new List<int>();
             }
-            var avg = values.Average();
-            var variance = (1.0 / values.Count) * values.Select(item => Math.Pow(item - avg, 2)).Sum();
-            return Math.Sqrt(variance);
+
         }
 
         private Dictionary<int, HashSet<string>> GetColumns(IEnumerable<Row> rows) {

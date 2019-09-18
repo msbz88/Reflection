@@ -153,9 +153,10 @@ namespace Reflection.Models {
                 OnPropertyChanged("IsKeyReady");
             }
         }
-        public Dictionary<int, string> NumberedColumnNames { get; set; }
-        public string ProjectName {get; set;}
+        public string[] Headers { get; set; }
+        public string ProjectName { get; set; }
         public List<double> UpgradeVersions { get; set; }
+        public UserKeys UserKeys { get;set;}
 
         public ComparisonTask(int comparisonId, ImportConfiguration masterConfiguration, ImportConfiguration testConfiguration) {
             ComparisonId = comparisonId;
@@ -172,8 +173,7 @@ namespace Reflection.Models {
             Timer = new DispatcherTimer();
             Stopwatch = new Stopwatch();
             ComparisonKeys = new ComparisonKeys();
-            ComparisonKeys.UserKeys = masterConfiguration.UserKeys;
-            NumberedColumnNames = new Dictionary<int, string>();
+            Headers = new string[0];
         }
 
         public void UpdateProgress(double val) {

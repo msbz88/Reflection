@@ -34,7 +34,7 @@ namespace Reflection.ViewModels {
             IsDeviationsOnly = true;
         }       
 
-        public void AddComparisonTask(ImportConfiguration masterConfiguration, ImportConfiguration testConfiguration) {
+        public void AddComparisonTask(ImportConfiguration masterConfiguration, ImportConfiguration testConfiguration, UserKeys userKeys) {
             var comparisonTask = new ComparisonTask(comparisonCount++, masterConfiguration, testConfiguration);
             if (AllComparisonDetails.Count == 99) {
                 AllComparisonDetails.RemoveAt(0);
@@ -43,10 +43,11 @@ namespace Reflection.ViewModels {
             comparisonTask.IsLinearView = IsLinearView;
             comparisonTask.IsDeviationsOnly = IsDeviationsOnly;
             AllComparisonDetails.Add(comparisonTask);
-            TriggerComparison();          
+            comparisonTask.UserKeys = userKeys;
+            TriggerComparison(userKeys);          
         }
 
-        private async void TriggerComparison() {
+        private async void TriggerComparison(UserKeys userKeys) {
             while (true) {
                 if (!ComparisonProcessor.IsBusy) {
                     var comparisonTask = AllComparisonDetails.Where(item => item.Status == Status.Queued).FirstOrDefault();
@@ -54,9 +55,9 @@ namespace Reflection.ViewModels {
                         return;
                     }
                     try {                       
-                        await Task.Run(() => ComparisonProcessor.StartComparison(FileReader, comparisonTask));
+                        await Task.Run(() => ComparisonProcessor.StartComparison(FileReader, comparisonTask, userKeys));
                         GC.Collect();
-                        WriteLog(comparisonTask);
+                        WriteLog(comparisonTask, userKeys);
                     } catch (Exception e) {
                         var cancelTask = e as OperationCanceledException;
                         if (cancelTask != null) {
@@ -70,7 +71,7 @@ namespace Reflection.ViewModels {
                             comparisonTask.Status = Status.Error;
                             comparisonTask.ErrorMessage = e.Message;
                             ComparisonProcessor.IsBusy = false;
-                            WriteLog(comparisonTask);
+                            WriteLog(comparisonTask, userKeys);
                             CleanUpTempFilesOnError(comparisonTask);
                         }
                     }
@@ -80,22 +81,19 @@ namespace Reflection.ViewModels {
             }
         }
 
-        private async Task<bool> RunComparison(ComparisonTask comparisonTask) {
-            return await Task.Run(() => ComparisonProcessor.StartComparison(FileReader, comparisonTask));
-        }
-
         public void DeleteTask(ComparisonTask comparisonTask) {
             AllComparisonDetails.Remove(comparisonTask);
             comparisonTask.CancellationToken.Cancel();
         }
 
-        private void WriteLog(ComparisonTask comparisonTask) {
+        private void WriteLog(ComparisonTask comparisonTask, UserKeys userKeys) {
             try {
+                var numberedColumnNames = Helpers.NumerateSequence(comparisonTask.Headers);
                 var userName = System.Security.Principal.WindowsIdentity.GetCurrent().Name.Replace("SCDOM\\", "").ToUpper();
                 if (userName != "MSBZ") {
                     OraSession oraSession = new OraSession("DK01SV7020", "1521", "TESTIMMD", "TESTIMMD", "T7020230");
                     oraSession.OpenConnection();
-                    oraSession.InsertIntoLogTable(comparisonTask, userName);
+                    oraSession.InsertIntoLogTable(comparisonTask, userName, numberedColumnNames, userKeys.UserComparisonKeys.Any());
                     oraSession.CloseConnection();
                 }
             } catch (Exception) { }
