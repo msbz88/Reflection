@@ -63,7 +63,7 @@ namespace Reflection {
                 if (IsNewVersionExists()) {
                     var userResponse = MessageBox.Show("New version available.\nWant to upgrade now?", "", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.Yes);
                     if (userResponse == MessageBoxResult.Yes) {
-                        Process.Start(@"O:\DATA\COMMON\core\updater\ReflectionUpdater.exe");
+                        Process.Start("*");
                         Environment.Exit(0);
                     }
                 }
@@ -73,7 +73,7 @@ namespace Reflection {
         }
 
         private bool IsNewVersionExists() {
-            DateTime modification = File.GetLastWriteTime(@"O:\DATA\COMMON\core\Reflection.exe");
+            DateTime modification = File.GetLastWriteTime("*");
             if(modification > StartTime) {
                 return true;
             }else {
@@ -104,7 +104,7 @@ namespace Reflection {
             if (isTasksExist) {
                 var userAnswer = MessageBox.Show("Do you want to exit?\nComparison history will be lost.", "", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
                 if (userAnswer == MessageBoxResult.Yes) {
-                    DeleteInstance(@"O:\DATA\COMMON\core\");
+                    DeleteInstance("*");
                     e.Cancel = false;
                 } else {
                     e.Cancel = true;
@@ -167,7 +167,7 @@ namespace Reflection {
                 ie.MenuBar = false;
                 ie.ToolBar = false;
                 ie.Visible = true;
-                ie.Navigate(@"O:\DATA\COMMON\core\doc\doc.html");
+                ie.Navigate("*");
             } catch (Exception) {
                 StatusBarContent.Foreground = new SolidColorBrush(Colors.Red);
                 StatusBarContent.Text = "Sorry, documentation is currently unavailable";

@@ -157,7 +157,7 @@ namespace Reflection.Models {
         }
 
         private void StartSession() {
-            OraSession = new OraSession("DK01SV7020", "1521", "TESTIMMD", "TESTIMMD", "T7020230");
+            OraSession = new OraSession("*", "*", "*", "*", "*");
             OraSession.OpenConnection();
         }
 
