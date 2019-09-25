@@ -781,6 +781,40 @@ namespace Reflection.Test {
 
 
         [TestMethod]
+        public void MasterSameDiffColumnsAtTheMidTest() {
+            var master = new List<string>();
+            master.Add("SecId;Port;RowNum;Bal");
+            master.Add("S1;P1;1;100");
+            master.Add("S1;P1;2;107");
+            master.Add("S1;P1;3;102");
+            var test = new List<string>();
+            test.Add("SecId;Port;Bal;RowNum");
+            test.Add("S1;P1;100;1");
+            test.Add("S1;P1;101;5");
+            test.Add("S1;P1;108;4");
+            var expectedResult = new string[3, 6];
+            expectedResult[0, 0] = "Defect No/Explanation";
+            expectedResult[0, 1] = "Comparison Result";
+            expectedResult[0, 2] = "Diff";
+            expectedResult[0, 3] = "SecId";
+            expectedResult[0, 4] = "RowNum";
+            expectedResult[0, 5] = "Bal";
+            expectedResult[1, 0] = "";
+            expectedResult[1, 1] = "Deviations";
+            expectedResult[1, 2] = "2";
+            expectedResult[1, 3] = "S1";
+            expectedResult[1, 4] = "3 | 4";
+            expectedResult[1, 5] = "102 | 108";
+            expectedResult[2, 0] = "";
+            expectedResult[2, 1] = "Deviations";
+            expectedResult[2, 2] = "2";
+            expectedResult[2, 3] = "S1";
+            expectedResult[2, 4] = "2 | 5";
+            expectedResult[2, 5] = "107 | 101";
+            Run(master, test, expectedResult, true, 4, 4);
+        }
+
+        [TestMethod]
         public void TestDiffNamesColumnsAtTheMidTest() {
             var master = new List<string>();
             master.Add("SecId;Port;Bal;RowId");
@@ -825,6 +859,51 @@ namespace Reflection.Test {
         }
 
         [TestMethod]
+        public void MasterDiffNamesColumnsAtTheMidTest() {
+            var master = new List<string>();
+            master.Add("SecId;Port;RowNum;Bal");
+            master.Add("S1;P1;1;100");
+            master.Add("S1;P1;2;107");
+            master.Add("S1;P1;3;102");
+            var test = new List<string>();
+            test.Add("SecId;Port;Bal;RowId");
+            test.Add("S1;P1;100;1");
+            test.Add("S1;P1;101;5");
+            test.Add("S1;P1;108;4");
+            var expectedResult = new string[4, 7];
+            expectedResult[0, 0] = "Defect No/Explanation";
+            expectedResult[0, 1] = "Comparison Result";
+            expectedResult[0, 2] = "Diff";
+            expectedResult[0, 3] = "SecId";
+            expectedResult[0, 4] = "(Master extra column) RowNum";
+            expectedResult[0, 5] = "Bal";
+            expectedResult[0, 6] = "(Test extra column) RowId";
+            expectedResult[1, 0] = "";
+            expectedResult[1, 1] = "Deviations";
+            expectedResult[1, 2] = "2";
+            expectedResult[1, 3] = "S1";
+            expectedResult[1, 4] = "1 | ";
+            expectedResult[1, 5] = "0";
+            expectedResult[1, 6] = " | 1";
+            expectedResult[2, 0] = "";
+            expectedResult[2, 1] = "Deviations";
+            expectedResult[2, 2] = "3";
+            expectedResult[2, 3] = "S1";
+            expectedResult[2, 4] = "2 | ";
+            expectedResult[2, 5] = "107 | 108";
+            expectedResult[2, 6] = " | 4";
+            expectedResult[3, 0] = "";
+            expectedResult[3, 1] = "Deviations";
+            expectedResult[3, 2] = "3";
+            expectedResult[3, 3] = "S1";
+            expectedResult[3, 4] = "3 | ";
+            expectedResult[3, 5] = "102 | 101";
+            expectedResult[3, 6] = " | 5";  
+            Run(master, test, expectedResult, true, 4, 4);
+        }
+
+
+        [TestMethod]
         public void TestDiffColumnsAtTheBeginningTest() {
             var master = new List<string>();
             master.Add("SecId;Port;Bal");
@@ -862,6 +941,46 @@ namespace Reflection.Test {
             expectedResult[3, 4] = " | ";
             expectedResult[3, 5] = "102 | 101";          
             Run(master, test, expectedResult, true, 3, 4);
+        }
+
+        [TestMethod]
+        public void MasterDiffColumnsAtTheBeginningTest() {
+            var master = new List<string>();
+            master.Add("RowNum;SecId;Port;Bal");
+            master.Add(";S1;P1;100");
+            master.Add(";S1;P1;101");
+            master.Add(";S1;P1;108");
+            var test = new List<string>();
+            test.Add("SecId;Port;Bal");
+            test.Add("S1;P1;100");
+            test.Add("S1;P1;107");
+            test.Add("S1;P1;102");
+            var expectedResult = new string[4, 6];
+            expectedResult[0, 0] = "Defect No/Explanation";
+            expectedResult[0, 1] = "Comparison Result";
+            expectedResult[0, 2] = "Diff";
+            expectedResult[0, 3] = "SecId";
+            expectedResult[0, 4] = "(Master extra column) RowNum";
+            expectedResult[0, 5] = "Bal";
+            expectedResult[1, 0] = "";
+            expectedResult[1, 1] = "Deviations";
+            expectedResult[1, 2] = "1";
+            expectedResult[1, 3] = "S1";
+            expectedResult[1, 4] = " | ";
+            expectedResult[1, 5] = "0";
+            expectedResult[2, 0] = "";
+            expectedResult[2, 1] = "Deviations";
+            expectedResult[2, 2] = "2";
+            expectedResult[2, 3] = "S1";
+            expectedResult[2, 4] = " | ";
+            expectedResult[2, 5] = "101 | 102";
+            expectedResult[3, 0] = "";
+            expectedResult[3, 1] = "Deviations";
+            expectedResult[3, 2] = "2";
+            expectedResult[3, 3] = "S1";
+            expectedResult[3, 4] = " | ";
+            expectedResult[3, 5] = "108 | 107";
+            Run(master, test, expectedResult, true, 4, 3);
         }
 
         [TestMethod]
