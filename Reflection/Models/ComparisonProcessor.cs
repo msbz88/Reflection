@@ -58,23 +58,21 @@ namespace Reflection.Models {
                 TestHeadersLine = testContent.Take(1);
                 testHeaders = Splitter.Split(TestHeadersLine.First(), comparisonTask.TestConfiguration.Delimiter);
             }
-            ColumnsCorrection columnsCorrection = new ColumnsCorrection(masterHeaders.ToList(), testHeaders.ToList());
-            if (comparisonTask.MasterConfiguration.ColumnsCount != comparisonTask.TestConfiguration.ColumnsCount) {
-                columnsCorrection.Correct();
-            }
+            ColumnsCorrection columnsCorrection = new ColumnsCorrection(masterHeaders.ToArray(), testHeaders.ToArray());
+            columnsCorrection.Correct();
             comparisonTask.IfCancelRequested();
-            MasterTable.LoadData(MasterHeadersLine.Concat(exceptedMasterData), comparisonTask.MasterConfiguration.Delimiter, comparisonTask.MasterConfiguration.IsHeadersExist, comparisonTask, columnsCorrection.MasterCorrection);
+            MasterTable.LoadData(MasterHeadersLine.Concat(exceptedMasterData), comparisonTask.MasterConfiguration.Delimiter, comparisonTask.MasterConfiguration.IsHeadersExist, comparisonTask, columnsCorrection.MasterCorrection, comparisonTask.MasterConfiguration.ColumnsCount);
             comparisonTask.IfCancelRequested();
-            TestTable.LoadData(TestHeadersLine.Concat(exceptedTestData), comparisonTask.TestConfiguration.Delimiter, comparisonTask.TestConfiguration.IsHeadersExist, comparisonTask, columnsCorrection.TestCorrection);
+            TestTable.LoadData(TestHeadersLine.Concat(exceptedTestData), comparisonTask.TestConfiguration.Delimiter, comparisonTask.TestConfiguration.IsHeadersExist, comparisonTask, columnsCorrection.TestCorrection, comparisonTask.TestConfiguration.ColumnsCount);
         }
 
-        public CompareTable Process(IWorkTable masterTable, IWorkTable testTable, ComparisonTask comparisonTask, UserKeys userKeys) {
+        public CompareTable Process(IWorkTable masterTable, IWorkTable testTable, IEnumerable<string> masterContent, IEnumerable<string> testContent, ComparisonTask comparisonTask, UserKeys userKeys) {
             ComparisonCore comparisonCore = new ComparisonCore(comparisonTask);
             if (masterTable.RowsCount > 0 && testTable.RowsCount > 0) {
                 CompareTable = comparisonCore.Execute(masterTable, testTable, userKeys);
             } else if (IsOnlyExtra()) {
                 var numberedHeaders = Helpers.NumerateSequence(masterTable.Headers.Data);
-                SetComparisonKeys(comparisonCore, comparisonTask, MasterFileContent, TestFileContent, userKeys, numberedHeaders);
+                SetComparisonKeys(comparisonCore, comparisonTask, masterContent, testContent, userKeys, numberedHeaders);
                 CompareTable = new CompareTable(masterTable.Headers, testTable.Headers, comparisonTask);
                 CompareTable.AddMasterExtraRows(masterTable.Rows);
                 CompareTable.AddTestExtraRows(testTable.Rows);
@@ -97,7 +95,7 @@ namespace Reflection.Models {
             TestConfiguration = comparisonTask.TestConfiguration;
             ReadFiles(MasterConfiguration, TestConfiguration, comparisonTask);
             PrepareData(MasterFileContent, TestFileContent, comparisonTask);
-            var compTable = Process(MasterTable, TestTable, comparisonTask, userKeys);
+            var compTable = Process(MasterTable, TestTable, MasterFileContent, TestFileContent, comparisonTask, userKeys);
             if (compTable == null) {
                 ComparisonCore comparisonCore = new ComparisonCore(comparisonTask);
                 var numberedHeaders = Helpers.NumerateSequence(FindHeaders(MasterFileContent.FirstOrDefault(), comparisonTask.MasterConfiguration.IsHeadersExist, comparisonTask.MasterConfiguration.Delimiter));
@@ -229,7 +227,7 @@ namespace Reflection.Models {
                 .Concat(fileContent.Skip(middleOfFile).Take(rowsForAnalysis))
                 .Concat(fileContent.Skip(rowsCount - rowsForAnalysis));
             var tempTable = new WorkTable("Temp");
-            tempTable.LoadData(data, impConfig.Delimiter, impConfig.IsHeadersExist, comparisonTask, new List<MoveColumn>());
+            tempTable.LoadData(data, impConfig.Delimiter, impConfig.IsHeadersExist, comparisonTask, new List<MoveColumn>(), comparisonTask.MasterConfiguration.ColumnsCount);
             return tempTable.Rows;
         }
 
@@ -251,8 +249,6 @@ namespace Reflection.Models {
             }
             return res;
         }
-
-
 
     }
 }

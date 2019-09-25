@@ -20,10 +20,16 @@ namespace Reflection.Models {
             Rows = new List<Row>();
         }
 
-        public void LoadData(IEnumerable<string> data, char[] delimiter, bool isHeadersExist, ComparisonTask comparisonTask, List<MoveColumn> correctionColumns) {
+        public void LoadData(IEnumerable<string> data, char[] delimiter, bool isHeadersExist, ComparisonTask comparisonTask, List<MoveColumn> correctionColumns, int columnsCount) {
             Delimiter = delimiter;
             var firstLine = data.FirstOrDefault();
-            ColumnsCount = comparisonTask.MasterConfiguration.ColumnsCount;
+            ColumnsCount = columnsCount;
+            if (correctionColumns.Any()) {
+                var maxColCorr = correctionColumns.Max(col => col.To) + 1;
+                if (maxColCorr > ColumnsCount) {
+                    ColumnsCount = maxColCorr;
+                }
+            }         
             if (firstLine == null || !isHeadersExist) {
                 Headers = GenerateDefaultHeaders();
             }else {
@@ -58,23 +64,27 @@ namespace Reflection.Models {
         private string[] Parse(string lineToSplit, List<MoveColumn> corrections) {
             var row = Splitter.Split(lineToSplit, Delimiter);
             if (corrections.Any()) {
-                int maxCorrCol = corrections.Max(item=>item.To);
-                ColumnsCount = row.Length > maxCorrCol + 1 ? row.Length : maxCorrCol + 1;
-                var correctedRow = Enumerable.Repeat("*null*", ColumnsCount).ToList();
+                var correctedRow = new string[ColumnsCount];
+                var exclude = new List<int>();
                 foreach (var item in corrections) {
-                    if(item.From == item.To) {
+                    if(item.To == item.From) {
                         correctedRow[item.To] = "";
-                    }else {
+                    } else {
                         correctedRow[item.To] = row[item.From];
-                    }                   
-                }
-                for (int i = 0; i < row.Length; i++) {
-                    if (correctedRow[i] == "*null*") {
-                        correctedRow[i] = row[i];
+                        if (correctedRow[item.From] == null) {
+                            exclude.Add(item.From);
+                        }
                     }
                 }
-                return correctedRow.ToArray();
-            }else {
+                var numeratedRow = Helpers.NumerateSequence(correctedRow);
+                var nulls = numeratedRow.Where(item=>item.Value == null && !exclude.Contains(item.Key)).Select(item=>item.Key);
+                foreach (var item in nulls) {
+                    if (item < row.Length) {
+                        correctedRow[item] = row[item];
+                    }                 
+                }
+                return correctedRow;
+            } else {
                 return row;
             }
         }

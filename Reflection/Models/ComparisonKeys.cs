@@ -6,24 +6,16 @@ using System.Threading.Tasks;
 
 namespace Reflection.Models {
    public class ComparisonKeys {
-        public List<int> MainKeys { get; set; }
-        public List<int> SingleIdColumns { get; set; }
-        public List<int> BinaryIdColumns { get; set; }
-        public List<int> ExcludeColumns { get; set; }
-        //public List<int> UserKeys { get; set; }
-        //public List<int> UserIdColumns { get; set; }
-        //public List<int> UserIdColumnsBinary { get; set; }
-        //public List<int> UserExcludeColumns { get; set; }
+        public HashSet<int> MainKeys { get; set; }
+        public HashSet<int> SingleIdColumns { get; set; }
+        public HashSet<int> BinaryIdColumns { get; set; }
+        public HashSet<int> ExcludeColumns { get; set; }
 
         public ComparisonKeys() {
-            MainKeys = new List<int>();
-            SingleIdColumns = new List<int>();
-            BinaryIdColumns = new List<int>();
-            ExcludeColumns = new List<int>();
-            //UserKeys = new List<int>();
-            //UserIdColumns = new List<int>();
-            //UserIdColumnsBinary = new List<int>();
-            //UserExcludeColumns = new List<int>();
+            MainKeys = new HashSet<int>();
+            SingleIdColumns = new HashSet<int>();
+            BinaryIdColumns = new HashSet<int>();
+            ExcludeColumns = new HashSet<int>();
         }
     }
 }

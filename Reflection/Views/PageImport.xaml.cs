@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
@@ -37,6 +38,7 @@ namespace Reflection.Views {
         private string Version { get; set; }
         public UserKeys UserKeys { get; set; }
         ColumnNamesViewModel CurrentColumnNamesVM { get; set; }
+        List<string> DiffColumns;
 
         public PageImport() {
             InitializeComponent();
@@ -81,15 +83,15 @@ namespace Reflection.Views {
             TestViewModel = new ImportViewModel();
             MasterViewModel.PropertyChanged += OnIsHeaderExistsChanged;
             TestViewModel.PropertyChanged += OnIsHeaderExistsChanged;
-            Version = "Master";
-            this.DataContext = MasterViewModel;
             MasterViewModel.FilePath = comparisonTask.MasterConfiguration.FilePath;
             TestViewModel.FilePath = comparisonTask.TestConfiguration.FilePath;
             MasterViewModel.ReturnedImportConfiguration = comparisonTask.MasterConfiguration;
             TestViewModel.ReturnedImportConfiguration = comparisonTask.TestConfiguration;
             SingleFileView?.Invoke(null, null);
             await AsyncRenderFileWithAnalyseToView(MasterViewModel);
-            CheckSelectedKey(UserIdColumnNames, comparisonTask.ComparisonKeys.SingleIdColumns.Concat(comparisonTask.ComparisonKeys.BinaryIdColumns).ToList());
+            Version = "Master";
+            this.DataContext = MasterViewModel;
+            CheckSelectedKey(UserIdColumnNames, new HashSet<int>(comparisonTask.ComparisonKeys.SingleIdColumns.Concat(comparisonTask.ComparisonKeys.BinaryIdColumns)));
             CheckSelectedKey(ExcludeColumnNames, comparisonTask.ComparisonKeys.ExcludeColumns);
             ShowAvailableKeys();
             ShowSelectedKeys();
@@ -99,7 +101,7 @@ namespace Reflection.Views {
             HandleSelectedKeys();
         }
 
-        private void CheckSelectedKey(ColumnNamesViewModel columnNamesViewModel, List<int> selectedColumns) {
+        private void CheckSelectedKey(ColumnNamesViewModel columnNamesViewModel, HashSet<int> selectedColumns) {
             CurrentColumnNamesVM = columnNamesViewModel;
             LoadColumnNames();
             foreach (var item in selectedColumns) {
@@ -262,19 +264,6 @@ namespace Reflection.Views {
             }
         }
 
-        public void UpdateDataGrid(ImportViewModel importViewModel) {
-            for (int i = 0; i < dgData.Columns.Count; i++) {
-                if (i + 1 > importViewModel.FileHeaders.Count) {
-                    dgData.Columns[i].Header = "";
-                } else {
-                    dgData.Columns[i].Header = importViewModel.FileHeaders[i].Replace("_", "__");
-                }
-            }
-            if (dgData.ItemsSource == null) {
-                dgData.ItemsSource = importViewModel.PreviewContent;
-            }
-        }
-
         public void PrintFileInfo(ImportViewModel importViewModel) {
             PrintSkippedLines(importViewModel.SkippedLines);
             ShowHeaderRow(importViewModel.RowsToSkip);
@@ -305,6 +294,7 @@ namespace Reflection.Views {
         }
 
         private void ButtonExecuteClick(object senderIn, RoutedEventArgs eIn) {
+            ReturnFromTestFile();
             MasterViewModel.IsUserInput = false;
             if (TestViewModel.IsFirstStart) {
                 TestViewModel.AnalyseFile();
@@ -335,13 +325,20 @@ namespace Reflection.Views {
 
         private void LoadColumnNames() {
             var currViewModel = Version == "Master" ? MasterViewModel : TestViewModel;
+            var selectedKeys = new List<ColumnName>(CurrentColumnNamesVM.SelectedKeys);
+            if(DiffColumns == null) {
+                DiffColumns = GetDifferentHeaders();             
+            }
+            CurrentColumnNamesVM.AddUnAvailableKeys(DiffColumns);
             CurrentColumnNamesVM.AvailableKeys.Clear();
+            CurrentColumnNamesVM.SelectedKeys.Clear();
             int index = 0;
-            foreach (var item in currViewModel.FileHeaders) {
-                if (!CurrentColumnNamesVM.UnAvailableKeys.Contains(index)) {
-                    var key = new ColumnName(index, item.Replace("_", "__"));
+            foreach (var colName in currViewModel.FileHeaders) {
+                var clearedColname = ClearIndexFromColumnName(colName);
+                if (!CurrentColumnNamesVM.IsKeyUnAvailable(clearedColname)) {
+                    var key = new ColumnName(index, colName.Replace("_", "__"));
                     CurrentColumnNamesVM.AvailableKeys.Add(key);
-                    if (CurrentColumnNamesVM.SelectedKeys.Any(k => k.Id == index)) {
+                    if (selectedKeys.Any(k => ClearIndexFromColumnName(k.Value) == clearedColname)) {
                         key.IsChecked = true;
                     }
                 }
@@ -349,6 +346,30 @@ namespace Reflection.Views {
             }
             ListBoxAvailableKeys.ItemsSource = CurrentColumnNamesVM.FilteredAvailableKeys;
             ListBoxSelectedKeys.ItemsSource = CurrentColumnNamesVM.SelectedKeys;
+        }
+
+        private string ClearIndexFromColumnName(string str) {
+            int startIdx = str.IndexOf(']') + 2;
+            var s = str.Substring(startIdx, str.Length - startIdx);
+            return s;
+        }
+
+        private void AnalyseTestFile() {
+            if (TestViewModel.FileHeaders.Any()) {
+                return;
+            }
+            if (TestViewModel.ReturnedImportConfiguration == null) {
+                TestViewModel.AnalyseFile();
+            } else {
+                TestViewModel.AnalyseFile(TestViewModel.ReturnedImportConfiguration);
+            }
+        }
+
+        private List<string> GetDifferentHeaders() {
+            AnalyseTestFile();
+            var mDiff = MasterViewModel.FileHeaders.Select(item=> ClearIndexFromColumnName(item)).Except(TestViewModel.FileHeaders.Select(item => ClearIndexFromColumnName(item)));
+            var tDiff = TestViewModel.FileHeaders.Select(item => ClearIndexFromColumnName(item)).Except(MasterViewModel.FileHeaders.Select(item => ClearIndexFromColumnName(item)));
+            return mDiff.Concat(tDiff).Distinct().ToList();
         }
 
         private void ShowAvailableKeys() {
@@ -407,16 +428,16 @@ namespace Reflection.Views {
             TextBlockCurrentUserSelection.Text = "";
             HideSelectedKeys();
             HideAvailableKeys();
-            var currViewModel = Version == "Master" ? MasterViewModel : TestViewModel;
+            var currentViewmodel = Version == "Master" ? MasterViewModel : TestViewModel;
             if (CurrentColumnNamesVM.SelectedKeys.Count > 0) {
                 if (CurrentColumnNamesVM.Name == "SuggestedKey") {
-                    UserKeys.UserComparisonKeys = CurrentColumnNamesVM.SelectedKeys.Select(item => item.Id).ToList();
+                    UserKeys.UserComparisonKeys = new HashSet<int>(GetIks(CurrentColumnNamesVM.SelectedKeys));
                     ChangeButtonColor(ButtonSuggestKey, new SolidColorBrush(Colors.DarkSlateBlue));
                 } else if (CurrentColumnNamesVM.Name == "UserId") {
-                    UserKeys.UserIdColumns = CurrentColumnNamesVM.SelectedKeys.Select(item => item.Id).ToList();
+                    UserKeys.UserIdColumns = new HashSet<int>(GetIks(CurrentColumnNamesVM.SelectedKeys));
                     ChangeButtonColor(ButtonAddIdColumns, new SolidColorBrush(Colors.DarkSlateBlue));
                 } else if (CurrentColumnNamesVM.Name == "ExcludeColumn") {
-                    UserKeys.UserExcludeColumns = CurrentColumnNamesVM.SelectedKeys.Select(item => item.Id).ToList();
+                    UserKeys.UserExcludeColumns = new HashSet<int>(GetIks(CurrentColumnNamesVM.SelectedKeys));
                     ChangeButtonColor(ButtonExcludeColumns, new SolidColorBrush(Colors.DarkSlateBlue));
                 }
             } else {
@@ -433,16 +454,23 @@ namespace Reflection.Views {
             }
         }
 
+        private List<int> GetIks(ObservableCollection<ColumnName> columnNames) {
+            var headers = MasterViewModel.FileHeaders.Count >= TestViewModel.FileHeaders.Count ? MasterViewModel.FileHeaders : TestViewModel.FileHeaders;
+            var numberedHeaders = Helpers.NumerateSequence(headers.Select(item => ClearIndexFromColumnName(item)).ToArray());
+            return numberedHeaders.Where(item => columnNames.Select(col => ClearIndexFromColumnName(col.Value)).Contains(item.Value)).Select(item => item.Key).ToList();
+        }
+
         private void HandleChecked(ColumnName columnName) {
+            var clearedColName = new ColumnName(columnName.Id, ClearIndexFromColumnName(columnName.Value));           
             if (CurrentColumnNamesVM.Name == "SuggestedKey") {
-                ExcludeColumnNames.UnAvailableKeys.Add(columnName.Id);
-                UserIdColumnNames.UnAvailableKeys.Add(columnName.Id);
+                ExcludeColumnNames.UnAvailableKeys.Add(clearedColName);
+                UserIdColumnNames.UnAvailableKeys.Add(clearedColName);
             } else if (CurrentColumnNamesVM.Name == "UserId") {
-                SuggestedKeyColumnNames.UnAvailableKeys.Add(columnName.Id);
-                ExcludeColumnNames.UnAvailableKeys.Add(columnName.Id);
+                SuggestedKeyColumnNames.UnAvailableKeys.Add(clearedColName);
+                ExcludeColumnNames.UnAvailableKeys.Add(clearedColName);
             } else if (CurrentColumnNamesVM.Name == "ExcludeColumn") {
-                SuggestedKeyColumnNames.UnAvailableKeys.Add(columnName.Id);
-                UserIdColumnNames.UnAvailableKeys.Add(columnName.Id);
+                SuggestedKeyColumnNames.UnAvailableKeys.Add(clearedColName);
+                UserIdColumnNames.UnAvailableKeys.Add(clearedColName);
             }
         }
 
@@ -461,15 +489,16 @@ namespace Reflection.Views {
             }
             var checkBox = (CheckBox)senderIn;
             var columnName = (ColumnName)checkBox.DataContext;
+            var clearedColName = new ColumnName(columnName.Id, ClearIndexFromColumnName(columnName.Value));
             if (CurrentColumnNamesVM.Name == "SuggestedKey") {
-                ExcludeColumnNames.UnAvailableKeys.Remove(columnName.Id);
-                UserIdColumnNames.UnAvailableKeys.Remove(columnName.Id);
+                ExcludeColumnNames.UnAvailableKeys.Remove(clearedColName);
+                UserIdColumnNames.UnAvailableKeys.Remove(clearedColName);
             } else if (CurrentColumnNamesVM.Name == "UserId") {
-                SuggestedKeyColumnNames.UnAvailableKeys.Remove(columnName.Id);
-                ExcludeColumnNames.UnAvailableKeys.Remove(columnName.Id);
+                SuggestedKeyColumnNames.UnAvailableKeys.Remove(clearedColName);
+                ExcludeColumnNames.UnAvailableKeys.Remove(clearedColName);
             } else if (CurrentColumnNamesVM.Name == "ExcludeColumn") {
-                SuggestedKeyColumnNames.UnAvailableKeys.Remove(columnName.Id);
-                UserIdColumnNames.UnAvailableKeys.Remove(columnName.Id);
+                SuggestedKeyColumnNames.UnAvailableKeys.Remove(clearedColName);
+                UserIdColumnNames.UnAvailableKeys.Remove(clearedColName);
             }
         }
 
@@ -480,6 +509,15 @@ namespace Reflection.Views {
                 this.DataContext = TestViewModel;
             }
             Version = name;
+        }
+
+        private void ReturnFromTestFile() {
+            if (Version == "Test") {
+                ButtonGoForward.Visibility = Visibility.Visible;
+                ButtonGoBack.ToolTip = "Back to Main Page";
+            } else {
+                ResetUserKeys();
+            }
         }
 
         private void ButtonGoBackClick(object senderIn, RoutedEventArgs eIn) {

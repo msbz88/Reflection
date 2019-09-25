@@ -13,7 +13,7 @@ namespace Reflection.Models.Interfaces {
         int RowsCount { get; }
         char[] Delimiter { get; }
         //Task<Dictionary<int, HashSet<string>>> GetColumnsAsync();
-        void LoadData(IEnumerable<string> data, char[] delimiter, bool isHeadersExist, ComparisonTask comparisonTask, List<MoveColumn> correctionColumns);
+        void LoadData(IEnumerable<string> data, char[] delimiter, bool isHeadersExist, ComparisonTask comparisonTask, List<MoveColumn> correctionColumns, int columnsCount);
         void SaveToFile(string filePath);
         void CleanUp();
     }

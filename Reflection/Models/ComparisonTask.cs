@@ -157,6 +157,7 @@ namespace Reflection.Models {
         public string ProjectName { get; set; }
         public List<double> UpgradeVersions { get; set; }
         public UserKeys UserKeys { get;set;}
+        public Application ExcelApplication { get; set; }
 
         public ComparisonTask(int comparisonId, ImportConfiguration masterConfiguration, ImportConfiguration testConfiguration) {
             ComparisonId = comparisonId;

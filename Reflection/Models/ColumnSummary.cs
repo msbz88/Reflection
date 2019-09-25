@@ -50,14 +50,19 @@ namespace Reflection.Models {
         }
 
         private bool CheckIfDouble(HashSet<string> columnData) {
+            if (columnData.Count == 1 && columnData.First() == null) {
+                return false;
+            }
             double d;
             var clearSeq = columnData.Where(item => item != "" && item.ToUpper() != "NULL");
-            return clearSeq.Any() ? clearSeq.All(item => double.TryParse(CleanUpNumber(item.Replace(" ", "")), out d)) : false;
+            return clearSeq.Any() ? clearSeq.All(item => double.TryParse(Helpers.CleanUpNumber(item), out d)) : false;
         }
 
 
         private bool ChechIfDate(HashSet<string> columnData) {
-            if (!IsNumber) {
+            if (columnData.Count == 1 && columnData.First() == null) {
+                return false;
+            } else if (!IsNumber) {
                 return false;
             }else {
                 DateTime date;
@@ -69,26 +74,20 @@ namespace Reflection.Models {
             }
         }
 
-        private string CleanUpNumber(string str) {
-            string result = str.Replace(" ", "");
-            if(str.Contains(',') && str.Contains('.')) {
-                if(str.IndexOf(',') > str.IndexOf('.')) {
-                    result = str.Replace(".", "");
-                }else {
-                    result = str.Replace(",", "");
-                }             
-            }
-            return result;
-        }
-
         private bool CheckIfHasNulls(HashSet<string> columnData) {
+            if(columnData.Count == 1 && columnData.First() == null) {
+                return true;
+            }
             return columnData.Any(item => item == "" || item.ToUpper() == "NULL");
         }
 
         private bool CheckIfNumeric(HashSet<string> columnData) {
+            if (columnData.Count == 1 && columnData.First() == null) {
+                return false;
+            }
             int n = 0;
             long l = 0;
-            var clearSeq = columnData.Where(item => item != "" && item.ToUpper() != "NULL").Select(item => CleanUpNumber(item));
+            var clearSeq = columnData.Where(item => item != "" && item.ToUpper() != "NULL").Select(item => Helpers.CleanUpNumber(item));
             return clearSeq.Any() ? clearSeq.All(item => int.TryParse(item, out n) || long.TryParse(item, out l)) : false;
         }
 
@@ -180,6 +179,9 @@ namespace Reflection.Models {
         }
 
         private bool CheckIfTimestamp(HashSet<string> columnData) {
+            if (columnData.Count == 1 && columnData.First() == null) {
+                return false;
+            }
             string[] format = new string[] {
                 "yyyy-MM-dd HH:mm:ss", "yyyy/MM/dd HH:mm:ss", "yyyy.MM.dd HH:mm:ss",
                 "MM-dd-yyyy HH:mm:ss","MM/dd/yyyy HH:mm:ss", "MM.dd.yyyy HH:mm:ss",
@@ -193,7 +195,7 @@ namespace Reflection.Models {
             foreach (var item in columnData) {
                 if(item == "" && columnData.Count == 1) {
                     return false;
-                }else if (item == "") {
+                }else if (item == "" || item == "0") {
                     continue;
                 }
                 var str = item.ToLower().Replace(" am", "").Replace(" pm","");

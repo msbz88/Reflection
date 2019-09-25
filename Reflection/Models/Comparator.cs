@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 namespace Reflection.Models {
     public class Comparator {
         ComparisonKeys ComparisonKeys { get; set; }
-        List<int> ExcludedColumns { get; set; }
+        HashSet<int> ExcludedColumns { get; set; }
         bool IsDeviationsOnly { get; set; }
 
         public Comparator(ComparisonKeys comparisonKeys, bool isDeviationsOnly) {
             IsDeviationsOnly = isDeviationsOnly;
             ComparisonKeys = comparisonKeys;
-            ExcludedColumns = new List<int>();
+            ExcludedColumns = new HashSet<int>();
             ExcludedColumns = comparisonKeys.ExcludeColumns;
         }
 
@@ -34,14 +34,8 @@ namespace Reflection.Models {
                 }
             }
             if (comparedRow.Deviations.Count > 0) {
-                var prevBooked = allCombinations.Where(row => row.TestRowId == testRow.Id).FirstOrDefault();
-                if (prevBooked != null) {
-                    int countPrevResult = prevBooked.Deviations.Count;
-                    if (countPrevResult > currentDeviations) {
-                        allCombinations.Remove(prevBooked);
-                    } else if (currentDeviations > countPrevResult) {
-                        return null;
-                    }
+                if (IsBetterResultExists(allCombinations, testRow, currentDeviations)) {
+                    return null;
                 }
                 comparedRow.AddTransNoColumns(GetTransNoColumns(masterRow, testRow));
                 comparedRow.AddMainIdColumns(GetMainIdColumns(masterRow, testRow));
@@ -55,6 +49,18 @@ namespace Reflection.Models {
                 comparedRow.IsPassed = true;
                 return comparedRow;
             }
+        }
+
+        private bool IsBetterResultExists(List<ComparedRow> allCombinations, Row testRow, int currentDeviations) {
+            var prevBooked = allCombinations.Where(row => row.TestRowId == testRow.Id).ToList();
+            foreach (var item in prevBooked) {
+                if(item.Deviations.Count > currentDeviations) {
+                    allCombinations.Remove(item);
+                }else if(item.Deviations.Count < currentDeviations) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public ComparedRow CompareSingle(Row masterRow, Row testRow) {

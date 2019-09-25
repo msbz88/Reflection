@@ -15,14 +15,14 @@ namespace Reflection.ViewModels {
         public ObservableCollection<ColumnName> AvailableKeys { get; set; }
         public ICollectionView FilteredAvailableKeys { get; private set; }
         public ObservableCollection<ColumnName> SelectedKeys { get; set; }
-        public List<int> UnAvailableKeys { get; set; }
+        public List<ColumnName> UnAvailableKeys { get; set; }
 
         public ColumnNamesViewModel(string name) {
             Name = name;
             AvailableKeys = new ObservableCollection<ColumnName>();
             FilteredAvailableKeys = CollectionViewSource.GetDefaultView(AvailableKeys);
             SelectedKeys = new ObservableCollection<ColumnName>();
-            UnAvailableKeys = new List<int>();
+            UnAvailableKeys = new List<ColumnName>();
             AvailableKeys.CollectionChanged += OnAvailableKeysCollectionChanged;
         }
 
@@ -49,6 +49,19 @@ namespace Reflection.ViewModels {
                 SelectedKeys.Remove(userKey);
             }
         }
+
+        public bool IsKeyUnAvailable(string name) {
+            return UnAvailableKeys.Any(item => item.Value == name);
+        }
+
+        public void AddUnAvailableKeys(List<string> names) {
+            int i = 0;
+            foreach (var item in names) {
+                var colName = new ColumnName(i, item);
+                UnAvailableKeys.Add(colName);
+            }
+        }
+
 
     }
 }

@@ -19,12 +19,16 @@ namespace Reflection.Models {
             Regex pattern = new Regex("(?:^|" + delimiter + ")(\"(?:[^\"])*\"|[^" + delimiter + "]*)");
             List<string> list = new List<string>();
             string curr = null;
+            if (str.StartsWith(string.Join("", delimiter))) {
+                str = str.TrimStart(delimiter);
+                list.Add("");
+            }
             foreach (Match match in pattern.Matches(str)) {
                 curr = match.Value;
                 if (0 == curr.Length) {
                     list.Add("");
                 }
-                list.Add(curr.TrimStart(delimiter));
+                list.Add(curr.TrimStart(delimiter));            
             }
             return list.ToArray();
         }

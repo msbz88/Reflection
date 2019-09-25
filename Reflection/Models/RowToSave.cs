@@ -27,7 +27,11 @@ namespace Reflection.Models {
             foreach (var deviation in ComparedRow.Deviations) {
                 var innerResult = new List<string>();
                 if (defectsSearch.IsEnabled) {
-                    DefectNo = defectsSearch.FindDefect(columnNames, ComparedRow.TransNoColumns, ComparedRow.IdColumns, deviation);
+                    try {
+                        DefectNo = defectsSearch.FindDefect(columnNames, ComparedRow.TransNoColumns, ComparedRow.IdColumns, deviation);
+                    } catch (Exception) {
+                        defectsSearch.Disable();
+                    }
                 }
                 innerResult.Add(DefectNo);
                 innerResult.Add("Deviations");

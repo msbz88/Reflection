@@ -287,15 +287,8 @@ namespace Reflection.Models {
                 headers.Add("T_" + TestHeaders[item]);
             }
             foreach (var item in allColumns) {
-                string headerName = "";
-                if (MasterHeaders[item] == "") {
-                    headerName = "(Test extra column) " + TestHeaders[item];
-                }else if(TestHeaders[item] == "") {
-                    headerName = "(Master extra column) " + MasterHeaders[item];
-                }else {
-                    headerName = MasterHeaders[item];
-                }
-                headers.Add(headerName);
+                var colName = NumberedColumnNames[item];
+                headers.Add(colName);
             }
             return headers;
         }
@@ -305,9 +298,9 @@ namespace Reflection.Models {
             Dictionary<int, string> result = new Dictionary<int, string>();
             for (int i = 0; i < columnsCount; i++) {
                 string headerName = "";
-                if (MasterHeaders[i] == "") {
+                if (MasterHeaders[i] == "" || MasterHeaders[i] == null) {
                     headerName = "(Test extra column) " + TestHeaders[i];
-                } else if (TestHeaders[i] == "") {
+                } else if (TestHeaders[i] == "" || TestHeaders[i] == null) {
                     headerName = "(Master extra column) " + MasterHeaders[i];
                 } else {
                     headerName = MasterHeaders[i];
@@ -374,16 +367,17 @@ namespace Reflection.Models {
                 ComparisonTask.UpdateProgress(3);
                 excelApplication.DisplayAlerts = false;
                 excelApplication.Visible = false;
-                //if (ComparisonTask.IsLinearView && !isPassed) {
                 //pass=#Reflection888
-                //workbook = excelApplication.Workbooks.Open(@"O:\DATA\COMMON\core\data\template.xlsx");
-                //}else {
-                workbook = excelApplication.Workbooks.Add("");
-                //}               
+                var template = @"O:\DATA\COMMON\core\data\template.xlsx";
+                if (File.Exists(template)) {
+                    workbook = excelApplication.Workbooks.Add(@"O:\DATA\COMMON\core\data\template.xlsx");
+                } else {
+                    workbook = excelApplication.Workbooks.Add("");
+                    var addin = excelApplication.AddIns.Add(@"I:\VT Execution\xDefectsUpdater\runDefectsUpdater.xlam", false);
+                    addin.Installed = true;
+                }
                 sheet = (Worksheet)workbook.ActiveSheet;
                 sheet.Name = "Comparison";
-                var addin = excelApplication.AddIns.Add(@"I:\VT Execution\xDefectsUpdater\runDefectsUpdater.xlam", false);
-                addin.Installed = true;
                 excelApplication.ActiveWindow.Zoom = 80;
                 excelApplication.Calculation = XlCalculation.xlCalculationAutomatic;
                 range = (Range)sheet.Cells[1, 1];
@@ -546,10 +540,10 @@ namespace Reflection.Models {
             foreach (var item in mainHeaders) {
                 rowToSave.Add(item);
             }
-            File.WriteAllText(path+".txt", string.Join(delimiter, rowToSave));
+            File.WriteAllText(path + ".txt", string.Join(delimiter, rowToSave));
             masterFileContent = ComparisonTask.MasterConfiguration.IsHeadersExist ? masterFileContent.Skip(1) : masterFileContent;
             testFileContent = ComparisonTask.TestConfiguration.IsHeadersExist ? testFileContent.Skip(1) : testFileContent;
-            List<string> content = new List<string>();        
+            List<string> content = new List<string>();
             if (ComparisonTask.ComparisonKeys.BinaryIdColumns.Count > 0) {
                 int rowCount = 0;
                 foreach (var line in masterFileContent) {
@@ -570,7 +564,7 @@ namespace Reflection.Models {
                     if (content.Count > 50000) {
                         File.AppendAllText(path + ".txt", string.Join(delimiter, content));
                         content.Clear();
-                    }                   
+                    }
                 }
             } else {
                 foreach (var line in masterFileContent) {
@@ -591,7 +585,7 @@ namespace Reflection.Models {
         }
 
         public string[,] GetPassedForExcel(IEnumerable<string> masterFileContent, IEnumerable<string> testFileContent) {
-            List<int> mainColumnsToGet = new List<int>();           
+            List<int> mainColumnsToGet = new List<int>();
             mainColumnsToGet = ComparisonTask.ComparisonKeys.MainKeys.Concat(ComparisonTask.ComparisonKeys.SingleIdColumns).Distinct().ToList();
             int allColumnsCount = 1 + mainColumnsToGet.Count + ComparisonTask.ComparisonKeys.BinaryIdColumns.Count * 2;
             string[,] outputArray = new string[1 + ComparisonTask.MasterRowsCount, allColumnsCount];

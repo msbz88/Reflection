@@ -33,6 +33,8 @@ namespace Reflection {
         public ComparisonTasksViewModel ComparisonDetailViewModel { get; set; }
         PageImport PageImport { get; set; }
         PageMain PageMain { get; set; }
+        DateTime StartTime { get; set; }
+        string CurrentUser { get; set; }
 
         public MainWindow() {
             InitializeComponent();
@@ -52,11 +54,31 @@ namespace Reflection {
             PageMain.LinearView += OnChangeDeviationsView;
             PageMain.ResultFileView += OnChangeResultView;
             PageMain.BackToImport += OnBackToImport;
+            StartTime = DateTime.Now;
+            CurrentUser = System.Security.Principal.WindowsIdentity.GetCurrent().Name.Replace("SCDOM\\", "").ToUpper();
         }
 
         private void OnOpenFiles(object sender, EventArgs e) {
+            try {
+                if (IsNewVersionExists()) {
+                    var userResponse = MessageBox.Show("New version available.\nWant to upgrade now?", "", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.Yes);
+                    if (userResponse == MessageBoxResult.Yes) {
+                        Process.Start(@"O:\DATA\COMMON\core\updater\ReflectionUpdater.exe");
+                        Environment.Exit(0);
+                    }
+                }
+            } catch (Exception) { }
             PageImport.SingleFileView += OnIsSingle;
             PageImport.SelectFiles();
+        }
+
+        private bool IsNewVersionExists() {
+            DateTime modification = File.GetLastWriteTime(@"O:\DATA\COMMON\core\Reflection.exe");
+            if(modification > StartTime) {
+                return true;
+            }else {
+                return false;
+            }
         }
 
         private void OnIsSingle(object sender, EventArgs e) {
@@ -92,8 +114,7 @@ namespace Reflection {
 
         private void DeleteInstance(string pathOrigin) {
             try {
-                string userName = System.Security.Principal.WindowsIdentity.GetCurrent().Name.Replace("SCDOM\\", "").ToUpper();
-                string path = pathOrigin + "Reflection_" + userName + ".exe";
+                string path = pathOrigin + "Reflection_" + CurrentUser + ".exe";
                 if (File.Exists(path)) {
                     File.Delete(path);
                 }

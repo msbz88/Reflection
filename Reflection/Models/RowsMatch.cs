@@ -42,7 +42,7 @@ namespace Reflection.Models {
                             break;
                         } else {
                             AllCombinations.Add(comparedRow);
-                        }                       
+                        }
                     }
                 }
             }
@@ -52,7 +52,6 @@ namespace Reflection.Models {
         public List<ComparedRow> ProcessGroup(List<Row> masterRows, List<Row> testRows, int allGroups) {
             ComparedRows.Clear();
             CreateAllCombinations(masterRows, testRows);
-            //FindPassedRows();
             while (AllCombinations.Count > 0) {
                 ComparisonTask.IfCancelRequested();
                 int minDeviation = AllCombinations.Min(row => row.Deviations.Count);
@@ -64,24 +63,9 @@ namespace Reflection.Models {
                     AddComparedRow(comparedRow);
                     continue;
                 }
-                //deviations in same columns
                 var deviationsColumns = BestCombinations.SelectMany(item => item.Deviations.Select(col => col.ColumnId)).Distinct().ToList();
-                var statDeviationsColumns = BaseStat.Where(stat => deviationsColumns.Contains(stat.ColumnId));
-                if (deviationsColumns.Count == minDeviation) {
-                    List<ComparedRow> comparedRows = HandleDeviationsInSameColumns();
-                    if(comparedRows.Count > 0) {
-                        foreach (var item in comparedRows) {
-                            AddComparedRow(item);
-                        }
-                    }else {
-                        comparedRow = SortByPriority(statDeviationsColumns);
-                        AddComparedRow(comparedRow);
-                    }
-                    continue;
-                }
-                //deviations in different columns
-                comparedRow = HandleDeviationsInDiffColumns(deviationsColumns);
-                AddComparedRow(comparedRow);
+                var statDeviationsColumns = BaseStat.Where(stat => deviationsColumns.Contains(stat.ColumnId)).ToList();
+                SortByPriority(statDeviationsColumns);
             }
             ComparisonTask.UpdateProgress(17 / (double)allGroups);
             return ComparedRows;
@@ -98,50 +82,42 @@ namespace Reflection.Models {
             RemoveWrongCombination(comparedRow);
         }
 
-        private List<ComparedRow> HandleDeviationsInSameColumns() {
-            var masterGroup = BestCombinations.GroupBy(item => item.MasterRowId).Where(item => item.Count() > 1).Select(item => item.Key);
-            var testGroup = BestCombinations.GroupBy(item => item.TestRowId).Where(item => item.Count() > 1).Select(item => item.Key);
-            return BestCombinations.Where(item => !masterGroup.Contains(item.MasterRowId) && !testGroup.Contains(item.TestRowId)).ToList();
+        private List<ComparedRow> IntersectRows(List<ComparedRow> comparedRows) {
+            var masterGroup = comparedRows.GroupBy(item => item.MasterRowId).Where(item => item.Count() > 1).Select(item => item.Key);
+            var testGroup = comparedRows.GroupBy(item => item.TestRowId).Where(item => item.Count() > 1).Select(item => item.Key);
+            return comparedRows.Where(item => !masterGroup.Contains(item.MasterRowId) && !testGroup.Contains(item.TestRowId)).ToList();
         }
 
-        private ComparedRow HandleDeviationsInDiffColumns(List<int> deviationsColumns) {
-            var statDeviationsColumns = BaseStat.Where(stat => deviationsColumns.Contains(stat.ColumnId));
-            ComparedRow comparedRow = null;
-            if (deviationsColumns.Count == 1 && !statDeviationsColumns.First().IsString) {
-                var masterValue = BestCombinations.SelectMany(row => row.Deviations.Select(col => ConvertToDouble(col.MasterValue))).First();
-                var testValues = BestCombinations.SelectMany(row => row.Deviations.Select(col => ConvertToDouble(col.TestValue))).ToList();
-                var bestMatch = ClosestNumber(testValues, masterValue);
-                comparedRow = BestCombinations.Where(row => row.Deviations.Select(col => ConvertToDouble(col.TestValue)).Contains(bestMatch)).First();
-            } else if (deviationsColumns.Count == 1 && statDeviationsColumns.First().IsString) {
-                comparedRow = BestCombinations.OrderBy(row => row.Deviations.Select(col => col.TestValue).First()).First();
-            } else {
-                comparedRow = SortByPriority(statDeviationsColumns);
-            }
-            return comparedRow;
-        }
-
-        private ComparedRow SortByPriority(IEnumerable<ColumnSummary> statDeviationsColumns) {
-            var columnsOrderedByPriority = statDeviationsColumns.Where(col => col.UniquenessRate > 1).OrderBy(col => col.MatchingRate).ThenBy(col => col.UniqMatchRate).Select(col => col.ColumnId);
+        private void SortByPriority(List<ColumnSummary> statDeviationsColumns) {
+            var columnsOrderedByPriority = statDeviationsColumns.OrderByDescending(col => col.MatchingRate).ThenByDescending(col => col.UniqMatchRate);
             List<ComparedRow> bestMatched = new List<ComparedRow>();
-            ComparedRow comparedRow = null;
             foreach (var item in columnsOrderedByPriority) {
                 ComparisonTask.IfCancelRequested();
-                var firstMatched = BestCombinations.SelectMany(row => row.Deviations.Where(col => col.ColumnId == item).Select(col => col.TestValue)).OrderBy(val => val).FirstOrDefault();
-                if (string.IsNullOrEmpty(firstMatched)) {
-                    continue;
+                foreach (var cr in BestCombinations) {
+                    ComparisonTask.IfCancelRequested();
+                    var deviation = cr.Deviations.Where(d => d.ColumnId == item.ColumnId).FirstOrDefault();
+                    if(deviation != null) {
+                        deviation.CalculateDiff(item.IsString);
+                    }                
                 }
-                bestMatched = BestCombinations.Where(row => row.Deviations.Select(col => col.TestValue).Contains(firstMatched)).ToList();
-                if (bestMatched.Count == 1) {
-                    comparedRow = bestMatched.First();
-                    return comparedRow;
+                var min = BestCombinations.SelectMany(g => g.Deviations.Select(i => i.Difference)).Min();
+                bestMatched = BestCombinations.Where(row => row.Deviations.Select(col => col.Difference).Contains(min)).ToList();
+                var res = IntersectRows(bestMatched);
+                foreach (var m in res) {
+                    AddComparedRow(m);
+                    bestMatched.RemoveAll(i=>i.MasterRowId == m.MasterRowId || i.TestRowId == m.TestRowId );
                 }
-                if(BestCombinations.Count > bestMatched.Count) {
+                if (bestMatched.Any()) {
                     BestCombinations.Clear();
                     BestCombinations.AddRange(bestMatched);
+                }else {
+                    return;
                 }
             }
-            comparedRow = bestMatched.First();
-            return comparedRow;
+            if (bestMatched.Any()) {
+                var orderedBestMatched = bestMatched.OrderBy(i=>i.TestRowId);
+                AddComparedRow(orderedBestMatched.First());
+            }
         }
 
         private double ConvertToDouble(string numberString) {

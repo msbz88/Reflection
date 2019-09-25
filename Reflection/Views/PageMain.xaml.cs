@@ -69,15 +69,21 @@ namespace Reflection.Views {
             if (listViewItem != null) {
                 var selectedItem = (ComparisonTask)listViewItem.DataContext;
                 if (selectedItem.IsToExcelSaved) {
-                    TryOpenExcel(selectedItem);
+                    OpenExcel(selectedItem);
                 } else {
                     OpenTextFile(selectedItem.ResultFile + ".txt");
                 }
             }
         }
 
-        public void TryOpenExcel(ComparisonTask comparisonTask) {
-             Task.Run(() => Process.Start(comparisonTask.ResultFile + ".xlsx"));
+        public void OpenExcel(ComparisonTask comparisonTask) {
+            Task.Run(() => {
+                try {
+                    Process.Start(comparisonTask.ResultFile + ".xlsx");
+                } catch (Exception ex) {
+                    Dispatcher.Invoke(() => { Error?.Invoke(ex.Message, null); });
+                }
+            });
         }
 
         private bool UserFilter(object item) {
@@ -170,7 +176,7 @@ namespace Reflection.Views {
             ContentPresenter myContentPresenter = FindVisualChild<ContentPresenter>(listViewItem);
             DataTemplate myDataTemplate = myContentPresenter.ContentTemplate;
             TextBlock textBlockError = (TextBlock)myDataTemplate.FindName("TextBlockError", myContentPresenter);
-            if(textBlockError.Text == "") {
+            if (textBlockError.Text == "") {
                 var compTask = (ComparisonTask)listViewItem.DataContext;
                 textBlockError.Text = compTask.ErrorMessage;
             }
@@ -222,7 +228,7 @@ namespace Reflection.Views {
             string userName = "";
             try {
                 userName = await Task.Run(() => System.DirectoryServices.AccountManagement.UserPrincipal.Current.DisplayName);
-                WelcomeTextBlock.Text = "Hello, " + Splitter.Split(userName, new char[]{' '})[0] + "!";
+                WelcomeTextBlock.Text = "Hello, " + Splitter.Split(userName, new char[] { ' ' })[0] + "!";
             } catch (Exception) {
                 WelcomeTextBlock.Visibility = Visibility.Collapsed;
             }
